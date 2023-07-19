@@ -1,3 +1,7 @@
+"""
+this script was never meant to be clean
+"""
+
 import os
 import sys
 import subprocess
@@ -280,7 +284,12 @@ else:
     for name, rawAsm, rawSrc in disasmQueue:
         disassemble(name, rawAsm, rawSrc)
         
-    print()
-    print("* Progress:")
-    print("    Functions: %d/%d (%.1f%%)" % (funcsOk, funcsTot, funcsOk/funcsTot * 100))
-    print("    Bytecode: %d/%d (%.1f%%)" % (bytesOk, bytesTot, bytesOk/bytesTot * 100))
+    progress = "* Progress (Marionea):" + "\n"
+    progress += ("    Functions: %d/%d (%.1f%%)" % (funcsOk, funcsTot, funcsOk/funcsTot * 100)) + "\n"
+    progress += ("    Bytecode: %d/%d (%.1f%%)" % (bytesOk, bytesTot, bytesOk/bytesTot * 100)) + "\n"
+    
+    if "-p" not in sys.argv:
+        print("\n" + progress)
+        with open("PROGRESS", "w") as f:
+            f.write(progress)
+            
