@@ -238,8 +238,8 @@ void DeleteTxFrames(u32 camAdrs) { // TxCtrl.c:1298
             continue;
         
         do {
-            pFrm = (TXFRM*)&pReq->frame;
             pNextReq = (WlMaDataReq*)GetHeapBufNextAdrs((HEAPBUF_HEADER*)pReq);
+            pFrm = (TXFRM*)&pReq->frame;
             
             if (pFrm->FirmHeader.CamAdrs == camAdrs) {
                 if (i == 1 || pFrm == wlMan->TxCtrl.Txq[i].pFrm) {
@@ -295,8 +295,8 @@ void MessageDeleteTx(u32 pri, u32 bMsg) { // TxCtrl.c:1465
     
     pReq = (WlMaDataReq*)wlMan->HeapMan.TxPri[pri].Head;
     while (pReq != (WlMaDataReq*)-1) {
-        pFrm = (TXFRM*)&pReq->frame;
         pNextReq = (WlMaDataReq*)GetHeapBufNextAdrs((HEAPBUF_HEADER*)pReq);
+        pFrm = (TXFRM*)&pReq->frame;
         
         if (pri != 2)
             CAM_DecFrameCount(pFrm);
