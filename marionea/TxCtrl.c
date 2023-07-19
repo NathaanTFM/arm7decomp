@@ -224,11 +224,43 @@ void ResetTxqPri(u32 pri) { // TxCtrl.c:1241
 }
 
 void DeleteTxFrames(u32 camAdrs) { // TxCtrl.c:1298
-    WlMaDataReq* pNextReq; // None - :1300
-    WlMaDataReq* pReq; // r5 - :1300
+    WlMaDataReq* pReq, *pNextReq; // None - :1300
     TXFRM* pFrm; // r6 - :1301
-    u32 bTask; // r7 - :1302
+    u32 bTask = 0; // r7 - :1302 - unused
     u32 i; // r8 - :1303
+    
+    if (CAM_GetFrameCount(camAdrs) == 0)
+        return;
+    
+    for (i = 0; i < 3; i++) { // :1308
+        pReq = (WlMaDataReq*)wlMan->HeapMan.TxPri[i].Head;
+        if (pReq == (WlMaDataReq*)-1)
+            continue;
+        
+        do {
+            pFrm = (TXFRM*)&pReq->frame;
+            pNextReq = (WlMaDataReq*)GetHeapBufNextAdrs((HEAPBUF_HEADER*)pReq);
+            
+            if (pFrm->FirmHeader.CamAdrs == camAdrs) {
+                if (i == 1 || pFrm == wlMan->TxCtrl.Txq[i].pFrm) {
+                    CAM_DecFrameCount(pFrm);
+                    pFrm->FirmHeader.CamAdrs = 0;
+                    CAM_IncFrameCount(pFrm);
+                    
+                } else {
+                    pFrm->MacHeader.Tx.Status = 2;
+                    CAM_DecFrameCount(pFrm);
+                    IssueMaDataConfirm(&wlMan->HeapMan.TxPri[i], pReq);
+                    
+                    if (!bTask)
+                        bTask = 1;
+                }
+            }
+            
+            pReq = pNextReq;
+            
+        } while (pReq != (WlMaDataReq*)-1);
+    }
 }
 
 void DeleteTxFrameByAdrs(u16* pMacAdrs) { // TxCtrl.c:1367
