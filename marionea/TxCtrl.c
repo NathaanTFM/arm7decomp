@@ -62,9 +62,23 @@ void CopyTxFrmToMacBuf(TXFRM_MAC* pMacTxFrm, WlMaDataReq* pTxReq) { // TxCtrl.c:
     }
 }
 
+// TODO: not matching
 u32 CheckFrameTimeout(TXFRM* pTxFrm) { // TxCtrl.c:381
     u16 timeout; // r3 - :383
     WORK_PARAM* pWork = &wlMan->Work; // r12 - :384
+    
+    timeout = pWork->FrameLifeTime * 8;
+    
+    if (pTxFrm->Dot11Header.FrameCtrl.Bit.Type != 0) { // :390
+        timeout /= 8;
+        
+    } else if (pWork->Mode == 1) { // :393
+        if (pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 1 || pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 3 || pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 0xB)
+            timeout /= 8;
+        
+    }
+    
+    return timeout < (u16)(pWork->IntervalCount - pTxFrm->FirmHeader.FrameTime); // :415
 }
 
 void TxqEndData(TXFRM* pFrm, u32 flag) { // TxCtrl.c:442
