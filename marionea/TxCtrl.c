@@ -240,8 +240,24 @@ void DeleteAllTxFrames() { // TxCtrl.c:1413
 }
 
 void MessageDeleteTx(u32 pri, u32 bMsg) { // TxCtrl.c:1465
-    WlMaDataReq* pReq, pNextReq; // r6, r7 - :1467
+    WlMaDataReq* pReq, *pNextReq; // r6, r7 - :1467
     TXFRM* pFrm; // r0 - :1468
+    
+    pReq = (WlMaDataReq*)wlMan->HeapMan.TxPri[pri].Head;
+    while (pReq != (WlMaDataReq*)-1) {
+        pFrm = (TXFRM*)&pReq->frame;
+        pNextReq = (WlMaDataReq*)GetHeapBufNextAdrs((HEAPBUF_HEADER*)pReq);
+        
+        if (pri != 2)
+            CAM_DecFrameCount(pFrm);
+        
+        pFrm->MacHeader.Tx.Status = 2;
+        
+        if (bMsg)
+            IssueMaDataConfirm(&wlMan->HeapMan.TxPri[pri], pReq);
+        
+        pReq = pNextReq;
+    }
 }
 
 void TxManCtrlFrame(TXFRM* pFrm) { // TxCtrl.c:1525
