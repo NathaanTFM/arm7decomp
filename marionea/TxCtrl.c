@@ -279,14 +279,28 @@ void SetManCtrlFrame(TXFRM* pFrm) { // TxCtrl.c:1545
 }
 
 void TxPsPollFrame() { // TxCtrl.c:1579
-    TXQ* pTxq; // r4 - :1581
+    TXQ* pTxq = &wlMan->TxCtrl.Txq[2]; // r4 - :1581
+    
+    pTxq->InCount++;
+    
+    if (pTxq->Busy) {
+        pTxq->pMacFrm->MacHeader.Tx.rsv_RetryCount = 0;
+        
+    } else {
+        pTxq->Busy = 1;
+        pTxq->pMacFrm->MacHeader.Tx.Status = 0;
+        pTxq->pMacFrm->MacHeader.Tx.rsv_RetryCount = 0;
+        pTxq->pMacFrm->MacHeader.Tx.Service_Rate = WCalcManRate();
+        
+        W_TXBUF_LOC3 = (u16)GetTxBufAddr(pTxq->pMacFrm) | 0x8000;
+    }
 }
 
 void StartBeaconFrame() { // TxCtrl.c:1621
     TXQ* pTxq = &wlMan->TxCtrl.Beacon; // r0 - :1623
     
     pTxq->Busy = 1;
-    W_TXBUF_BEACON = ((((u32)pTxq->pMacFrm) & 0x3FFF) >> 1) | 0x8000;
+    W_TXBUF_BEACON = GetTxBufAddr(pTxq->pMacFrm) | 0x8000;
 }
 
 void StopBeaconFrame() { // TxCtrl.c:1652
