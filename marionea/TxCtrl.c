@@ -23,9 +23,43 @@ IPA
 */
 
 void CopyTxFrmToMacBuf(TXFRM_MAC* pMacTxFrm, WlMaDataReq* pTxReq) { // TxCtrl.c:298
-    TXFRM* pTxFrm; // r0 - :300
-    u16* pIcv; // r0 - :336
-    u16* pId; // r0 - :359
+    TXFRM* pTxFrm = (TXFRM*)&pTxReq->frame; // r0 - :300
+    
+    if (pTxFrm->Dot11Header.FrameCtrl.Data & 0x4000) { // WEP ?
+        // TODO: check the bit (0x4000)
+        if (wlMan->Work.Mode == 3)
+            WUpdateCounter();
+        
+        if (pTxReq->header.code == (u16)-1) {
+            DMA_WepWriteHeaderData(pMacTxFrm, &pTxFrm->MacHeader, pTxFrm->Data.Body, pTxFrm->FirmHeader.Length); // :316
+            
+        } else {
+            DMA_WepWriteHeaderData(pMacTxFrm, &pTxFrm->MacHeader, pTxFrm->Data.Pointer, pTxFrm->FirmHeader.Length); // :322
+        }
+        
+        *((u16*)(pMacTxFrm->Body + 0)) = (W_RANDOM + (W_RANDOM << 8)); // :330
+        *((u16*)(pMacTxFrm->Body + 2)) = (W_RANDOM & 0xFF) | (wlMan->Config.WepKeyId << 14); // :331
+        
+        if (wlMan->WlOperation & 8) { // :334
+            u16* pIcv = (u16*)(((u32)&pMacTxFrm->Dot11Header + pTxFrm->MacHeader.Tx.MPDU - 7) & ~1); // r0 - :336
+            pIcv[0] = 0;
+            pIcv[1] = 0;
+        }
+        
+    } else {
+        if (pTxReq->header.code == (u16)-1) {
+            DMA_Write(pMacTxFrm, &pTxFrm->MacHeader, pTxFrm->FirmHeader.Length + 36); // :322
+            
+        } else {
+            DMA_WriteHeaderData(pMacTxFrm, &pTxFrm->MacHeader, pTxFrm->Data.Pointer, pTxFrm->FirmHeader.Length); // :322
+        }
+    }
+    
+    if (wlMan->WlOperation & 4) {
+        u16* pId = (u16*)(((u32)&pMacTxFrm->Dot11Header + pTxFrm->MacHeader.Tx.MPDU - 1) & ~3); // r0 - :359
+        pId[0] = 0xB6B8;
+        pId[1] = 0x1D46;
+    }
 }
 
 u32 CheckFrameTimeout(TXFRM* pTxFrm) { // TxCtrl.c:381
