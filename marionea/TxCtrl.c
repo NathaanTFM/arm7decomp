@@ -518,6 +518,29 @@ PRBREQ_FRAME* MakeProbeReqFrame(u16* pDA) { // TxCtrl.c:2245
     WlMaDataReq* pReq; // r0 - :2247
     PRBREQ_FRAME* pFrm; // r0 - :2248
     u32 ofst; // r0 - :2249
+    
+    // TODO: sizeof..?
+    pReq = (WlMaDataReq*)AllocateHeapBuf(&wlMan->HeapMan.TmpBuf, 0x5A);
+    if (pReq == 0) {
+        SetFatalError(2);
+        
+         // okay, this is actually really ugly, but "return 0" (which behaves the same)
+         // makes the decomp inaccurate
+        return (PRBREQ_FRAME*)pReq;
+    }
+    
+    pReq->header.code = -1;
+    
+    pFrm = (PRBREQ_FRAME*)&pReq->frame;
+    InitManHeader((TXFRM*)pFrm, pDA);
+    
+    ofst = SetSSIDElement(pFrm->Body.Buf);
+    ofst += SetSupRateSet(pFrm->Body.Buf + ofst);
+    
+    pFrm->FirmHeader.Length = ofst;
+    pFrm->MacHeader.Tx.MPDU = ofst + 28;
+    pFrm->Dot11Header.FrameCtrl.Data = 0x40;
+    return pFrm;
 }
 
 PRBRES_FRAME* MakeProbeResFrame(u16* pDA) { // TxCtrl.c:2294
