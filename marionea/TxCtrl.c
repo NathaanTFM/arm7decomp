@@ -265,6 +265,24 @@ void DeleteTxFrames(u32 camAdrs) { // TxCtrl.c:1298
 
 void DeleteTxFrameByAdrs(u16* pMacAdrs) { // TxCtrl.c:1367
     u32 i; // r5 - :1370
+    
+    if (pMacAdrs[0] & 1) { // (????)
+        if (wlMan->Config.MaxStaNum > 1) {
+            for (i = 1; i < wlMan->Config.MaxStaNum; i++) {
+                DeleteTxFrames(i);
+            }
+        }
+        
+    } else {
+        i = CAM_Search(pMacAdrs); // :1384
+        if (i != 255)
+            DeleteTxFrames(i);
+        
+        if (wlMan->Config.Mode == 1 && CAM_GetStaState(i) == 0x40) {
+            CAM_SetStaState(i, 0x20);
+            ClearTxKeyData();
+        }
+    }
 }
 
 void DeleteAllTxFrames() { // TxCtrl.c:1413
