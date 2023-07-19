@@ -388,6 +388,29 @@ static u32 IsEnableManagement() { // TxCtrl.c:1897
 DISASS_FRAME* MakeDisAssFrame(u16* pDA, u16 reasonCode) { // TxCtrl.c:1923
     WlMaDataReq* pReq; // r0 - :1925
     DISASS_FRAME* pFrm; // r0 - :1926
+    
+    // TODO: sizeof..?
+    pReq = (WlMaDataReq*)AllocateHeapBuf(&wlMan->HeapMan.TmpBuf, 0x36);
+    if (pReq == 0) {
+        SetFatalError(2);
+        
+         // okay, this is actually really ugly, but "return 0" (which behaves the same)
+         // makes the decomp inaccurate
+        return (DISASS_FRAME*)pReq;
+    }
+    
+    pReq->header.code = -1;
+    
+    pFrm = (DISASS_FRAME*)&pReq->frame;
+    InitManHeader((TXFRM*)pFrm, pDA);
+    
+    pFrm->Body.ReasonCode = reasonCode;
+    
+    pFrm->FirmHeader.Length = 2;
+    pFrm->MacHeader.Tx.MPDU = pFrm->FirmHeader.Length + 28;
+    pFrm->Dot11Header.FrameCtrl.Data = 0xA0;
+    
+    return pFrm;
 }
 
 ASSREQ_FRAME* MakeAssReqFrame(u16* pDA) { // TxCtrl.c:1969
