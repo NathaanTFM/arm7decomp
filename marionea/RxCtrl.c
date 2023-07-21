@@ -146,8 +146,16 @@ void DefragTask() { // RxCtrl.c:3011
 }
 
 void DefragTimerTask() { // RxCtrl.c:3348
-    DEFRAG_LIST* pList; // r5 - :3350
+    DEFRAG_LIST* pList = wlMan->RxCtrl.DefragList; // r5 - :3350
     u32 i; // r6 - :3351
+    
+    for (i = 0; i < 3; i++) {
+        if (pList[i].RestTime) {
+            if (--pList[i].RestTime == 0) {
+                ReleaseHeapBuf(&wlMan->HeapMan.TmpBuf, pList[i].pPacket);
+            }
+        }
+    }
 }
 
 void InitRxCtrl() { // RxCtrl.c:3395
@@ -177,7 +185,6 @@ void InitRxCtrl() { // RxCtrl.c:3395
             break;
     }
     
-    // Registers are u16s, but this one adds 0x4800000 which gets discarded 
     W_RXBUF_BEGIN = (u32)&W_MACMEM(str_madrs);
     W_RXBUF_WR_ADDR = str_madrs >> 1;
     W_RXBUF_END = 0x5F60;
