@@ -1,3 +1,77 @@
-* Progress (Marionea):
+Progress:
     Functions: 233/358 (65.1%)
     Bytecode: 22196/62188 (35.7%)
+
+File progress:
+    marionea\ApList.c
+        Functions: 3/3 (100.0%)
+        Bytecode: 432/432 (100.0%)
+
+    marionea\BufMan.c
+        Functions: 10/11 (90.9%)
+        Bytecode: 1016/1232 (82.5%)
+
+    marionea\CAM.c
+        Functions: 25/33 (75.8%)
+        Bytecode: 1656/3416 (48.5%)
+
+    marionea\DevCmd.c
+        Functions: 9/11 (81.8%)
+        Bytecode: 776/1776 (43.7%)
+
+    marionea\Diag.c
+        Functions: 0/3 (0.0%)
+        Bytecode: 0/1520 (0.0%)
+
+    marionea\Flash.c
+        Functions: 5/5 (100.0%)
+        Bytecode: 608/608 (100.0%)
+
+    marionea\MA.c
+        Functions: 2/6 (33.3%)
+        Bytecode: 132/2260 (5.8%)
+
+    marionea\MLME.c
+        Functions: 12/34 (35.3%)
+        Bytecode: 1444/6544 (22.1%)
+
+    marionea\ParamCmd.c
+        Functions: 26/58 (44.8%)
+        Bytecode: 1304/3700 (35.2%)
+
+    marionea\RxCtrl.c
+        Functions: 1/16 (6.2%)
+        Bytecode: 276/11012 (2.5%)
+
+    marionea\TaskMan.c
+        Functions: 0/6 (0.0%)
+        Bytecode: 0/748 (0.0%)
+
+    marionea\TxCtrl.c
+        Functions: 29/40 (72.5%)
+        Bytecode: 4452/9376 (47.5%)
+
+    marionea\WaitLoop.c
+        Functions: 5/5 (100.0%)
+        Bytecode: 372/372 (100.0%)
+
+    marionea\WlCmdIf.c
+        Functions: 4/5 (80.0%)
+        Bytecode: 264/968 (27.3%)
+
+    marionea\WlIntr.c
+        Functions: 10/20 (50.0%)
+        Bytecode: 992/5464 (18.2%)
+
+    marionea\WlIntrTask.c
+        Functions: 3/6 (50.0%)
+        Bytecode: 464/1808 (25.7%)
+
+    marionea\WlNic.c
+        Functions: 86/93 (92.5%)
+        Bytecode: 7472/10416 (71.7%)
+
+    marionea\WlSys.c
+        Functions: 3/3 (100.0%)
+        Bytecode: 536/536 (100.0%)
+
