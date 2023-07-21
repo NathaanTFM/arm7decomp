@@ -79,10 +79,43 @@ void RxBeaconFrame(BEACON_FRAME* pFrm) { // RxCtrl.c:740
 }
 
 static void RxDisAssFrame(DISASS_FRAME* pFrm) { // RxCtrl.c:1146
-    WORK_PARAM* pWork; // r1 - :1148
+    WORK_PARAM* pWork = &wlMan->Work; // r1 - :1148
     DEAUTH_FRAME* pDeAuth; // r0 - :1149
-    u32 cam_adrs; // r5 - :1150
-    u32 st; // r0 - :1150
+    u32 st, cam_adrs = pFrm->FirmHeader.CamAdrs; // r0, r5 - :1150
+    
+    switch (pWork->Mode) {
+        case 1:
+            st = CAM_GetStaState(cam_adrs);
+            
+            if (st == 0x40) {
+                CAM_SetStaState(cam_adrs, 0x30);
+                MLME_IssueDisAuthIndication(pFrm->Dot11Header.SA, pFrm->Body.ReasonCode);
+                DeleteTxFrames(cam_adrs);
+                
+            } else {
+                if (st == 0x30) {
+                    // ugly cast is ugly. should just have been a TXFRM*
+                    pDeAuth = (DEAUTH_FRAME*)MakeDisAssFrame(pFrm->Dot11Header.SA, 7);
+                    
+                } else {
+                    pDeAuth = MakeDeAuthFrame(pFrm->Dot11Header.SA, 7, 1);
+                }
+                
+                if (pDeAuth)
+                    TxManCtrlFrame((TXFRM*)pDeAuth);
+            }
+            
+            break;
+            
+        case 2:
+        case 3:
+            if (pWork->STA == 0x40 && MatchMacAdrs(pFrm->Dot11Header.SA, pWork->LinkAdrs)) {
+                WSetStaState(0x30);
+                WClearAids();
+                MLME_IssueDisAssIndication(pFrm->Dot11Header.SA, pFrm->Body.ReasonCode);
+            }
+            break;
+    }
 }
 
 static void RxAssReqFrame(ASSREQ_FRAME* pFrm) { // RxCtrl.c:1228
