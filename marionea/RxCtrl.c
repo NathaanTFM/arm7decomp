@@ -87,7 +87,7 @@ static void RxProbeReqFrame(PRBREQ_FRAME* pFrm) { // RxCtrl.c:1703
     if (IsExistManFrame(pFrm->Dot11Header.SA, 0x50))
         return;
     
-    if ((pFrm->Dot11Header.BSSID[0] & 1) || (pFrm->MacHeader.Tx.Status & 0x8000)) {
+    if ((pFrm->Dot11Header.BSSID[0] & 1) || (pFrm->MacHeader.Rx.Status & 0x8000)) {
         MIi_CpuClear32(0, &elementCheck, sizeof(ELEMENT_CHECKER));
         elementCheck.pElement = pFrm->Body.Buf;
         elementCheck.bodyLength = pFrm->FirmHeader.Length;
