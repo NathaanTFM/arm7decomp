@@ -37,8 +37,24 @@ void RxKeyDataFrame(RXFRM* pFrm) { // RxCtrl.c:450
 }
 
 u32 RxMpAckFrame(RXFRM* pFrm) { // RxCtrl.c:645
-    WORK_PARAM* pWork; // r6 - :647
+    WORK_PARAM* pWork = &wlMan->Work; // r6 - :647
     WlMaMpAckInd* pInd; // r0 - :648
+    
+    if (wlMan->Work.STA != 0x40)
+        return 1;
+    
+    if (!MatchMacAdrs(pFrm->Dot11Header.Adrs2, pWork->BSSID) || !MatchMacAdrs(pFrm->Dot11Header.Adrs3, pWork->LinkAdrs))
+        return 1;
+    
+    pInd = SubtractAddr(pFrm, 0x10);
+    pFrm->FirmHeader.Length = pFrm->MacHeader.Rx.MPDU - 28;
+    
+    pInd->header.code = 0x185; // ?
+    pInd->header.length = 24;
+    pInd->ack.txKeySts |= wlMan->RxCtrl.TxKeyReg | ((W_TXBUF_REPLY2 & 0x8000) >> 4) | ((W_TXBUF_REPLY1 & 0x8000) >> 3);
+    
+    SendMessageToWmDirect(&wlMan->HeapMan.TmpBuf, pInd);
+    return 0;
 }
 
 void RxBeaconFrame(BEACON_FRAME* pFrm) { // RxCtrl.c:740
