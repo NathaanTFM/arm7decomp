@@ -87,8 +87,9 @@ def compile(compiler, path, target):
             "-W", "noimpl_signedunsigned",
             "-w", "notinlined",
             "-c",
-            path,
-        ])
+            path
+            
+        ], env={"LM_LICENSE_FILE": "compiler/license.dat"})
     
     #if "-s" not in sys.argv or isRecompiled:
     #    print(path)
