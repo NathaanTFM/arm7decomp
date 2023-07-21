@@ -286,7 +286,34 @@ void DeleteTxFrameByAdrs(u16* pMacAdrs) { // TxCtrl.c:1367
 }
 
 void DeleteAllTxFrames() { // TxCtrl.c:1413
-    TX_CTRL* pTxCtrl; // r5 - :1415
+    TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r5 - :1415
+    
+    switch (wlMan->Work.Mode) {
+        case 1:
+            MessageDeleteTx(0, 1);
+            MessageDeleteTx(1, 0);
+            MessageDeleteTx(2, 1);
+            
+            if (pTxCtrl->Mp.Busy) {
+                pTxCtrl->Mp.Busy = 0;
+                pTxCtrl->Mp.InCount--;
+                ReleaseHeapBuf(&wlMan->HeapMan.TmpBuf, pTxCtrl->pMpEndInd);
+            }
+            break;
+            
+        case 2:
+        case 3:
+            MessageDeleteTx(0, 1);
+            MessageDeleteTx(1, 0);
+            MessageDeleteTx(2, 0);
+            break;
+            
+        default:
+            MessageDeleteTx(0, 0);
+            MessageDeleteTx(1, 0);
+            MessageDeleteTx(2, 0);
+            break;
+    }
 }
 
 void MessageDeleteTx(u32 pri, u32 bMsg) { // TxCtrl.c:1465
