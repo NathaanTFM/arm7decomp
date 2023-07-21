@@ -262,25 +262,24 @@ for name, rawAsm, rawSrc in disasmQueue:
     
 sumBytesOk, sumBytesTot, sumFuncsOk, sumFuncsTot = 0, 0, 0, 0
 
-progress = "Progress:" + "\n"
+progressVerbose = "File progress:\n"
 for file, (bytesOk, bytesTot, funcsOk, funcsTot) in sorted(progressPerFile.items()):
-    progress += "    " + file + "\n"
-    progress += "        Functions: %d/%d (%.1f%%)" % (funcsOk, funcsTot, funcsOk/funcsTot * 100) + "\n"
-    progress += "        Bytecode: %d/%d (%.1f%%)" % (bytesOk, bytesTot, bytesOk/bytesTot * 100) + "\n"
-    progress += "\n"
+    progressVerbose += "    " + file + "\n"
+    progressVerbose += "        Functions: %d/%d (%.1f%%)" % (funcsOk, funcsTot, funcsOk/funcsTot * 100) + "\n"
+    progressVerbose += "        Bytecode: %d/%d (%.1f%%)" % (bytesOk, bytesTot, bytesOk/bytesTot * 100) + "\n"
+    progressVerbose += "\n"
     
     sumBytesOk += bytesOk
     sumBytesTot += bytesTot
     sumFuncsOk += funcsOk
     sumFuncsTot += funcsTot
     
+progress = "Progress:" + "\n"
 progress += "    Functions: %d/%d (%.1f%%)" % (sumFuncsOk, sumFuncsTot, sumFuncsOk/sumFuncsTot * 100) + "\n"
 progress += "    Bytecode: %d/%d (%.1f%%)" % (sumBytesOk, sumBytesTot, sumBytesOk/sumBytesTot * 100) + "\n"
-    
-
 
 if "-p" not in sys.argv:
     print("\n" + progress)
     with open("PROGRESS", "w") as f:
-        f.write(progress)
+        f.write(progress + "\n" + progressVerbose)
         
