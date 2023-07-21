@@ -178,7 +178,7 @@ void InitRxCtrl() { // RxCtrl.c:3395
     }
     
     // Registers are u16s, but this one adds 0x4800000 which gets discarded 
-    W_RXBUF_BEGIN = 0x4800000 + str_madrs + 0x4000;
+    W_RXBUF_BEGIN = (u32)&W_MACMEM(str_madrs);
     W_RXBUF_WR_ADDR = str_madrs >> 1;
     W_RXBUF_END = 0x5F60;
     W_RXBUF_READCSR = str_madrs >> 1;
