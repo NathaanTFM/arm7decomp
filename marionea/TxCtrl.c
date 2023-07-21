@@ -497,9 +497,29 @@ void MakeBeaconFrame() { // TxCtrl.c:1692
 }
 
 void UpdateGameInfoElement() { // TxCtrl.c:1842
-    WORK_PARAM* pWork; // r5 - :1844
-    GAME_INFO_ELEMENT* pGMIF; // r6 - :1845
-    u16* pId; // r0 - :1874
+    WORK_PARAM* pWork = &wlMan->Work; // r5 - :1844
+    GAME_INFO_ELEMENT* pGMIF = (GAME_INFO_ELEMENT*)&wlMan->TxCtrl.Beacon.pMacFrm->Body[pWork->Ofst.Beacon.GameInfo]; // r6 - :1845
+    
+    if (pWork->GameInfoLength != 0) {
+        if (pWork->GameInfoAlign & 1) {
+            DMA_Write((char*)pGMIF->GameInfo - 1, pWork->GameInfoAdrs, pWork->GameInfoLength + 2);
+            WL_WriteByte(&pGMIF->VTSF[1], (global_vtsf_var >> 8));
+            
+        } else {
+            DMA_Write(pGMIF->GameInfo, pWork->GameInfoAdrs, pWork->GameInfoLength + 1);
+        }
+    }
+    
+    wlMan->TxCtrl.Beacon.pMacFrm->MacHeader.Tx.MPDU = pWork->Ofst.Beacon.GameInfo + 38 + pWork->GameInfoLength;
+    WL_WriteByte(&pGMIF->Length, pWork->GameInfoLength + 8);
+    
+    if (wlMan->WlOperation & 4) {
+        u16* pId = (u16*)(((u32)pGMIF + sizeof(GAME_INFO_ELEMENT) + pWork->GameInfoLength) & ~3); // r0 - :1874
+        pId[0] = 0xB6B8;
+        pId[1] = 0x1D46;
+    }
+    
+    pWork->bUpdateGameInfo = 0;
 }
 
 static u32 IsEnableManagement() { // TxCtrl.c:1897
