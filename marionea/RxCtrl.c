@@ -113,8 +113,27 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
 }
 
 static void RxDeAuthFrame(DEAUTH_FRAME* pFrm) { // RxCtrl.c:2418
-    WORK_PARAM* pWork; // r1 - :2420
-    u32 cam_adrs; // r5 - :2422
+    WORK_PARAM* pWork = &wlMan->Work; // r1 - :2420
+    u32 cam_adrs = pFrm->FirmHeader.CamAdrs; // r5 - :2422
+    
+    switch (pWork->Mode) {
+        case 1:
+            if (CAM_GetStaState(cam_adrs) > 0x20) {
+                CAM_SetStaState(cam_adrs, 0x20);
+                MLME_IssueDeAuthIndication(pFrm->Dot11Header.SA, pFrm->Body.ReasonCode);
+                DeleteTxFrames(cam_adrs);
+            }
+            break;
+            
+        case 2:
+        case 3:
+            if (pWork->STA > 0x20 && MatchMacAdrs(pFrm->Dot11Header.SA, pWork->LinkAdrs)) {
+                WSetStaState(0x20);
+                WClearAids();
+                MLME_IssueDeAuthIndication(pFrm->Dot11Header.SA, pFrm->Body.ReasonCode);
+            }
+            break;
+    }
 }
 
 static void ElementChecker(ELEMENT_CHECKER* p) { // RxCtrl.c:2564
