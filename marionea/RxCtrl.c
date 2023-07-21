@@ -17,13 +17,51 @@ void RxDataFrameTask() { // RxCtrl.c:66
 }
 
 u32 RxMpFrame(RXFRM* pFrm) { // RxCtrl.c:324
-    WORK_PARAM* pWork; // r5 - :326
-    RX_CTRL* pRxCtrl; // r6 - :327
+    WORK_PARAM* pWork = &wlMan->Work; // r5 - :326
+    RX_CTRL* pRxCtrl = &wlMan->RxCtrl; // r6 - :327
     WlMaMpInd* pInd; // r5 - :328
-    u32 x; // r0 - :329
-    u32 cnt; // r7 - :329
-    u16 out; // r0 - :330
-    u16 bitmap; // r2 - :330
+    u32 cnt, x; // r7, r0 - :329
+    u16 bitmap, out; // r2, r0 - :330
+    
+    if (pWork->STA != 0x40)
+        return 1;
+    
+    if (!MatchMacAdrs(pFrm->Dot11Header.Adrs2, pWork->BSSID) || !MatchMacAdrs(pFrm->Dot11Header.Adrs3, pWork->LinkAdrs))
+        return 1;
+    
+    if (( ((WlRxMpFrame*)pFrm)->bitmap & (u16)(1 << pWork->AID)) == 0) // weird cast
+        pRxCtrl->TxKeyReg = 0;
+    else
+        pRxCtrl->TxKeyReg = 0x2000;
+    
+    out = W_TXBUF_REPLY2;
+    if ((out & 0x8000) != 0 && (&W_MACMEM((u16)(2 * out)))[2] != 0) // TODO: ugliest thing in the code
+        pRxCtrl->TxKeyReg |= 0x4000;
+    
+    CAM_UpdateLifeTime(pWork->APCamAdrs);
+    pInd = SubtractAddr(pFrm, 0x10);
+    pFrm->FirmHeader.Length = pFrm->MacHeader.Rx.MPDU - 28;
+    
+    pInd->header.code = 0x182; // ?
+    pInd->header.length = ((u32)pFrm->FirmHeader.Length + 49) / 2;
+    
+    bitmap = pInd->frame.bitmap;
+    cnt = 0;
+    while (bitmap) {
+        if (bitmap & 1)
+            ++cnt;
+        
+        bitmap /= 2;
+    }
+    
+    x = OS_DisableIrqMask(0x1000000);
+    pInd->frame.txKeySts = pRxCtrl->TxKeyFrm | pRxCtrl->TxKeyReg | ((W_TXBUF_REPLY2 & 0x8000) >> 4) | ((W_TXBUF_REPLY1 & 0x8000) >> 3);
+    pRxCtrl->TxKeyFrm = 0;
+    OS_EnableIrqMask(x);
+    
+    pInd->frame.ackTimeStamp = pInd->frame.timeStamp + ((cnt * (pInd->frame.txop + 10) + 252) >> 4);
+    SendMessageToWmDirect(&wlMan->HeapMan.TmpBuf, pInd);
+    return 0;
 }
 
 void RxKeyDataFrame(RXFRM* pFrm) { // RxCtrl.c:450
