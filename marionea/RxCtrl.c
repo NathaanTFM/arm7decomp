@@ -1,5 +1,7 @@
 #include "Mongoose.h"
 
+static void ElementChecker(ELEMENT_CHECKER* p);
+
 void RxDataFrameTask() { // RxCtrl.c:66
     DEAUTH_FRAME* pDeAuth; // r0 - :68
     WlMaDataInd* pInd; // r5 - :69
@@ -81,6 +83,26 @@ static void RxAssReqFrame(ASSREQ_FRAME* pFrm) { // RxCtrl.c:1228
 static void RxProbeReqFrame(PRBREQ_FRAME* pFrm) { // RxCtrl.c:1703
     PRBRES_FRAME* pTxFrm; // r0 - :1705
     ELEMENT_CHECKER elementCheck; // None - :1706
+    
+    if (IsExistManFrame(pFrm->Dot11Header.SA, 0x50))
+        return;
+    
+    if ((pFrm->Dot11Header.BSSID[0] & 1) || (pFrm->MacHeader.Tx.Status & 0x8000)) {
+        MIi_CpuClear32(0, &elementCheck, sizeof(ELEMENT_CHECKER));
+        elementCheck.pElement = pFrm->Body.Buf;
+        elementCheck.bodyLength = pFrm->FirmHeader.Length;
+        if (!wlMan->Config.BcSsidResponse)
+            elementCheck.foundFlag = 0x800;
+        
+        ElementChecker(&elementCheck);
+        
+        if ((elementCheck.matchFlag & 1) == 1) {
+            pTxFrm = MakeProbeResFrame(pFrm->Dot11Header.SA);
+            if (pTxFrm)
+                TxManCtrlFrame((TXFRM*)pTxFrm);
+        }
+    }
+    
 }
 
 static void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCtrl.c:1758
