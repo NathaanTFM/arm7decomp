@@ -1,5 +1,7 @@
 #include "Mongoose.h"
 
+static void MLME_MeasChanTimeOut(void *unused);
+
 u16 MLME_ResetReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:69
     WlMlmeResetReq* pReq = (WlMlmeResetReq*)pReqt; // r0 - :71
     
@@ -203,13 +205,95 @@ static void MLME_ReAssTimeOut() { // MLME.c:1651
 }
 
 void MLME_MeasChannelTask() { // MLME.c:1695
-    WORK_PARAM* pWork; // r6 - :1697
-    MLME_MAN* pMLME; // r7 - :1698
-    u32 ratio; // r2 - :1699
-    u32 ch; // r0 - :1699
+    WORK_PARAM* pWork = &wlMan->Work; // r6 - :1697
+    MLME_MAN* pMLME = &wlMan->MLME; // r7 - :1698
+    u32 ch, ratio; // r0, r2 - :1699
+    
+    switch (pMLME->State) {
+        case 128:
+            pMLME->Work.Measure.Channel = 0;
+            pMLME->Work.Measure.bkCCAMode = BBP_Read(0x13);
+            pMLME->Work.Measure.bkEdTh = BBP_Read(0x35);
+            WSetCCA_ED(pMLME->pReq.MeasChannel->ccaMode, pMLME->pReq.MeasChannel->edThreshold);
+            pWork->Mode = 4;
+            pMLME->Work.Measure.sts = 0;
+            // go to 129
+            
+        case 129:
+            pMLME->Work.Measure.Counter = 0;
+            pMLME->Work.Measure.CCA = 0;
+            ch = WL_ReadByte(&pMLME->pReq.MeasChannel->channelList[pMLME->Work.Measure.Channel]);
+            if (ch == 0 || pMLME->Work.Measure.Channel >= 16) {
+                pMLME->State = 132;
+                break;
+            }
+                
+            if (FLASH_VerifyChecksum(0)) {
+                pMLME->Work.Measure.sts = 14;
+                pMLME->State = 132;
+                break;
+            }
+                
+            if (pMLME->State == 128) {
+                WSetChannel(ch, 0);
+                WStart();
+                pMLME->Work.Measure.bkPowerMode = W_POWERFORCE;
+                WSetForcePowerState(0x8000);
+                
+            } else {
+                WSetChannel(ch, 0);
+            }
+            
+            pMLME->State = 130;
+            SetupTimeOut(pMLME->pReq.MeasChannel->measureTime, MLME_MeasChanTimeOut);
+            // go to 130
+            
+        case 130:
+            pMLME->Work.Measure.Counter++;
+            if (W_RF_PINS & 1)
+                pMLME->Work.Measure.CCA += 100;
+            
+            break;
+            
+        case 131:
+            ch = WL_ReadByte(&pMLME->pReq.MeasChannel->channelList[pMLME->Work.Measure.Channel]);
+            ratio = 0;
+            
+            if (pMLME->Work.Measure.Counter != 0 && pMLME->Work.Measure.CCA != 0) {
+                ratio = 1 + (pMLME->Work.Measure.CCA / pMLME->Work.Measure.Counter);
+                ratio = (ratio > 100) ? 100 : ratio;
+            }
+            
+            pMLME->pCfm.MeasChannel->ccaBusyInfo[pMLME->Work.Measure.Channel] = ch | (ratio << 8);
+            pMLME->Work.Measure.Channel++;
+            pMLME->State = 129;
+            break;
+            
+        case 132:
+            WStop();
+            pWork->Mode = wlMan->Config.Mode;
+            BBP_Write(0x13, pMLME->Work.Measure.bkCCAMode);
+            BBP_Write(0x35, pMLME->Work.Measure.bkEdTh);
+            WSetForcePowerState(pMLME->Work.Measure.bkPowerMode);
+            pMLME->pCfm.MeasChannel->resultCode = pMLME->Work.Measure.sts;
+            pMLME->State = 0;
+            
+            for (ch = pMLME->Work.Measure.Channel; ch < 16; ch++) {
+                pMLME->pCfm.MeasChannel->ccaBusyInfo[ch] = 0;
+            }
+            
+            IssueMlmeConfirm();
+            break;
+            
+        default:
+            break;
+    }
+    
+    if (pMLME->State)
+        AddTask(2, 5);
 }
 
-static void MLME_MeasChanTimeOut() { // MLME.c:1871
+static void MLME_MeasChanTimeOut(void *unused) { // MLME.c:1871
     wlMan->MLME.State = 131;
     AddTask(2, 5);
 }
