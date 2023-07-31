@@ -1,6 +1,6 @@
 Progress:
-    Functions: 237/358 (66.2%)
-    Bytecode: 23132/62188 (37.2%)
+    Functions: 267/358 (74.6%)
+    Bytecode: 25048/62188 (40.3%)
 
 File progress:
     marionea\ApList.c
@@ -36,8 +36,8 @@ File progress:
         Bytecode: 1444/6544 (22.1%)
 
     marionea\ParamCmd.c
-        Functions: 26/58 (44.8%)
-        Bytecode: 1304/3700 (35.2%)
+        Functions: 56/58 (96.6%)
+        Bytecode: 3220/3700 (87.0%)
 
     marionea\RxCtrl.c
         Functions: 4/16 (25.0%)
