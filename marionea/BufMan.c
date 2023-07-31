@@ -190,12 +190,14 @@ void InitHeapBufMan(HEAPBUF_MAN* pBufMan, u16 Flag) { // BufMan.c:585
     pBufMan->Flag = Flag;
 }
 
-// TODO: this one is inaccurate! for some reason...
 void InitializeHeapBuf(HEAP_INFO* pHeapInfo) { // BufMan.c:611
     HEAP_MAN* pHeapMan = &wlMan->HeapMan; // r0 - :613
     WORK_PARAM* pWork = &wlMan->Work; // r5 - :614
     
-    wlMan->HeapMan.HeapInfo = *pHeapInfo;
+    // TODO: should we be using func.ext or func.os?
+    pHeapMan->HeapInfo.heapType = pHeapInfo->heapType;
+    pHeapMan->HeapInfo.func.ext.alloc = pHeapInfo->func.ext.alloc;
+    pHeapMan->HeapInfo.func.ext.free = pHeapInfo->func.ext.free;
     
     InitHeapBufMan(&pHeapMan->TmpBuf, 2);
     InitHeapBufMan(&pHeapMan->TxPri[0], 3);
