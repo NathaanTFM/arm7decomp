@@ -46,7 +46,19 @@ def disassemble(name, rawAsm, rawSrc):
             mismatch = True
             
         if mismatch:
-            print(("=" if lineAsm == lineSrc else " ") + " " + lineAsm.ljust(LENGTH) + " | " + lineSrc.ljust(LENGTH))
+            icon = " "
+            if lineAsm == lineSrc:
+                icon = "="
+                
+            else:
+                # lazy!!!
+                try:
+                    if lineAsm.split()[2] == lineSrc.split()[2]:
+                        icon = "*"
+                except Exception:
+                    pass
+                    
+            print(icon + " " + lineAsm.ljust(LENGTH) + " | " + lineSrc.ljust(LENGTH))
             
     if not mismatch:
         print("(no mismatch found)")
