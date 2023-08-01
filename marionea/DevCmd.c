@@ -1,7 +1,8 @@
 #include "Mongoose.h"
 
 u16 DEV_ShutdownReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:49
-    pCfmt->header.length = 1;
+    WlDevShutdownCfm* pCfm = (WlDevShutdownCfm*)pCfmt;
+    pCfm->header.length = 1;
     
     if (!(wlMan->Work.STA == 0 || wlMan->Work.STA == 0x10))
         return 1;
@@ -11,7 +12,8 @@ u16 DEV_ShutdownReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:49
 }
 
 u16 DEV_IdleReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:84
-    pCfmt->header.length = 1;
+    WlDevIdleCfm* pCfm = (WlDevIdleCfm*)pCfmt;
+    pCfm->header.length = 1;
     
     if (wlMan->Work.STA > 32)
         return 1; // :94
@@ -27,7 +29,8 @@ u16 DEV_IdleReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:84
 }
 
 u16 DEV_Class1ReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:127
-    pCfmt->header.length = 1; // :137
+    WlDevClass1Cfm* pCfm = (WlDevClass1Cfm*)pCfmt;
+    pCfm->header.length = 1; // :137
     
     if (wlMan->Work.STA == 0x10 || (wlMan->Work.STA == 0x20 && !wlMan->Work.bSynchro)) {
         WSetStaState(0x20); // :144
@@ -39,7 +42,8 @@ u16 DEV_Class1ReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:127
 }
 
 u16 DEV_RebootReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:166
-    pCfmt->header.length = 1;
+    WlDevClass1Cfm* pCfm = (WlDevClass1Cfm*)pCfmt;
+    pCfm->header.length = 1;
     
     if (wlMan->Work.STA >= 0x20)
         WStop();
@@ -49,10 +53,11 @@ u16 DEV_RebootReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:166
 }
 
 u16 DEV_ClearWlInfoReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:201
+    WlDevClrInfoCfm* pCfm = (WlDevClrInfoCfm*)pCfmt;
     if (wlMan->Work.STA == 0)
         return 1;
     
-    pCfmt->header.length = 1;
+    pCfm->header.length = 1;
     WInitCounter();
     return 0;
 }
@@ -61,7 +66,7 @@ u16 DEV_GetVerInfoReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:239
     static u8 wlVersion[] = "2.88.00"; // :242
     WlDevGetVerInfoCfm* pCfm = (WlDevGetVerInfoCfm*)pCfmt; // r0 - :245
     
-    pCfmt->header.length = 9;
+    pCfm->header.length = 9;
     
     MIi_CpuCopy16(wlVersion, pCfm->wlVersion, sizeof(wlVersion));
     pCfm->macVersion = W_ID;
@@ -101,13 +106,14 @@ u16 DEV_GetWlInfoReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:293
 u16 DEV_GetStateReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:330
     WlDevGetStateCfm* pCfm = (WlDevGetStateCfm*)pCfmt; // r0 - :334
     
-    pCfmt->header.length = 2;
+    pCfm->header.length = 2;
     pCfm->state = wlMan->Work.STA;
     return 0;
 }
 
 u16 DEV_TestSignalReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:364
-    WlDevTestSignalReq* pReq; // r0 - :366
+    WlDevTestSignalReq* pReq = (WlDevTestSignalReq*)pReqt; // r0 - :366
+    WlDevTestSignalCfm* pCfm = (WlDevTestSignalCfm*)pCfmt;
     WORK_PARAM* pWork; // r9 - :368
     u32 tmp; // None - :369
     

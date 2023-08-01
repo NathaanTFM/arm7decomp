@@ -3,9 +3,9 @@
 u16 PARAMSET_AllReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:64
     u16 ret; // r4 - :66
     WlParamSetAllReq* pReq = (WlParamSetAllReq*)pReqt; // r0 - :67
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
-    pCfmt->header.length = 1;
-    
+    pCfm->header.length = 1;
     if (wlMan->Work.STA != 0x10)
         return 1;
 
@@ -29,9 +29,9 @@ u16 PARAMSET_AllReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:64
 
 u16 PARAMSET_MacAdrsReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:109
     WlParamSetMacAdrsReq* pReq = (WlParamSetMacAdrsReq*)pReqt; // r0 - :111
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
-    pCfmt->header.length = 1;
-    
+    pCfm->header.length = 1;
     if (wlMan->Work.STA != 0x10)
         return 1;
     
@@ -39,15 +39,18 @@ u16 PARAMSET_MacAdrsReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:109
 }
 
 u16 PARAMSET_RetryReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:138
-    pCfmt->header.length = 1;
-    return WSetRetryLimit(((WlParamSetRetryLimitReq*)pReqt)->retryLimit);
+    WlParamSetRetryLimitReq* pReq = (WlParamSetRetryLimitReq*)pReqt;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
+    return WSetRetryLimit(pReq->retryLimit);
 }
 
 u16 PARAMSET_EnableChannelReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:164
     WlParamSetEnableChannelReq* pReq = (WlParamSetEnableChannelReq*)pReqt; // r0 - :166
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
-    pCfmt->header.length = 1;
-    
+    pCfm->header.length = 1;
     if (wlMan->Work.STA != 0x10)
         return 1;
     
@@ -56,8 +59,9 @@ u16 PARAMSET_EnableChannelReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd
 
 u16 PARAMSET_ModeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:192
     WlParamSetModeReq* pReq = (WlParamSetModeReq*)pReqt; // r0 - :194
-    pCfmt->header.length = 1;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
+    pCfm->header.length = 1;
     if (wlMan->Work.STA > 0x20)
         return 1;
     
@@ -68,29 +72,42 @@ u16 PARAMSET_ModeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:192
 }
 
 u16 PARAMSET_RateReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:221
-    pCfmt->header.length = 1;
-    return WSetRate(((WlParamSetRateReq*)pReqt)->rate);
+    WlParamSetRateReq* pReq = (WlParamSetRateReq*)pReqt;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
+    return WSetRate(pReq->rate);
 }
 
 u16 PARAMSET_WepModeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:249
-    pCfmt->header.length = 1;
-    return WSetWepMode(((WlParamSetWepModeReq*)pReqt)->wepMode);
+    WlParamSetWepModeReq* pReq = (WlParamSetWepModeReq*)pReqt;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
+    return WSetWepMode(pReq->wepMode);
 }
 
 u16 PARAMSET_WepKeyIdReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:277
-    pCfmt->header.length = 1;
-    return WSetWepKeyId(((WlParamSetWepKeyIdReq*)pReqt)->wepKeyId);
+    WlParamSetWepKeyIdReq* pReq = (WlParamSetWepKeyIdReq*)pReqt;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
+    return WSetWepKeyId(pReq->wepKeyId);
 }
 
 u16 PARAMSET_WepKeyReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:305
-    pCfmt->header.length = 1;
-    return WSetWepKey((u16*)((WlParamSetWepKeyReq*)pReqt)->wepKey);
+    WlParamSetWepKeyReq* pReq = (WlParamSetWepKeyReq*)pReqt;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
+    return WSetWepKey((u16*)pReq->wepKey);
 }
 
 u16 PARAMSET_BeaconTypeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:333
     WlParamSetBeaconTypeReq* pReq = (WlParamSetBeaconTypeReq*)pReqt; // r0 - :335
-    pCfmt->header.length = 1;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
+    pCfm->header.length = 1;
     if (wlMan->Work.STA > 0x20)
         return 1;
     
@@ -98,41 +115,59 @@ u16 PARAMSET_BeaconTypeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:
 }
 
 u16 PARAMSET_ResBcSsidReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:362
-    pCfmt->header.length = 1;
-    return WSetBcSsidResponse(((WlParamSetProbeResReq*)pReqt)->probeRes);
+    WlParamSetProbeResReq* pReq = (WlParamSetProbeResReq*)pReqt;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
+    return WSetBcSsidResponse(pReq->probeRes);
 }
 
 u16 PARAMSET_BeaconLostThReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:388
-    pCfmt->header.length = 1;
-    return WSetBeaconLostThreshold(((WlParamSetBeaconLostThresholdReq*)pReqt)->beaconLostTh);
+    WlParamSetBeaconLostThresholdReq* pReq = (WlParamSetBeaconLostThresholdReq*)pReqt;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
+    return WSetBeaconLostThreshold(pReq->beaconLostTh);
 }
 
 u16 PARAMSET_ActiveZoneReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:414
-    pCfmt->header.length = 1;
-    return WSetActiveZoneTime(((WlParamSetActiveZoneReq*)pReqt)->activeZoneTime, 0);
+    WlParamSetActiveZoneReq* pReq = (WlParamSetActiveZoneReq*)pReqt;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
+    return WSetActiveZoneTime(pReq->activeZoneTime, 0);
 }
 
 u16 PARAMSET_SSIDMaskReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:440
-    pCfmt->header.length = 1;
-    return WSetSsidMask((u16*)((WlParamSetSsidMaskReq*)pReqt)->mask);
+    WlParamSetSsidMaskReq* pReq = (WlParamSetSsidMaskReq*)pReqt;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
+    return WSetSsidMask((u16*)pReq->mask);
 }
 
 u16 PARAMSET_PreambleTypeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:466
-    pCfmt->header.length = 1;
-    return WSetPreambleType(((WlParamSetPreambleTypeReq*)pReqt)->type);
+    WlParamSetPreambleTypeReq* pReq = (WlParamSetPreambleTypeReq*)pReqt;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
+    return WSetPreambleType(pReq->type);
 }
 
 u16 PARAMSET_AuthAlgoReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:492
-    pCfmt->header.length = 1;
-    return WSetAuthAlgo(pReqt->buf[0]);
+    WlParamSetAuthAlgoReq* pReq = (WlParamSetAuthAlgoReq*)pReqt;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
+    return WSetAuthAlgo(pReq->type);
 }
 
 u16 PARAMSET_CCAModeEDThReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:518
     WlParamSetCCAModeEDThReq* pReq = (WlParamSetCCAModeEDThReq*)pReqt; // r0 - :520
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     u16 ret; // r4 - :521
     
-    pCfmt->header.length = 1;
-    
+    pCfm->header.length = 1;
     if (pReq->agcLimit > 0x3F)
         return 5;
     
@@ -144,21 +179,21 @@ u16 PARAMSET_CCAModeEDThReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c
 }
 
 u16 PARAMSET_LifeTimeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:555
-    WlParamSetLifeTimeReq* pReq; // r0 - :557
+    WlParamSetLifeTimeReq* pReq = (WlParamSetLifeTimeReq*)pReqt; // r0 - :557
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     CAM_ELEMENT* pCAM; // r2 - :558
     u32 i; // r4 - :559
 }
 
 u16 PARAMSET_MaxConnReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:617
     WlParamSetMaxConnReq* pReq = (WlParamSetMaxConnReq*)pReqt; // r0 - :619
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
-    pCfmt->header.length = 1;
-    
+    pCfm->header.length = 1;
     if (wlMan->Work.STA > 0x20)
         return 1;
     
     pReq->count++;
-    
     if (pReq->count > wlMan->Config.CamMaxStaNum)
         return 5;
     
@@ -168,9 +203,9 @@ u16 PARAMSET_MaxConnReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:617
 
 u16 PARAMSET_MainAntennaReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:651
     WlParamSetMainAntennaReq* pReq = (WlParamSetMainAntennaReq*)pReqt; // r0 - :653
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
-    pCfmt->header.length = 1;
-    
+    pCfm->header.length = 1;
     if (wlMan->Work.STA < 0x10)
         return 1;
     
@@ -179,7 +214,9 @@ u16 PARAMSET_MainAntennaReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c
 
 u16 PARAMSET_DiversityReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:681
     WlParamSetDiversityReq* pReq = (WlParamSetDiversityReq*)pReqt; // r0 - :683
-    pCfmt->header.length = 1;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
     if (wlMan->Work.STA < 0x10)
         return 1;
     
@@ -188,7 +225,9 @@ u16 PARAMSET_DiversityReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:6
 
 u16 PARAMSET_BcnSendRecvIndReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:710
     WlParamSetBeaconSendRecvIndReq* pReq = (WlParamSetBeaconSendRecvIndReq*)pReqt; // r0 - :712
-    pCfmt->header.length = 1;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
     if (wlMan->Work.STA < 0x10)
         return 1;
     
@@ -197,7 +236,9 @@ u16 PARAMSET_BcnSendRecvIndReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCm
 
 u16 PARAMSET_NullKeyModeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:738
     WlParamSetNullKeyModeReq* pReq = (WlParamSetNullKeyModeReq*)pReqt; // r0 - :740
-    pCfmt->header.length = 1;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
     if (wlMan->Work.STA < 0x10)
         return 1;
     
@@ -206,7 +247,9 @@ u16 PARAMSET_NullKeyModeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c
 
 u16 PARAMSET_McPassModeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:766
     WlParamSetMcPassModeReq* pReq = (WlParamSetMcPassModeReq*)pReqt; // r0 - :768
-    pCfmt->header.length = 1;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
     if (wlMan->Work.STA < 0x10)
         return 1;
     
@@ -214,19 +257,26 @@ u16 PARAMSET_McPassModeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:
 }
 
 u16 PARAMSET_BSSIDReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:809
-    pCfmt->header.length = 1;
-    return WSetBssid(((WlParamSetBssidReq*)pReqt)->bssid);
+    WlParamSetBssidReq* pReq = (WlParamSetBssidReq*)pReqt;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
+    return WSetBssid(pReq->bssid);
 }
 
 u16 PARAMSET_SSIDReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:835
     WlParamSetSsidReq* pReq = (WlParamSetSsidReq*)pReqt; // r0 - :837
-    pCfmt->header.length = 1;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
     return WSetSsid(pReq->ssidLength, pReq->ssid);
 }
 
 u16 PARAMSET_BeaconPeriodReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:861
     WlParamSetBeaconPeriodReq* pReq = (WlParamSetBeaconPeriodReq*)pReqt; // r0 - :863
-    pCfmt->header.length = 1;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
     if (wlMan->Config.Mode != 1)
         return 11;
     
@@ -235,7 +285,9 @@ u16 PARAMSET_BeaconPeriodReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.
 
 u16 PARAMSET_DTIMPeriodReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:890
     WlParamSetDtimPeriodReq* pReq = (WlParamSetDtimPeriodReq*)pReqt; // r0 - :892
-    pCfmt->header.length = 1;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
     if (wlMan->Config.Mode != 1)
         return 11;
     
@@ -244,7 +296,9 @@ u16 PARAMSET_DTIMPeriodReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:
 
 u16 PARAMSET_ListenIntervalReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:919
     WlParamSetIntervalReq* pReq = (WlParamSetIntervalReq*)pReqt; // r0 - :921
-    pCfmt->header.length = 1;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
     if (wlMan->Config.Mode != 2 && wlMan->Config.Mode != 3)
         return 11;
     
@@ -253,7 +307,9 @@ u16 PARAMSET_ListenIntervalReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCm
 
 u16 PARAMSET_GameInfoReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:948
     WlParamSetGameInfoReq* pReq = (WlParamSetGameInfoReq*)pReqt; // r0 - :950
-    pCfmt->header.length = 1;
+    WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
+    
+    pCfm->header.length = 1;
     if (wlMan->Config.Mode != 1)
         return 11;
     
@@ -387,8 +443,9 @@ u16 PARAMGET_PreambleTypeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.
 }
 
 u16 PARAMGET_AuthAlgoReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:1429
-    pCfmt->header.length = 2;
-    ((WlParamGetAuthAlgoCfm*)pCfmt)->type = wlMan->Config.AuthAlgo;
+    WlParamGetAuthAlgoCfm* pCfm = (WlParamGetAuthAlgoCfm*)pCfmt;
+    pCfm->header.length = 2;
+    pCfm->type = wlMan->Config.AuthAlgo;
     return 0;
 }
 
@@ -402,8 +459,9 @@ u16 PARAMGET_CCAModeEDThReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c
 }
 
 u16 PARAMGET_MaxConnReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:1491
-    pCfmt->header.length = 2;
-    ((WlParamGetMaxConnCfm*)pCfmt)->count = wlMan->Config.MaxStaNum - 1;
+    WlParamGetMaxConnCfm* pCfm = (WlParamGetMaxConnCfm*)pCfmt;
+    pCfm->header.length = 2;
+    pCfm->count = wlMan->Config.MaxStaNum - 1;
     return 0;
 }
 

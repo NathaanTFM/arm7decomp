@@ -9,8 +9,9 @@ static void MLME_MeasChanTimeOut(void *unused);
 
 u16 MLME_ResetReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:69
     WlMlmeResetReq* pReq = (WlMlmeResetReq*)pReqt; // r0 - :71
+    WlMlmeResetCfm* pCfm = (WlMlmeResetCfm*)pCfmt; // r0 - :71
     
-    pCfmt->header.length = 1;
+    pCfm->header.length = 1;
     
     if (pReq->mib > 1)
         return 5;
@@ -25,8 +26,9 @@ u16 MLME_ResetReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:69
 
 u16 MLME_PwrMgtReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:105
     WlMlmePowerMgtReq* pReq = (WlMlmePowerMgtReq*)pReqt; // r0 - :107
+    WlMlmePowerMgtCfm* pCfm = (WlMlmePowerMgtCfm*)pCfmt; // r0 - :107
     
-    pCfmt->header.length = 9;
+    pCfm->header.length = 9;
     
     if (pReq->pwrMgtMode > 1) return 5;
     if (pReq->wakeUp > 1) return 5;
@@ -54,10 +56,11 @@ u16 MLME_ScanReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:166
     u32 ch; // r0 - :168
     u32 i; // r8 - :168
     WlMlmeScanReq* pReq = (WlMlmeScanReq*)pReqt; // r0 - :169
+    WlMlmeScanCfm* pCfm = (WlMlmeScanCfm*)pCfmt;
     MLME_MAN* pMLME = &wlMan->MLME; // r4 - :170
     
-    pMLME->Work.Scan.MaxConfirmLength = pCfmt->header.length - 3; // :177
-    pCfmt->header.length = 3; // :180
+    pMLME->Work.Scan.MaxConfirmLength = pCfm->header.length - 3; // :177
+    pCfm->header.length = 3; // :180
     
     if (!(wlMan->Config.Mode == 1 || wlMan->Config.Mode == 2 || wlMan->Config.Mode == 3)) // :183
         return 11; // :187
@@ -80,7 +83,7 @@ u16 MLME_ScanReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:166
     WSetSsid(pReq->ssidLength, pReq->ssid); // :216
     
     pMLME->pReq.Scan = pReq; // :219
-    pMLME->pCfm.Scan = (WlMlmeScanCfm*)pCfmt; // :220
+    pMLME->pCfm.Scan = pCfm; // :220
     
     pMLME->State = 16; // :223
     AddTask(2, 0); // :226
@@ -115,9 +118,10 @@ u16 MLME_AssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:497
 }
 
 u16 MLME_ReAssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:566
-    WlMlmeReAssReq* pReq; // r0 - :568
-    WORK_PARAM* pWork; // r12 - :570
-    MLME_MAN* pMLME; // r14 - :571
+    WlMlmeReAssReq* pReq = (WlMlmeReAssReq*)pReqt; // r0 - :568
+    WlMlmeReAssCfm* pCfm = (WlMlmeReAssCfm*)pCfmt; // not in nef
+    WORK_PARAM* pWork = &wlMan->Work; // r12 - :570
+    MLME_MAN* pMLME = &wlMan->MLME; // r14 - :571
 }
 
 u16 MLME_DisAssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:632

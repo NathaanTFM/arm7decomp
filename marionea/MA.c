@@ -52,8 +52,9 @@ u16 MA_TestDataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:775
 
 u16 MA_ClrDataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:850
     WlMaClrDataReq* pReq = (WlMaClrDataReq*)pReqt; // r0 - :853
+    WlMaClrDataCfm* pCfm = (WlMaClrDataCfm*)pCfmt;
     
-    pCfmt->header.length = 1;
+    pCfm->header.length = 1;
     if (pReq->flag & 1)
         ClearTxKeyData();
     if (pReq->flag & 2)
