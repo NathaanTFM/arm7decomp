@@ -222,8 +222,37 @@ static void MLME_JoinTimeOut(void *unused) { // MLME.c:1249
 }
 
 void MLME_AuthTask() { // MLME.c:1296
-    MLME_MAN* pMLME; // r4 - :1298
+    MLME_MAN* pMLME = &wlMan->MLME; // r4 - :1298
     AUTH_FRAME* pFrm; // r0 - :1299
+    
+    switch (pMLME->State) {
+        case 48:
+            pFrm = MakeAuthFrame(pMLME->pReq.Auth->peerMacAdrs, 0, 0);
+            if (!pFrm) {
+                pMLME->pCfm.Auth->resultCode = 8;
+                pMLME->State = 53;
+                AddTask(2, 2);
+                break;
+            }
+            
+            pFrm->Body.AlgoType = pMLME->pReq.Auth->algorithm;
+            pFrm->Body.SeqNum = 1;
+            pFrm->Body.StatusCode = 0;
+            
+            pMLME->State = 49;
+            
+            TxManCtrlFrame((TXFRM*)pFrm);
+            SetupTimeOut(pMLME->pReq.Auth->timeOut, MLME_AuthTimeOut);
+            break;
+            
+        case 53:
+            ResetTxqPri(1);
+            ClearQueuedPri(1);
+            MessageDeleteTx(1, 0);
+            pMLME->State = 0;
+            IssueMlmeConfirm();
+            break;
+    }
 }
 
 static void MLME_AuthTimeOut(void *unused) { // MLME.c:1388
