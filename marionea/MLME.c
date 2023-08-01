@@ -243,8 +243,31 @@ static void MLME_AssTimeOut(void *unused) { // MLME.c:1523
 }
 
 void MLME_ReAssTask() { // MLME.c:1570
-    MLME_MAN* pMLME; // r4 - :1573
+    MLME_MAN* pMLME = &wlMan->MLME; // r4 - :1573
     void* pFrm; // r0 - :1574
+    
+    switch (pMLME->State) {
+        case 96:
+            pFrm = MakeReAssReqFrame(pMLME->pReq.ReAss->newApMacAdrs);
+            if (!pFrm) {
+                pMLME->pCfm.ReAss->resultCode = 8;
+                pMLME->State = 99;
+                AddTask(2, 4);
+                break;
+            }
+            
+            pMLME->State = 97;
+            TxManCtrlFrame(pFrm);
+            SetupTimeOut(pMLME->pReq.ReAss->timeOut, MLME_ReAssTimeOut);
+            break;
+            
+        case 99:
+            ClearQueuedPri(1);
+            MessageDeleteTx(1, 0);
+            pMLME->State = 0;
+            IssueMlmeConfirm();
+            break;
+    }
 }
 
 static void MLME_ReAssTimeOut(void *unused) { // MLME.c:1651
