@@ -20,10 +20,9 @@ static u32 CheckKeyTxEndMain(TXQ* pTxq);
 
 #pragma dont_inline on
 
-// WlIntr.c:80
-void WlIntr() {
+void WlIntr() { // WlIntr.c:80
     while (1) {
-        u32 isr = W_IF & W_IE;
+        u32 isr = W_IF & W_IE; // r6 - :82
         if (isr == 0)
             break;
         
@@ -45,10 +44,8 @@ void WlIntr() {
 
 #pragma dont_inline off
 
-// WlIntr.c:175
-static void WlIntrPreTbtt() {
-    WORK_PARAM* pWork; // r4
-    pWork = &wlMan->Work;
+static void WlIntrPreTbtt() { // WlIntr.c:175
+    WORK_PARAM* pWork = &wlMan->Work; // r4 - :177
     
     W_IF = 0x8000;
     
@@ -61,26 +58,22 @@ static void WlIntrPreTbtt() {
             }
         }
     }
+    
     pWork->PowerState = 1;
 }
 
-// WlIntr.c:240
-static void WlIntrTbtt() {
-    TXQ* pTxq; // r9
-    u32 bWakeUp; // r1
-    u32 vtsf; // r0
-    u32 i; // r7
-    u32 txq; // r0
-    u8* p; // r0
-    TX_CTRL* pTxCtrl; // r8
-    CONFIG_PARAM* pConfig; // r7
-    WORK_PARAM* pWork; // r5
+static void WlIntrTbtt() { // WlIntr.c:240
+    WORK_PARAM* pWork; // r5 - :242
+    CONFIG_PARAM* pConfig; // r7 - :243
+    TX_CTRL* pTxCtrl; // r8 - :244
+    u8* p; // r0 - :245
+    u32 txq, i, vtsf; // r0, r7, r0 - :246
+    u32 bWakeUp; // r1 - :247
+    TXQ* pTxq; // r9 - :411
 }
 
-// WlIntr.c:457
-static void WlIntrActEnd() {
-    WORK_PARAM* pWork; // r0
-    pWork = &wlMan->Work;
+static void WlIntrActEnd() { // WlIntr.c:457
+    WORK_PARAM* pWork = &wlMan->Work; // r0 - :459
     
     W_IF = 0x2000;
     W_TXREQ_RESET = 0xD;
@@ -96,68 +89,63 @@ static void WlIntrActEnd() {
     }
 }
 
-// WlIntr.c:559
-static void WlIntrRfWakeup() {
+static void WlIntrRfWakeup() { // WlIntr.c:559
     W_IF = 0x800;
 }
 
-// WlIntr.c:592
-static void WlIntrCntOvf() {
+static void WlIntrCntOvf() { // WlIntr.c:625
     WUpdateCounter();
     W_RXSTAT_OVF_IF = 0xFFFF;
     W_IF = 0x30;
 }
 
-// WlIntr.c:625
-static void WlIntrTxErr() {
-    u16* pIcv; // r0
-    TX_CTRL* pTxCtrl; // r3
-    WORK_PARAM* pWork; // r0
-    u32 i; // r2
-    TXFRM_MAC* pMFrm; // r0
+static void WlIntrTxErr() { // WlIntr.c:625
+    TXFRM_MAC* pMFrm; // r0 - :627
+    u32 i; // r2 - :628
+    
+    WORK_PARAM* pWork; // r0 - :650
+    TX_CTRL* pTxCtrl; // r3 - :651
+    u16* pIcv; // r0 - :662
 }
 
-// WlIntr.c:705
-static void WlIntrRxCntup() {
-    u16 curr; // r0
-    u16 map; // r0
-    u32 isr; // r2
-    TXQ* pTxq; // r12
-    RX_CTRL* pRxCtrl; // r1
+static void WlIntrRxCntup() { // WlIntr.c:705
+    RX_CTRL* pRxCtrl; // r1 - :707
+    TXQ* pTxq; // r12 - :708
+    u32 isr; // r2 - :709
+    u16 map; // r0 - :726
+    u16 curr; // r0 - :784
 }
 
-// WlIntr.c:857
-static void WlIntrTxEnd() {
-    WlMpKeyData* pKeyData; // r2
-    u16 pollmap; // r1
-    u16 setmap; // r0
-    u32 txFrm; // r8
-    TX_CTRL* pTxCtrl; // r7
+static void WlIntrTxEnd() { // WlIntr.c:857
+    TX_CTRL* pTxCtrl; // r7 - :859
+    u32 txFrm; // r8 - :860
+    u16 setmap, pollmap; // r0, r1 - :993
+    WlMpKeyData* pKeyData; // r2 - :994
 }
 
-// WlIntr.c:1101
-static void WlIntrRxEnd() {
-    u16 keySts; // r0
-    u16 bkcurr; // r0
-    u16 seqCtrl; // r10
-    u16 fc; // None
-    u16 nextRate; // r0
-    u16 nextStatus; // r2
-    RXFRM_MAC* pNextMFrm; // r0
-    u32 frameType; // r0
-    u32 length; // r1
-    u32 next_bnry; // r9
-    u32 curr; // r10
-    u32 bnry; // r9
-    u16* pDur; // None
-    u16* pMPDU; // r0
-    u16* pTimeStamp; // r0
-    u16* pErrSts; // r0
-    u16* pStatus; // r8
-    u32 wlOperation; // r4
-    RXFRM_MAC* pMFrm; // r0
-    RX_CTRL* pRxCtrl; // r7
-    WORK_PARAM* pWork; // r6
+static void WlIntrRxEnd() { // WlIntr.c:1101
+    WORK_PARAM* pWork; // r6 - :1103
+    RX_CTRL* pRxCtrl; // r7 - :1104
+    RXFRM_MAC* pMFrm; // r0 - :1105
+    u32 wlOperation; // r4 - :1106
+    u16 *pStatus, *pErrSts, *pTimeStamp, *pMPDU, *pDur; // r8, r0, r0, r0, None - :1107
+    u32 bnry, curr, next_bnry, length, frameType; // r9, r10, r9, r1, r0 - :1108
+    u16 keySts; // r0 - :1109
+    
+    if (0) {
+        RXFRM_MAC* pNextMFrm; // r0 - :1247
+        u16 nextStatus, nextRate; // r2, r0 - :1248
+    }
+    
+    if (0) {
+        u16 fc; // None - :1309
+        u16 seqCtrl; // r10 - :1310
+    }
+    
+    if (0) {
+        u16 bkcurr; // r0 - :1394
+        u16 keySts; // r0 - :1395
+    }
 }
 
 static void WlIntrMpEnd(u32 bMacBugPatch) { // WlIntr.c:1449
@@ -182,6 +170,7 @@ static void WlIntrMpEnd(u32 bMacBugPatch) { // WlIntr.c:1449
                 }
                 
                 SetupUsTimeOut( // :1496
+                    // what the fuck??? TODO: fix this mess
                     (u16)(cnt * ((*(u16*)pTxCtrl->Mp.pMacFrm->Body) + 10) + 0xC0 + (4 * pTxCtrl->Mp.pMacFrm->MacHeader.Tx.MPDU)),
                     MacBugTxMp
                 );
@@ -191,43 +180,34 @@ static void WlIntrMpEnd(u32 bMacBugPatch) { // WlIntr.c:1449
         }
         
         AddTask(0, 16); // :1528
-        
     }
-    
 } // :1531
 
-// WlIntr.c:1548
-static void WlIntrStartTx() {
-    u16 adr; // r0
-    u16 sts; // r0
-    u32 cnt; // r2
-    u32 i; // None
-    TX_CTRL* pTxCtrl; // r0
+static void WlIntrStartTx() { // WlIntr.c:1548
+    TX_CTRL* pTxCtrl; // r0 - :1550
+    u32 i, cnt; // None, r2 - :1552
+    u16 sts; // r0 - :1564
+    u16 adr; // r0 - :1565
 }
 
-// WlIntr.c:1631
-static void WlIntrStartRx() {
-    u16 tm_delt; // r0
-    u16 delt; // r2
-    u16 curr; // r0
-    u16* p; // r0
-    u32 tm; // r6
-    u32 i; // r8
-    TX_CTRL* pTxCtrl; // r5
-    WORK_PARAM* pWork; // r4
-}
-
-// WlIntr.c:1857
-static void SetParentTbttTxq() {
-    u32 bTask; // r5
-    TX_CTRL* pTxCtrl; // r4
-}
-
-// WlIntr.c:1934
-void MacBugTxMp() {
-    u32 i, x; // r1, r4
-    u16 seqCtrl, seqCtrl2; // r3, r0
+static void WlIntrStartRx() { // WlIntr.c:1631
+    WORK_PARAM* pWork; // r4 - :1633
+    TX_CTRL* pTxCtrl; // r5 - :1634
     
+    u32 i, tm; // r8, r6 - :1651
+    u16* p; // r0 - :1652
+    u16 curr, delt, tm_delt; // r0, r2, r0 - :1653
+}
+
+static void SetParentTbttTxq() { // WlIntr.c:1857
+    TX_CTRL* pTxCtrl; // r4 - :1859
+    u32 bTask; // r5 - :1860
+}
+
+void MacBugTxMp() { // WlIntr.c:1934
+    u32 x, i; // r4, r1 - :1938
+    u16 seqCtrl, seqCtrl2; // r3, r0 - :1939
+
     x = OS_DisableIrqMask(0x1000000);
     seqCtrl = W_TX_SEQNO;
     
@@ -244,24 +224,18 @@ void MacBugTxMp() {
     OS_EnableIrqMask(x);
 }
 
-// WlIntr.c:1996
-void* AdjustRingPointer(void* p) {
+void* AdjustRingPointer(void* p) { // WlIntr.c:1996
     if (p >= RING_END_PTR)
         return (char*)p - wlMan->Work.Ofst.RxBuf.Size;
     
     return p;
 }
 
-// WlIntr.c:2063
-static u32 CheckKeyTxEnd() {
-    TX_CTRL* pTxCtrl; // r5
-    RX_CTRL* pRxCtrl; // r6
-    u32 retVal; // r0
+static u32 CheckKeyTxEnd() { // WlIntr.c:2063
+    TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r5 - :2065
+    RX_CTRL* pRxCtrl = &wlMan->RxCtrl; // r6 - :2066
+    u32 retVal = CheckKeyTxEndMain(&pTxCtrl->Key[0]) | CheckKeyTxEndMain(&pTxCtrl->Key[1]); // r0 - :2067
     
-    pTxCtrl = &wlMan->TxCtrl;
-    pRxCtrl = &wlMan->RxCtrl;
-    
-    retVal = CheckKeyTxEndMain(&pTxCtrl->Key[0]) | CheckKeyTxEndMain(&pTxCtrl->Key[1]);
     if ((retVal & 0x1) != 0)
         pRxCtrl->TxKeyFrm |= 0x400;
     
@@ -271,11 +245,9 @@ static u32 CheckKeyTxEnd() {
     return retVal;
 }
 
-// WlIntr.c:2109
-static u32 CheckKeyTxEndMain(TXQ* pTxq) {
-    u32 retVal; // r4
+static u32 CheckKeyTxEndMain(TXQ* pTxq) { // WlIntr.c:2109
+    u32 retVal = 0; // r4 - :2111
     
-    retVal = 0;
     if (pTxq->Busy == 2) {
         if ((GetTxBufAddr(pTxq->pMacFrm) | 0x8000) != W_TXBUF_REPLY1) {
             pTxq->Busy = 1;
@@ -293,14 +265,12 @@ static u32 CheckKeyTxEndMain(TXQ* pTxq) {
     return retVal;
 }
 
-// WlIntr.c:2167
-void InitializeIntr() {
+void InitializeIntr() { // WlIntr.c:2167
     OS_SetIrqFunction(0x1000000u, WlIntr);
     OS_EnableIrqMask(0x1000000u);
 }
 
-// WlIntr.c:2190
-void ReleaseIntr() {
+void ReleaseIntr() { // WlIntr.c:2190
     OS_DisableIrqMask(0x1000000u);
     OS_SetIrqFunction(0x1000000u, 0);
 }
