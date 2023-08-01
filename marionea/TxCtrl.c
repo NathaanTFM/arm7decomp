@@ -455,10 +455,10 @@ void MakeBeaconFrame() { // TxCtrl.c:1692
     
     WL_WriteByte(pBuf++, 0xDD);
     WL_WriteByte(pBuf++, pWork->GameInfoLength + 8);
-    WL_WriteByte(pBuf++, 0); // 00:09:BF:00 (OUI)
-    WL_WriteByte(pBuf++, 9);
+    WL_WriteByte(pBuf++, 0x00); // 00:09:BF:00 (OUI)
+    WL_WriteByte(pBuf++, 0x09);
     WL_WriteByte(pBuf++, 0xBF);
-    WL_WriteByte(pBuf++, 0);
+    WL_WriteByte(pBuf++, 0x00);
     
     if (pWork->PowerMgtMode == 1) {
         WL_WriteByte(pBuf++, pConfig->ActiveZone);
