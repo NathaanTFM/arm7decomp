@@ -1,17 +1,17 @@
 #include "Mongoose.h"
 
-static void (*pTaskFunc[24])() = {
-    MLME_ScanTask, MLME_JoinTask, MLME_AuthTask, MLME_AssTask,
-    MLME_ReAssTask, MLME_MeasChannelTask, RxDataFrameTask,
-    RxManCtrlTask, WlIntrTxBeaconTask, DefragTask, CAM_TimerTask,
-    RequestCmdTask, LowestIdleTask, MLME_BeaconLostTask,
-    WlIntrTxEndTask, WlIntrRxEndTask, WlIntrMpEndTask,
-    DefragTimerTask, UpdateApListTask, SendMessageToWmTask,
-    SetParentTbttTxqTask, SendFatalErrMsgTask, TerminateWlTask,
-    ReleaseWlTask
-}; // :47
-
 void InitializeTask() { // TaskMan.c:91
+    static void (*pTaskFunc[24])() = {
+        MLME_ScanTask, MLME_JoinTask, MLME_AuthTask, MLME_AssTask,
+        MLME_ReAssTask, MLME_MeasChannelTask, RxDataFrameTask,
+        RxManCtrlTask, WlIntrTxBeaconTask, DefragTask, CAM_TimerTask,
+        RequestCmdTask, LowestIdleTask, MLME_BeaconLostTask,
+        WlIntrTxEndTask, WlIntrRxEndTask, WlIntrMpEndTask,
+        DefragTimerTask, UpdateApListTask, SendMessageToWmTask,
+        SetParentTbttTxqTask, SendFatalErrMsgTask, TerminateWlTask,
+        ReleaseWlTask
+    };
+
     TASK_MAN* pTaskMan = &wlMan->TaskMan; // r14 - :93
     u32 i; // r12 - :94
     
@@ -21,7 +21,6 @@ void InitializeTask() { // TaskMan.c:91
         pTaskMan->EnQ[i] = pTaskMan->DeQ[i] = 0xFFFF;
     }
     
-    // TODO: there's an instruction swap, for some reason?
     for (i = 0; i < 24; i++) {
         pTaskMan->TaskTbl[i].NextId = 0xFFFF;
         pTaskMan->TaskTbl[i].Flag = 0;
