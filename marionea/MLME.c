@@ -56,13 +56,14 @@ u16 MLME_ScanReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:166
     u32 ch; // r0 - :168
     u32 i; // r8 - :168
     WlMlmeScanReq* pReq = (WlMlmeScanReq*)pReqt; // r0 - :169
-    WlMlmeScanCfm* pCfm = (WlMlmeScanCfm*)pCfmt;
+    WlMlmeScanCfm* pCfm = (WlMlmeScanCfm*)pCfmt; // not in nef, probably absent
     MLME_MAN* pMLME = &wlMan->MLME; // r4 - :170
+    CONFIG_PARAM* pConfig = &wlMan->Config; // not in nef, probably exists
     
     pMLME->Work.Scan.MaxConfirmLength = pCfm->header.length - 3; // :177
     pCfm->header.length = 3; // :180
     
-    if (!(wlMan->Config.Mode == 1 || wlMan->Config.Mode == 2 || wlMan->Config.Mode == 3)) // :183
+    if (pConfig->Mode != 1 && pConfig->Mode != 3 && pConfig->Mode != 2) // :183
         return 11; // :187
     
     if (wlMan->Work.STA < 0x20) return 1; // :191
@@ -120,8 +121,30 @@ u16 MLME_AssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:497
 u16 MLME_ReAssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:566
     WlMlmeReAssReq* pReq = (WlMlmeReAssReq*)pReqt; // r0 - :568
     WlMlmeReAssCfm* pCfm = (WlMlmeReAssCfm*)pCfmt; // not in nef
+    CONFIG_PARAM* pConfig = &wlMan->Config; // not in nef, exists probably (:569)
     WORK_PARAM* pWork = &wlMan->Work; // r12 - :570
     MLME_MAN* pMLME = &wlMan->MLME; // r14 - :571
+    
+    pCfm->header.length = 3;
+    if (pConfig->Mode != 3 && pConfig->Mode != 2)
+        return 11;
+    
+    if (pWork->STA < 0x30) return 1;
+    if (pReq->newApMacAdrs[0] & 1) return 5;
+    if (pReq->listenInterval < 1) return 5;
+    if (pReq->listenInterval > 0xFF) return 5;
+    if (pReq->timeOut > 2000) return 5;
+    if (pReq->timeOut < 10) return 5;
+    
+    pWork->ListenInterval = pReq->listenInterval;
+    pWork->CurrListenInterval = pReq->listenInterval;
+    
+    pMLME->pReq.ReAss = pReq;
+    pMLME->pCfm.ReAss = pCfm;
+    pMLME->State = 96;
+    
+    MLME_ReAssTask();
+    return 128;
 }
 
 u16 MLME_DisAssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:632
