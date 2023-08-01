@@ -1,6 +1,7 @@
 #include "Mongoose.h"
 
 static void MLME_MeasChanTimeOut(void *unused);
+static void MLME_AssTimeOut(void *unused);
 
 u16 MLME_ResetReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:69
     WlMlmeResetReq* pReq = (WlMlmeResetReq*)pReqt; // r0 - :71
@@ -181,11 +182,35 @@ static void MLME_AuthTimeOut() { // MLME.c:1388
 }
 
 void MLME_AssTask() { // MLME.c:1436
-    MLME_MAN* pMLME; // r4 - :1438
+    MLME_MAN* pMLME = &wlMan->MLME; // r4 - :1438
     void* pFrm; // r0 - :1439
+    
+    switch (pMLME->State) {
+        case 80:
+            pFrm = MakeAssReqFrame(pMLME->pReq.Ass->peerMacAdrs);
+            if (!pFrm) {
+                pMLME->pCfm.Ass->resultCode = 8;
+                pMLME->State = 83;
+                AddTask(2, 3);
+                break;
+            }
+            
+            pMLME->State = 81;
+            TxManCtrlFrame(pFrm);
+            SetupTimeOut(pMLME->pReq.Ass->timeOut, MLME_AssTimeOut);
+            break;
+            
+        case 83:
+            ResetTxqPri(1);
+            ClearQueuedPri(1);
+            MessageDeleteTx(1, 0);
+            pMLME->State = 0;
+            IssueMlmeConfirm();
+            break;
+    }
 }
 
-static void MLME_AssTimeOut() { // MLME.c:1523
+static void MLME_AssTimeOut(void *unused) { // MLME.c:1523
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1526
     pMLME->pCfm.Ass->resultCode = 7;
     pMLME->State = 83;
