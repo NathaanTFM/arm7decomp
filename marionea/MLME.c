@@ -99,10 +99,34 @@ u16 MLME_JoinReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:245
 }
 
 u16 MLME_AuthReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:336
-    WORK_PARAM* pWork; // r0 - :338
-    MLME_MAN* pMLME; // r4 - :340
-    WlMlmeAuthReq* pReq; // r0 - :341
-    WlMlmeAuthCfm* pCfm; // r0 - :342
+    WORK_PARAM* pWork = &wlMan->Work; // r0 - :338
+    CONFIG_PARAM* pConfig = &wlMan->Config; // not in nef, probably exists
+    MLME_MAN* pMLME = &wlMan->MLME; // r4 - :340
+    WlMlmeAuthReq* pReq = (WlMlmeAuthReq*)pReqt; // r0 - :341
+    WlMlmeAuthCfm* pCfm = (WlMlmeAuthCfm*)pCfmt; // r0 - :342
+    
+    pCfm->header.length = 6;
+    
+    if (pConfig->Mode != 3 && pConfig->Mode != 2)
+        return 11;
+    
+    if (pWork->STA < 0x20) return 1;
+    if (pReq->peerMacAdrs[0] & 1) return 5;
+    if (pReq->algorithm > 1) return 5;
+    if (pReq->timeOut > 2000) return 5;
+    if (pReq->timeOut < 10) return 5;
+    
+    WSetStaState(0x20);
+    
+    pMLME->pReq.Auth = pReq;
+    pMLME->pCfm.Auth = pCfm;
+    pMLME->State = 48;
+    
+    pCfm->algorithm = pReq->algorithm;
+    WSetMacAdrs1(pCfm->peerMacAdrs, pMLME->pReq.Auth->peerMacAdrs);
+    
+    MLME_AuthTask();
+    return 128;
 }
 
 u16 MLME_DeAuthReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:403
