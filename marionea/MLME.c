@@ -1,7 +1,11 @@
 #include "Mongoose.h"
 
-static void MLME_MeasChanTimeOut(void *unused);
+static void MLME_ScanTimeOut(void *unused);
+static void MLME_JoinTimeOut(void *unused);
+static void MLME_AuthTimeOut(void *unused);
 static void MLME_AssTimeOut(void *unused);
+static void MLME_ReAssTimeOut(void *unused);
+static void MLME_MeasChanTimeOut(void *unused);
 
 u16 MLME_ResetReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:69
     WlMlmeResetReq* pReq = (WlMlmeResetReq*)pReqt; // r0 - :71
@@ -143,7 +147,7 @@ void MLME_ScanTask() { // MLME.c:886
     u16 ch; // r0 - :892
 }
 
-static void MLME_ScanTimeOut() { // MLME.c:1114
+static void MLME_ScanTimeOut(void *unused) { // MLME.c:1114
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1117
     
     pMLME->Work.Scan.ElapseTime += pMLME->Work.Scan.TxPeriod;
@@ -162,7 +166,7 @@ void MLME_JoinTask() { // MLME.c:1173
     MLME_MAN* pMLME; // r4 - :1175
 }
 
-static void MLME_JoinTimeOut() { // MLME.c:1249
+static void MLME_JoinTimeOut(void *unused) { // MLME.c:1249
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1252
     pMLME->Work.Join.Result = 7;
     pMLME->State = 37;
@@ -174,7 +178,7 @@ void MLME_AuthTask() { // MLME.c:1296
     AUTH_FRAME* pFrm; // r0 - :1299
 }
 
-static void MLME_AuthTimeOut() { // MLME.c:1388
+static void MLME_AuthTimeOut(void *unused) { // MLME.c:1388
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1391
     pMLME->pCfm.Auth->resultCode = 7;
     pMLME->State = 53;
@@ -222,7 +226,7 @@ void MLME_ReAssTask() { // MLME.c:1570
     void* pFrm; // r0 - :1574
 }
 
-static void MLME_ReAssTimeOut() { // MLME.c:1651
+static void MLME_ReAssTimeOut(void *unused) { // MLME.c:1651
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1654
     pMLME->pCfm.ReAss->resultCode = 7;
     pMLME->State = 99;
