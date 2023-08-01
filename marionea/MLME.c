@@ -163,7 +163,28 @@ static void MLME_ScanTimeOut(void *unused) { // MLME.c:1114
 }
 
 void MLME_JoinTask() { // MLME.c:1173
-    MLME_MAN* pMLME; // r4 - :1175
+    MLME_MAN* pMLME = &wlMan->MLME; // r4 - :1175
+    
+    switch (pMLME->State) {
+        case 32:
+            WStart();
+            pMLME->Work.Join.Result = 0;
+            pMLME->Work.Join.Status = 0;
+            pMLME->State = 33;
+            SetupTimeOut(pMLME->pReq.Join->timeOut, MLME_JoinTimeOut);
+            break;
+            
+        case 37:
+            pMLME->pCfm.Join->resultCode = pMLME->Work.Join.Result;
+            pMLME->pCfm.Join->statusCode = pMLME->Work.Join.Status;
+            
+            if (pMLME->Work.Join.Result != 0)
+                WStop();
+            
+            pMLME->State = 0;
+            IssueMlmeConfirm();
+            break;
+    }
 }
 
 static void MLME_JoinTimeOut(void *unused) { // MLME.c:1249
