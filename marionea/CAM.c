@@ -236,9 +236,13 @@ void CAM_ReleaseAID(u16 camAdrs) { // CAM.c:736
     }
 }
 
+// This function gets inlined but we don't want that, for some reason.
+
+#pragma dont_inline on
 u32 CAM_GetStaState(u32 camAdrs) { // CAM.c:826
     return wlMan->Config.pCAM[camAdrs].state;
 }
+#pragma dont_inline off
 
 u32 CAM_IsActive(u32 camAdrs) { // CAM.c:845
     return (wlMan->CamMan.PowerState >> camAdrs) & 1;
