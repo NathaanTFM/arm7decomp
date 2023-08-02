@@ -52,6 +52,7 @@ void CAM_IncFrameCount(TXFRM* pFrm) { // CAM.c:291
     
     cam_adrs = pFrm->FirmHeader.CamAdrs;
     pCAM = &wlMan->Config.pCAM[cam_adrs];
+    
     x = OS_DisableIrqMask(0x1000000);
     
     if (wlMan->Work.Mode == 1 && pCAM->frameCount == 0)
@@ -67,6 +68,18 @@ void CAM_IncFrameCount(TXFRM* pFrm) { // CAM.c:291
 
 void CAM_DecFrameCount(TXFRM* pFrm) { // CAM.c:336
     u32 x, cam_adrs; // r4, r5 - :339
+    CAM_ELEMENT* pCAM;
+    
+    cam_adrs = pFrm->FirmHeader.CamAdrs;
+    pCAM = &wlMan->Config.pCAM[cam_adrs];
+    
+    x = OS_DisableIrqMask(0x1000000);
+    
+    if (wlMan->Work.Mode == 1 && pCAM->frameCount == 1)
+        CAM_ClrTIMElementBitmap(cam_adrs);  
+    
+    pCAM->frameCount--;
+    OS_EnableIrqMask(x);
 }
 
 void CAM_SetStaState(u16 camAdrs, u16 state) { // CAM.c:396
