@@ -7,6 +7,9 @@ import sys
 import subprocess
 from elftools.elf.elffile import ELFFile
 
+from colorama import just_fix_windows_console, Fore, Back, Style
+just_fix_windows_console()
+
 COMPILER = "compiler/dsi/1.2p2/mwccarm.exe"
 OBJDUMP = r"C:\msys64\opt\devkitpro\devkitARM\bin\arm-none-eabi-objdump.exe"
 
@@ -46,19 +49,19 @@ def disassemble(name, rawAsm, rawSrc):
             mismatch = True
             
         if mismatch:
-            icon = " "
+            icon = Fore.RED + " "
             if lineAsm == lineSrc:
-                icon = "="
+                icon = Fore.LIGHTBLACK_EX + "="
                 
             else:
                 # lazy!!!
                 try:
                     if lineAsm.split()[2] == lineSrc.split()[2]:
-                        icon = "*"
+                        icon = Fore.WHITE + "*"
                 except Exception:
                     pass
                     
-            print(icon + " " + lineAsm.ljust(LENGTH) + " | " + lineSrc.ljust(LENGTH))
+            print(icon + " " + lineAsm.ljust(LENGTH) + " | " + lineSrc.ljust(LENGTH) + Style.RESET_ALL)
             
     if not mismatch:
         print("(no mismatch found)")
