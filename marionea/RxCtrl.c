@@ -71,19 +71,64 @@ u32 RxMpFrame(RXFRM* pFrm) { // RxCtrl.c:324
     return 0;
 }
 
-/*
-Empty function IPA
-
 void RxKeyDataFrame(RXFRM* pFrm) { // RxCtrl.c:450
-    TX_CTRL* pTxCtrl; // r5 - :452
-    WlMpKey* pMpKey; // r0 - :453
+    TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r5 - :452
+    WlMpKey* pMpKey = &pTxCtrl->pMpEndInd->mpKey; // r0 - :453
     WlMpKeyData* pKeyData; // r6 - :454
-    u32 aid; // r0 - :455
-    u32 camAdrs; // r6 - :455
+    u32 camAdrs, aid; // r6, r0 - :455
     u16 bitmap; // r1 - :456
-    DEAUTH_FRAME* pTxDeAuthFrm; // r0 - :519
+    
+    if (pTxCtrl->Mp.Busy
+            && MatchMacAdrs(pFrm->Dot11Header.Adrs1, wlMan->Work.BSSID)
+            && pFrm->MacHeader.Rx.MPDU - 24 <= pMpKey->length - 8) {
+        
+        camAdrs = CAM_Search(pFrm->Dot11Header.Adrs2);
+        
+        if (camAdrs == 0xFF || (camAdrs != 0 && CAM_GetStaState(camAdrs) != 0x40)) {
+            DEAUTH_FRAME* pTxDeAuthFrm; // r0 - :519
+            
+            if (!IsExistManFrame(pFrm->Dot11Header.Adrs2, 0xC0)) {
+                pTxDeAuthFrm = MakeDeAuthFrame(pFrm->Dot11Header.Adrs2, 7, 0); 
+                
+                if (pTxDeAuthFrm) {
+                    pTxDeAuthFrm->FirmHeader.FrameId = 2;
+                    TxManCtrlFrame((TXFRM*)pTxDeAuthFrm);
+                }
+            }
+            
+        } else if (camAdrs != 0) {
+            CAM_SetPowerMgtMode(camAdrs, pFrm->Dot11Header.FrameCtrl.Bit.PowerMan);
+            CAM_UpdateLifeTime(camAdrs);
+            
+            aid = CAM_GetAID(camAdrs);
+            bitmap = (1 << aid);
+            
+            if ((bitmap & pTxCtrl->GetKeyMap) == 0 && (bitmap & pTxCtrl->SetKeyMap) != 0) {
+                pTxCtrl->GetKeyMap |= bitmap;
+                pMpKey->bitmap &= ~bitmap;
+                
+                pKeyData = pMpKey->data;
+                bitmap >>= 1;
+                
+                while (bitmap != 1) {
+                    if (bitmap & pTxCtrl->SetKeyMap)
+                        pKeyData = (WlMpKeyData*)((char*)pKeyData + pMpKey->length);
+                    
+                    bitmap >>= 1;
+                }
+                
+                pKeyData->length = pFrm->MacHeader.Rx.MPDU - 24; // sizeof?
+                WL_WriteByte(&pKeyData->rssi, pFrm->MacHeader.Rx.rsv_RSSI);
+                WL_WriteByte(&pKeyData->rate, pFrm->MacHeader.Rx.Service_Rate);
+                
+                if (pKeyData->length)
+                    MIi_CpuCopy16(pFrm->Body, pKeyData->cdata, pKeyData->length + 1);
+            }
+        }
+    }
+    
+    
 }
-*/
 
 u32 RxMpAckFrame(RXFRM* pFrm) { // RxCtrl.c:645
     WORK_PARAM* pWork = &wlMan->Work; // r6 - :647
