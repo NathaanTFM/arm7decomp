@@ -30,9 +30,57 @@ u32 CAM_Search(u16* pMacAdrs) { // CAM.c:63
 }
 
 u32 CAM_SearchAdd(u16* pMacAdrs) { // CAM.c:109
-    CONFIG_PARAM* pConfig; // r6 - :111
+    CONFIG_PARAM* pConfig = &wlMan->Config; // r6 - :111
     CAM_ELEMENT* pCAM; // r7 - :112
     u32 pos, i, free, lifeTime; // r8, r9, r10, r3 - :113
+    
+    if (pMacAdrs[0] & 1)
+        return 0;
+    
+    // attempt to search    
+    if (wlMan->CamMan.Count > 1) {
+        pCAM = &pConfig->pCAM[1];
+        
+        for (free = 0, i = 0, pos = 1; pos < pConfig->MaxStaNum; pos++, pCAM++) {
+            if (pCAM->state) {
+                if (MatchMacAdrs(pCAM->macAdrs, pMacAdrs)) {
+                    return pos;
+                }
+                
+                if (++i >= wlMan->CamMan.Count)
+                    break;
+                
+            } else if (!free) {
+                // we found a free index!
+                free = pos;
+            }
+        }
+        
+        if (free)
+            pos = free;
+        
+    } else {
+        pos = 1;
+    }
+    
+    if (pos >= wlMan->Config.MaxStaNum) {
+        pCAM = pConfig->pCAM;
+        lifeTime = 0x10000;
+        
+        for (i = 1, pos = 0; i < pConfig->MaxStaNum; i++) {
+            if (pCAM[i].state < 0x30 && pCAM[i].frameCount == 0 && lifeTime > pCAM[i].lifeTime) {
+                lifeTime = pCAM[i].lifeTime;
+                pos = i;
+            }
+        }
+        
+        if (pos == 0) {
+            return 0xFF;
+        }
+    }
+    
+    CAM_InitElement(pos, pMacAdrs);
+    return pos;
 }
 
 void CAM_AddBcFrame(HEAPBUF_MAN* pBufMan, void* pBuf) { // CAM.c:207
@@ -327,5 +375,21 @@ void InitCAM() { // CAM.c:1346
 }
 
 static void CAM_InitElement(u32 camAdrs, u16* pMacAdrs) { // CAM.c:1385
-    CAM_ELEMENT* pCAM; // r7 - :1387
+    CAM_ELEMENT* pCAM = &wlMan->Config.pCAM[camAdrs]; // r7 - :1387
+    
+    if (!pCAM->state)
+        wlMan->CamMan.Count++;
+    
+    MIi_CpuClear16(0, pCAM, sizeof(CAM_ELEMENT)-2); // maxLifeTime IS NOT reset
+    
+    wlMan->CamMan.NotSetTIM &= ~(1 << camAdrs);
+    CAM_SetPowerMgtMode(camAdrs, 0);
+    CAM_SetAwake(camAdrs);
+    
+    WSetMacAdrs1(pCAM->macAdrs, pMacAdrs);
+    pCAM->lastSeqCtrl = -1;
+    pCAM->supRateSet = wlMan->Work.RateSet.Support;
+    pCAM->lifeTime = pCAM->maxLifeTime;
+    
+    CAM_SetStaState(camAdrs, 0x20);
 }
