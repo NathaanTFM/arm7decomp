@@ -21,7 +21,7 @@ u16 DEV_IdleReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:84
     if (wlMan->Work.bSynchro) // :97
         return 1;
     
-    if (FLASH_VerifyCkecksum(0) != 0)
+    if (FLASH_VerifyCheckSum(0) != 0)
         return 14; // :104
     
     WSetStaState(16); // :108

@@ -381,7 +381,7 @@ void MLME_MeasChannelTask() { // MLME.c:1695
                 break;
             }
                 
-            if (FLASH_VerifyChecksum(0)) {
+            if (FLASH_VerifyCheckSum(0)) {
                 pMLME->Work.Measure.sts = 14;
                 pMLME->State = 132;
                 break;
@@ -638,5 +638,5 @@ u32 MLME_IssueBeaconRecvIndication(void* pRxFrm) { // MLME.c:2304
 }
 
 void InitializeMLME() { // MLME.c:2382
-    MIi_CpuClear(0, &wlMan->MLME, sizeof(wlMan->MLME));
+    MIi_CpuClear16(0, &wlMan->MLME, sizeof(wlMan->MLME));
 }

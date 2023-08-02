@@ -537,7 +537,7 @@ DISASS_FRAME* MakeDisAssFrame(u16* pDA, u16 reasonCode) { // TxCtrl.c:1923
     // TODO: sizeof..?
     pReq = (WlMaDataReq*)AllocateHeapBuf(&wlMan->HeapMan.TmpBuf, 0x36);
     if (pReq == 0) {
-        SetFatalError(2);
+        SetFatalErr(2);
         
          // okay, this is actually really ugly, but "return 0" (which behaves the same)
          // makes the decomp inaccurate
@@ -567,7 +567,7 @@ ASSREQ_FRAME* MakeAssReqFrame(u16* pDA) { // TxCtrl.c:1969
     // TODO: sizeof..?
     pReq = (WlMaDataReq*)AllocateHeapBuf(&wlMan->HeapMan.TmpBuf, 0x5E);
     if (pReq == 0) {
-        SetFatalError(2);
+        SetFatalErr(2);
         
          // okay, this is actually really ugly, but "return 0" (which behaves the same)
          // makes the decomp inaccurate
@@ -600,7 +600,7 @@ REASSREQ_FRAME* MakeReAssReqFrame(u16* pDA) { // TxCtrl.c:2021
     // TODO: sizeof..?
     pReq = (WlMaDataReq*)AllocateHeapBuf(&wlMan->HeapMan.TmpBuf, 0x64);
     if (pReq == 0) {
-        SetFatalError(2);
+        SetFatalErr(2);
         
          // okay, this is actually really ugly, but "return 0" (which behaves the same)
          // makes the decomp inaccurate
@@ -653,7 +653,7 @@ PRBREQ_FRAME* MakeProbeReqFrame(u16* pDA) { // TxCtrl.c:2245
     // TODO: sizeof..?
     pReq = (WlMaDataReq*)AllocateHeapBuf(&wlMan->HeapMan.TmpBuf, 0x5A);
     if (pReq == 0) {
-        SetFatalError(2);
+        SetFatalErr(2);
         
          // okay, this is actually really ugly, but "return 0" (which behaves the same)
          // makes the decomp inaccurate
@@ -691,7 +691,7 @@ AUTH_FRAME* MakeAuthFrame(u16* pDA, u16 txtLen, u32 bCheck) { // TxCtrl.c:2355
     // TODO: sizeof..?
     pReq = (WlMaDataReq*)AllocateHeapBuf(&wlMan->HeapMan.TmpBuf, txtLen + 0x3D);
     if (pReq == 0) {
-        SetFatalError(2);
+        SetFatalErr(2);
         
          // okay, this is actually really ugly, but "return 0" (which behaves the same)
          // makes the decomp inaccurate
@@ -725,7 +725,7 @@ DEAUTH_FRAME* MakeDeAuthFrame(u16* pDA, u16 reasonCode, u32 bCheck) { // TxCtrl.
     // TODO: sizeof..?
     pReq = (WlMaDataReq*)AllocateHeapBuf(&wlMan->HeapMan.TmpBuf, 0x36);
     if (pReq == 0) {
-        SetFatalError(2);
+        SetFatalErr(2);
         
          // okay, this is actually really ugly, but "return 0" (which behaves the same)
          // makes the decomp inaccurate
