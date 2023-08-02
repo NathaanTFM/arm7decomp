@@ -93,7 +93,7 @@ def compile(path, target):
             "-Cpp_exceptions", "off",
             "-interworking",
             "-enum", "int",
-            #"-W", "all",
+            "-r",
             "-W", "noimpl_signedunsigned",
             "-w", "notinlined",
             "-c",
