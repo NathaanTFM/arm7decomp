@@ -263,18 +263,18 @@ void DeleteTxFrames(u32 camAdrs) { // TxCtrl.c:1298
     }
 }
 
+// TODO: Doesn't match twlsdk 5.5, but matches to ntrsdk 3.0. The "for" loop is compiled differently
+// There seems to be a variable on line 1369 that was optimised away
 void DeleteTxFrameByAdrs(u16* pMacAdrs) { // TxCtrl.c:1367
     u32 i; // r5 - :1370
     
-    if (pMacAdrs[0] & 1) { // (????)
-        if (wlMan->Config.MaxStaNum > 1) {
-            for (i = 1; i < wlMan->Config.MaxStaNum; i++) {
-                DeleteTxFrames(i);
-            }
+    if (pMacAdrs[0] & 1) {
+        for (i = 1; i < wlMan->Config.MaxStaNum; i++) {
+            DeleteTxFrames(i);
         }
         
     } else {
-        i = CAM_Search(pMacAdrs); // :1384
+        i = CAM_Search(pMacAdrs);
         if (i != 255)
             DeleteTxFrames(i);
         
