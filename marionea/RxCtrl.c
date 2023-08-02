@@ -1,6 +1,12 @@
+// temporary: we remove static functions
+#define STATIC
+
 #include "Mongoose.h"
 
-static void ElementChecker(ELEMENT_CHECKER* p);
+STATIC void ElementChecker(ELEMENT_CHECKER* p);
+
+/*
+Empty function IPA
 
 void RxDataFrameTask() { // RxCtrl.c:66
     DEAUTH_FRAME* pDeAuth; // r0 - :68
@@ -15,6 +21,7 @@ void RxDataFrameTask() { // RxCtrl.c:66
     u32 err; // r9 - :76
     u32 camAdrs; // r8 - :76
 }
+*/
 
 u32 RxMpFrame(RXFRM* pFrm) { // RxCtrl.c:324
     WORK_PARAM* pWork = &wlMan->Work; // r5 - :326
@@ -64,6 +71,9 @@ u32 RxMpFrame(RXFRM* pFrm) { // RxCtrl.c:324
     return 0;
 }
 
+/*
+Empty function IPA
+
 void RxKeyDataFrame(RXFRM* pFrm) { // RxCtrl.c:450
     TX_CTRL* pTxCtrl; // r5 - :452
     WlMpKey* pMpKey; // r0 - :453
@@ -73,6 +83,7 @@ void RxKeyDataFrame(RXFRM* pFrm) { // RxCtrl.c:450
     u16 bitmap; // r1 - :456
     DEAUTH_FRAME* pTxDeAuthFrm; // r0 - :519
 }
+*/
 
 u32 RxMpAckFrame(RXFRM* pFrm) { // RxCtrl.c:645
     WORK_PARAM* pWork = &wlMan->Work; // r6 - :647
@@ -95,6 +106,9 @@ u32 RxMpAckFrame(RXFRM* pFrm) { // RxCtrl.c:645
     return 0;
 }
 
+/*
+Empty function IPA
+
 void RxBeaconFrame(BEACON_FRAME* pFrm) { // RxCtrl.c:740
     BEACON_BODY* pBeacon; // r0 - :742
     WORK_PARAM* pWork; // r7 - :743
@@ -115,8 +129,9 @@ void RxBeaconFrame(BEACON_FRAME* pFrm) { // RxCtrl.c:740
     u32 actZone; // r0 - :886
     u16 dtimCnt; // r0 - :1039
 }
+*/
 
-static void RxDisAssFrame(DISASS_FRAME* pFrm) { // RxCtrl.c:1146
+STATIC void RxDisAssFrame(DISASS_FRAME* pFrm) { // RxCtrl.c:1146
     WORK_PARAM* pWork = &wlMan->Work; // r1 - :1148
     DEAUTH_FRAME* pDeAuth; // r0 - :1149
     u32 st, cam_adrs = pFrm->FirmHeader.CamAdrs; // r0, r5 - :1150
@@ -127,7 +142,7 @@ static void RxDisAssFrame(DISASS_FRAME* pFrm) { // RxCtrl.c:1146
             
             if (st == 0x40) {
                 CAM_SetStaState(cam_adrs, 0x30);
-                MLME_IssueDisAuthIndication(pFrm->Dot11Header.SA, pFrm->Body.ReasonCode);
+                MLME_IssueDisAssIndication(pFrm->Dot11Header.SA, pFrm->Body.ReasonCode);
                 DeleteTxFrames(cam_adrs);
                 
             } else {
@@ -156,7 +171,7 @@ static void RxDisAssFrame(DISASS_FRAME* pFrm) { // RxCtrl.c:1146
     }
 }
 
-static void RxAssReqFrame(ASSREQ_FRAME* pFrm) { // RxCtrl.c:1228
+STATIC void RxAssReqFrame(ASSREQ_FRAME* pFrm) { // RxCtrl.c:1228
     CONFIG_PARAM* pConfig = &wlMan->Config; // r4 - :1230
     ASSREQ_BODY* pAssReq = &pFrm->Body; // r0 - :1231
     DEAUTH_FRAME* pTxDeAuthFrm; // r0 - :1232
@@ -233,7 +248,7 @@ static void RxAssReqFrame(ASSREQ_FRAME* pFrm) { // RxCtrl.c:1228
         TxManCtrlFrame((TXFRM*)pTxFrm);
 }
 
-static void RxProbeReqFrame(PRBREQ_FRAME* pFrm) { // RxCtrl.c:1703
+STATIC void RxProbeReqFrame(PRBREQ_FRAME* pFrm) { // RxCtrl.c:1703
     PRBRES_FRAME* pTxFrm; // r0 - :1705
     ELEMENT_CHECKER elementCheck; // None - :1706
     
@@ -258,7 +273,10 @@ static void RxProbeReqFrame(PRBREQ_FRAME* pFrm) { // RxCtrl.c:1703
     
 }
 
-static void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCtrl.c:1758
+/*
+IPA prevention stuff
+
+STATIC void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCtrl.c:1758
     MLME_MAN* pMLME; // r6 - :1760
     WlMlmeScanCfm* pCfm; // r7 - :1761
     PRBRES_BODY* pPrbRes; // r0 - :1762
@@ -274,7 +292,7 @@ static void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCt
     u8* pSrc; // r9 - :1767
 }
 
-static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
+STATIC void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
     WORK_PARAM* pWork; // r4 - :1995
     MLME_MAN* pMLME; // r5 - :1996
     AUTH_BODY* pAuth; // r0 - :1997
@@ -286,8 +304,9 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
     TXQ* pTxq; // r1 - :2013
     u16 map; // r0 - :2014
 }
+*/
 
-static void RxDeAuthFrame(DEAUTH_FRAME* pFrm) { // RxCtrl.c:2418
+STATIC void RxDeAuthFrame(DEAUTH_FRAME* pFrm) { // RxCtrl.c:2418
     WORK_PARAM* pWork = &wlMan->Work; // r1 - :2420
     u32 cam_adrs = pFrm->FirmHeader.CamAdrs; // r5 - :2422
     
@@ -311,7 +330,10 @@ static void RxDeAuthFrame(DEAUTH_FRAME* pFrm) { // RxCtrl.c:2418
     }
 }
 
-static void ElementChecker(ELEMENT_CHECKER* p) { // RxCtrl.c:2564
+/*
+The following functions have been removed to prevent IPA
+
+STATIC void ElementChecker(ELEMENT_CHECKER* p) { // RxCtrl.c:2564
     WORK_PARAM* pWork; // r4 - :2566
     u8* pBuf; // r5 - :2567
     long i; // r6 - :2568
@@ -338,6 +360,7 @@ void DefragTask() { // RxCtrl.c:3011
     DEFRAG_TBL defragTbl; // None - :3016
     u32 fc; // r4 - :3017
 }
+*/
 
 void DefragTimerTask() { // RxCtrl.c:3348
     DEFRAG_LIST* pList = wlMan->RxCtrl.DefragList; // r5 - :3350
