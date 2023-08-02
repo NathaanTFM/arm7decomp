@@ -118,15 +118,11 @@ void CAM_SetPowerMgtMode(u16 camAdrs, u16 pmtMode) { // CAM.c:473
     }
 }
 
-#pragma dont_inline on
-
 void CAM_SetDoze(u32 camAdrs) { // CAM.c:505
     if (CAM_GetStaState(camAdrs) == 0x40) {
         wlMan->CamMan.PowerState &= ~(1 << camAdrs);
     }
 }
-
-#pragma dont_inline off
 
 void CAM_SetAwake(u32 camAdrs) { // CAM.c:529
     wlMan->CamMan.PowerState |= (1 << camAdrs);
@@ -231,8 +227,6 @@ u32 CAM_GetFrameCount(u32 camAdrs) { // CAM.c:980
     return wlMan->Config.pCAM[camAdrs].frameCount;
 }
 
-#pragma dont_inline on
-
 void CAM_SetTIMElementBitmap(u32 camAdrs) { // CAM.c:1030
     TIM_ELEMENT* pTIM; // r7 - :1032
     u32 tmp, x, aid; // r0, r5, r0 - :1033
@@ -282,8 +276,6 @@ void CAM_ClrTIMElementBitmap(u32 camAdrs) { // CAM.c:1089
     OS_EnableIrqMask(x);
 }
 
-#pragma dont_inline off
-
 void CAM_TimerTask() { // CAM.c:1158
     WL_MAN* pWlMan; // r2 - :1160
     CAM_ELEMENT* pCAM; // r7 - :1161
@@ -300,8 +292,6 @@ void CAM_Delete(u16 camAdrs) { // CAM.c:1267
     wlMan->CamMan.Count--;
 }
 
-#pragma dont_inline on
-
 void InitializeCAM() { // CAM.c:1307
     CAM_ELEMENT* pCAM = wlMan->Config.pCAM; // r4 - :1309
     u32 i, max; // r3, r5 - :1310
@@ -317,8 +307,6 @@ void InitializeCAM() { // CAM.c:1307
     CAM_InitElement(0, BC_ADRS);
     CAM_SetStaState(0, 0x40);
 }
-
-#pragma dont_inline off
 
 void InitCAM() { // CAM.c:1346
     CAM_ELEMENT* pCAM = wlMan->Config.pCAM; // r4 - :1348
