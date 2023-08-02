@@ -153,10 +153,28 @@ void CAM_UpdateLifeTime(u32 camAdrs) { // CAM.c:633
 }
 
 u32 CAM_AllocateAID(u16 camAdrs) { // CAM.c:665
-    CAM_MAN* pCamMan; // r4 - :667
-    u32 x; // r6 - :668
-    u32 map; // r0 - :668
-    u32 i; // r5 - :668
+    CAM_MAN* pCamMan = &wlMan->CamMan; // r4 - :667
+    u32 i, map, x; // r5, r0, r6 - :668
+    
+    x = OS_DisableIrqMask(0x1000000);
+    
+    for (i = 1, map = 2; i < 0x10; i++, map <<= 1) {
+        if ((pCamMan->UseAidMap & map) == 0) {
+            pCamMan->UseAidMap |= map;
+            
+            pCamMan->ConnectSta++;
+            if (pCamMan->ConnectSta == 1) {
+                WEnableTmpttPowerSave();
+            }
+            
+            wlMan->Config.pCAM[camAdrs].aid = i;
+            OS_EnableIrqMask(x);
+            return i;
+        }
+    }
+    
+    OS_EnableIrqMask(x);
+    return 0;
 }
 
 void CAM_ReleaseAID(u16 camAdrs) { // CAM.c:736
