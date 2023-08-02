@@ -321,7 +321,10 @@ void MessageDeleteTx(u32 pri, u32 bMsg) { // TxCtrl.c:1465
     TXFRM* pFrm; // r0 - :1468
     
     pReq = (WlMaDataReq*)wlMan->HeapMan.TxPri[pri].Head;
-    while (pReq != (WlMaDataReq*)-1) {
+    if (pReq == (WlMaDataReq*)-1)
+        return;
+    
+    do {
         pNextReq = (WlMaDataReq*)GetHeapBufNextAdrs((HEAPBUF_HEADER*)pReq);
         pFrm = (TXFRM*)&pReq->frame;
         
@@ -334,7 +337,8 @@ void MessageDeleteTx(u32 pri, u32 bMsg) { // TxCtrl.c:1465
             IssueMaDataConfirm(&wlMan->HeapMan.TxPri[pri], pReq);
         
         pReq = pNextReq;
-    }
+        
+    } while (pReq != (WlMaDataReq*)-1);
 }
 
 void TxManCtrlFrame(TXFRM* pFrm) { // TxCtrl.c:1525
