@@ -159,12 +159,20 @@ u32 CAM_AllocateAID(u16 camAdrs) { // CAM.c:665
     u32 i; // r5 - :668
 }
 
-#pragma dont_inline on
 void CAM_ReleaseAID(u16 camAdrs) { // CAM.c:736
-    WL_MAN* pWlMan; // r4 - :738
+    WL_MAN* pWlMan = wlMan; // r4 - :738
     u32 aid; // r0 - :740
+    
+    CAM_ClrTIMElementBitmap(camAdrs);
+    aid = CAM_GetAID(camAdrs);
+    if (aid) {
+        wlMan->Config.pCAM[camAdrs].aid = 0;
+        pWlMan->CamMan.UseAidMap &= ~(1 << aid);
+        pWlMan->CamMan.ConnectSta--;
+        if (pWlMan->CamMan.ConnectSta == 0)
+            WDisableTmpttPowerSave();
+    }
 }
-#pragma dont_inline off
 
 u32 CAM_GetStaState(u32 camAdrs) { // CAM.c:826
     return wlMan->Config.pCAM[camAdrs].state;
