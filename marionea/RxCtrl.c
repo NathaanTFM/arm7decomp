@@ -157,14 +157,80 @@ static void RxDisAssFrame(DISASS_FRAME* pFrm) { // RxCtrl.c:1146
 }
 
 static void RxAssReqFrame(ASSREQ_FRAME* pFrm) { // RxCtrl.c:1228
-    CONFIG_PARAM* pConfig; // r4 - :1230
-    ASSREQ_BODY* pAssReq; // r0 - :1231
+    CONFIG_PARAM* pConfig = &wlMan->Config; // r4 - :1230
+    ASSREQ_BODY* pAssReq = &pFrm->Body; // r0 - :1231
     DEAUTH_FRAME* pTxDeAuthFrm; // r0 - :1232
     ASSRES_FRAME* pTxFrm; // r0 - :1233
     u32 bodyLen; // r5 - :1234
-    u16 cam_adrs; // r0 - :1235
-    u16 stsCode; // r0 - :1235
+    u16 stsCode, cam_adrs; // r0, r0 - :1235
     ELEMENT_CHECKER elementCheck; // None - :1236
+    
+    bodyLen = pFrm->FirmHeader.Length; // :1239
+    
+    if (bodyLen <= 4) // :1244
+        return;
+    
+    if (wlMan->Work.Mode != 1) // :1258
+        return;
+    
+    if (IsExistManFrame(pFrm->Dot11Header.SA, 0x10)) // :1265
+        return;
+    
+    cam_adrs = pFrm->FirmHeader.CamAdrs; // :1268
+    
+    if (cam_adrs == 0 || CAM_GetStaState(cam_adrs) < 0x30) { // :1272
+        if (IsExistManFrame(pFrm->Dot11Header.SA, 0xC0)) // :1276
+            return;
+            
+        pTxDeAuthFrm = MakeDeAuthFrame(pFrm->Dot11Header.SA, 6, 1); // :1279
+        if (pTxDeAuthFrm) // :1280
+            TxManCtrlFrame((TXFRM*)pTxDeAuthFrm); // :1282
+        
+        return;
+    }
+    
+    if (CAM_GetStaState(cam_adrs) == 0x40) {
+        CAM_SetStaState(cam_adrs, 0x30);
+        MLME_IssueDisAssIndication(pFrm->Dot11Header.SA, 1);    
+    }
+    
+    else if (CAM_GetAID(cam_adrs) != 0) {
+        return;
+    }
+    
+    MIi_CpuClear32(0, &elementCheck, sizeof(ELEMENT_CHECKER));
+    elementCheck.pElement = pAssReq->Buf;
+    elementCheck.bodyLength = bodyLen - 4;
+    ElementChecker(&elementCheck);
+    
+    // holy
+    if (
+        (pAssReq->CapaInfo.Data & 0xFFC2) != 0
+        || (pAssReq->CapaInfo.Bit.ESS == 0)
+        || (!pConfig->WepMode && pAssReq->CapaInfo.Bit.Privacy == 1)
+        || (pConfig->WepMode && pAssReq->CapaInfo.Bit.Privacy == 0)
+        || (pConfig->PreambleType == 1 && pAssReq->CapaInfo.Bit.ShortPreamble == 0)
+    ) {
+        stsCode = 10;
+        
+    } else {
+        CAM_SetCapaInfo(cam_adrs, pAssReq->CapaInfo.Data); // :1325
+        
+        if ((elementCheck.matchFlag & 1) == 0) { // :1328
+            stsCode = 1; // :1331
+            
+        } else if ((elementCheck.matchFlag & 4) == 0) { // :1336
+            stsCode = 18; // :1341
+            
+        } else {
+            CAM_SetSupRate(cam_adrs, elementCheck.rateSet.Support); // :1346
+            stsCode = 0; // :1349
+        }
+    }
+    
+    pTxFrm = MakeAssResFrame(cam_adrs, stsCode, elementCheck.pSSID); // :1354
+    if (pTxFrm)
+        TxManCtrlFrame((TXFRM*)pTxFrm);
 }
 
 static void RxProbeReqFrame(PRBREQ_FRAME* pFrm) { // RxCtrl.c:1703
