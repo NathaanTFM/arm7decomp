@@ -73,16 +73,16 @@ void CAM_SetStaState(u16 camAdrs, u16 state) { // CAM.c:396
     u32 x = OS_DisableIrqMask(0x1000000); // r5 - :398
     
     if (state < 0x40) {
-        wlMan->CamMan.PowerState |= (1 << camAdrs);
+        CAM_SetAwake(camAdrs);
         wlMan->CamMan.NotClass3 |= (1 << camAdrs);
         
-        if (wlMan->Work.Mode == 1 && CAM_GetAID(camAdrs) != 0)
+        if (wlMan->Work.Mode == 1 && CAM_GetAID(camAdrs))
             CAM_ReleaseAID(camAdrs);
         
     } else {
         wlMan->CamMan.NotClass3 &= ~(1 << camAdrs);
         
-        if ((wlMan->CamMan.PowerMgtMode >> camAdrs) & 1)
+        if (CAM_GetPowerMgtMode(camAdrs))
             CAM_SetDoze(camAdrs);
     }
     
@@ -146,10 +146,12 @@ u32 CAM_AllocateAID(u16 camAdrs) { // CAM.c:665
     u32 i; // r5 - :668
 }
 
+#pragma dont_inline on
 void CAM_ReleaseAID(u16 camAdrs) { // CAM.c:736
     WL_MAN* pWlMan; // r4 - :738
     u32 aid; // r0 - :740
 }
+#pragma dont_inline off
 
 u32 CAM_GetStaState(u32 camAdrs) { // CAM.c:826
     return wlMan->Config.pCAM[camAdrs].state;
