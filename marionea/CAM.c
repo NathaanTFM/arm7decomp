@@ -48,18 +48,20 @@ void CAM_AddBcFrame(HEAPBUF_MAN* pBufMan, void* pBuf) { // CAM.c:207
 
 void CAM_IncFrameCount(TXFRM* pFrm) { // CAM.c:291
     u32 x, cam_adrs; // r4, r5 - :294
+    CAM_ELEMENT* pCAM; // optimized away, mentioned in old nef
     
     cam_adrs = pFrm->FirmHeader.CamAdrs;
+    pCAM = &wlMan->Config.pCAM[cam_adrs];
     x = OS_DisableIrqMask(0x1000000);
     
-    if (wlMan->Work.Mode == 1 && wlMan->Config.pCAM[cam_adrs].frameCount == 0)
+    if (wlMan->Work.Mode == 1 && pCAM->frameCount == 0)
         CAM_SetTIMElementBitmap(cam_adrs);  
     
-    wlMan->Config.pCAM[cam_adrs].frameCount++;
+    pCAM->frameCount++;
     OS_EnableIrqMask(x);
     
     if ((wlMan->CamMan.NotSetTIM & (1 << cam_adrs)) == 0)
-        wlMan->Config.pCAM[cam_adrs].lifeTime = wlMan->Config.pCAM[cam_adrs].maxLifeTime;
+        pCAM->lifeTime = pCAM->maxLifeTime;
     
 }
 
