@@ -371,14 +371,44 @@ u16 WSetBssid(u16* pBssid) { // WlNic.c:1029
     return 0;
 }
 
-/*
 u16 WSetSsid(u16 length, u8* pSsid) { // WlNic.c:1065
-    WORK_PARAM* pWork; // r4 - :1067
-    u32 i, b; // r5, r6 - :1068
+    WORK_PARAM* pWork = &wlMan->Work; // r4 - :1067
+    u32 i, b = 0; // r5, r6 - :1068
     u8* pBuf; // r6 - :1069
+    
+    if (length > 0x20)
+        return 5;
+    
+    if (pWork->STA == 0x40 && wlMan->Config.Mode == 1) {
+        if (pWork->SSIDLength != length)
+            return 6;
+        
+        if (pWork->Ofst.Beacon.SSID) {
+            b = 1;
+        }
+    }
+    
+    for (i = 0; i < length; i++) {
+        WL_WriteByte(&pWork->SSID[i], WL_ReadByte(pSsid));
+        pSsid++;
+    }
+    
+    for (; i < 0x20; i++) {
+        WL_WriteByte(&pWork->SSID[i], 0);
+    }
+    
+    pWork->SSIDLength = length;
+    
+    if (b) {
+        pBuf = wlMan->TxCtrl.Beacon.pMacFrm->Body + pWork->Ofst.Beacon.SSID + 2;
+        
+        for (i = 0; i < length; i++) {
+            WL_WriteByte(&pBuf[i], WL_ReadByte(&pWork->SSID[i]));
+        }
+    }
+    
+    return 0;
 }
-Did I talk about IPA?
-*/
 
 u16 WSetBeaconPeriod(u16 period) { // WlNic.c:1121
     if (period < 10 || period > 1000)
