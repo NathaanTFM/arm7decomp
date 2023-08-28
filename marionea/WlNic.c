@@ -756,18 +756,45 @@ void WUpdateCounter() { // WlNic.c:2277
 IPA blablablabah
 */
 
-/*
 u32 WCheckSSID(u16 len, u8* pSSID) { // WlNic.c:2494
-    WORK_PARAM* pWork; // r2 - :2496
-    u8* pMask; // r6 - :2497
-    u8* pBuf; // r5 - :2497
-    u32 myss; // r0 - :2498
-    u32 ssid; // r0 - :2498
-    u32 mask; // r0 - :2498
+    WORK_PARAM* pWork = &wlMan->Work; // r2 - :2496
+    u8 *pBuf, *pMask; // r5, r6 - :2497
+    u32 mask, ssid, myss; // r0, r0, r0 - :2498
     u32 i; // r7 - :2499
+    
+    if (len > 0x20)
+        return 0;
+    
+    if (pWork->SSIDLength == 0)
+        return 1;
+    
+    if (wlMan->MLME.State == 0x13) {
+        if (len < pWork->SSIDLength)
+            return 0;
+        
+        len = pWork->SSIDLength;
+        
+    } else {
+        if (len != pWork->SSIDLength) {
+            return 0;
+        }
+    }
+    
+    pBuf = pWork->SSID;
+    pMask = pWork->SSIDMask;
+    
+    for (i = 0; i < len; i++) {
+        mask = WL_ReadByte(pMask++);
+        ssid = WL_ReadByte(pSSID++);
+        myss = WL_ReadByte(pBuf++);
+        
+        if ((ssid | mask) != (myss | mask)) {
+            return 0;
+        }
+    }
+    
+    return 1;
 }
-Dude, have you checked my IPA?
-*/
 
 u32 MatchMacAdrs(u16* pAdrs1, u16* pAdrs2) { // WlNic.c:2552
     return pAdrs1[2] == pAdrs2[2] && pAdrs1[1] == pAdrs2[1] && pAdrs1[0] == pAdrs2[0];
