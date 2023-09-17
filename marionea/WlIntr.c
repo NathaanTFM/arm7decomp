@@ -15,7 +15,7 @@ static void WlIntrMpEnd(u32 bMacBugPatch);
 static void WlIntrStartTx();
 static void WlIntrStartRx();
 static void SetParentTbttTxq();
-static u32 CheckKeyTxEnd();
+STATIC u32 CheckKeyTxEnd();
 static u32 CheckKeyTxEndMain(TXQ* pTxq);
 
 #pragma dont_inline on
@@ -231,7 +231,7 @@ void* AdjustRingPointer(void* p) { // WlIntr.c:1996
     return p;
 }
 
-static u32 CheckKeyTxEnd() { // WlIntr.c:2063
+STATIC u32 CheckKeyTxEnd() { // WlIntr.c:2063
     TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r5 - :2065
     RX_CTRL* pRxCtrl = &wlMan->RxCtrl; // r6 - :2066
     u32 retVal = CheckKeyTxEndMain(&pTxCtrl->Key[0]) | CheckKeyTxEndMain(&pTxCtrl->Key[1]); // r0 - :2067

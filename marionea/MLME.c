@@ -1,6 +1,6 @@
 #include "Mongoose.h"
 
-static void MLME_ScanTimeOut(void *unused);
+STATIC void MLME_ScanTimeOut(void *unused);
 static void MLME_JoinTimeOut(void *unused);
 static void MLME_AuthTimeOut(void *unused);
 static void MLME_AssTimeOut(void *unused);
@@ -284,7 +284,7 @@ void MLME_ScanTask() { // MLME.c:886
     u16 ch; // r0 - :892
 }
 
-static void MLME_ScanTimeOut(void *unused) { // MLME.c:1114
+STATIC void MLME_ScanTimeOut(void *unused) { // MLME.c:1114
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1117
     
     pMLME->Work.Scan.ElapseTime += pMLME->Work.Scan.TxPeriod;

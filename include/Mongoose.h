@@ -32,6 +32,12 @@
 #define GetCfm(req) ((void*)((u32)(req) + ((req)->header.length * 2) + 0x10))
 #define SubtractAddr(ptr, value) (void*)((u32)(ptr) - (value))
 
+// TODO: Decided to make some static functions not static for now so they compile
+#ifndef STATIC
+#warning STATIC is not static!
+#define STATIC
+#endif
+
 // this one has no name
 #define global_vtsf_var (*(u16*)0x0380FFF0)
 #define wlMan (*(WL_MAN**)0x0380FFF4)

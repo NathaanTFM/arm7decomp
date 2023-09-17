@@ -1,6 +1,3 @@
-// temporary: we remove static functions
-#define STATIC
-
 #include "Mongoose.h"
 
 STATIC void ElementChecker(ELEMENT_CHECKER* p);
@@ -321,7 +318,7 @@ STATIC void RxProbeReqFrame(PRBREQ_FRAME* pFrm) { // RxCtrl.c:1703
 /*
 IPA prevention stuff
 
-STATIC void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCtrl.c:1758
+static void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCtrl.c:1758
     MLME_MAN* pMLME; // r6 - :1760
     WlMlmeScanCfm* pCfm; // r7 - :1761
     PRBRES_BODY* pPrbRes; // r0 - :1762
@@ -337,7 +334,7 @@ STATIC void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCt
     u8* pSrc; // r9 - :1767
 }
 
-STATIC void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
+static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
     WORK_PARAM* pWork; // r4 - :1995
     MLME_MAN* pMLME; // r5 - :1996
     AUTH_BODY* pAuth; // r0 - :1997
@@ -375,15 +372,28 @@ STATIC void RxDeAuthFrame(DEAUTH_FRAME* pFrm) { // RxCtrl.c:2418
     }
 }
 
-/*
-The following functions have been removed to prevent IPA
-
 STATIC void ElementChecker(ELEMENT_CHECKER* p) { // RxCtrl.c:2564
-    WORK_PARAM* pWork; // r4 - :2566
+    WORK_PARAM* pWork = &wlMan->Work; // r4 - :2566
     u8* pBuf; // r5 - :2567
     long i; // r6 - :2568
     u32 len; // r7 - :2569
+    
+    p->channel = pWork->CurrChannel;
+    
+    pBuf = p->pElement;
+    
+    if (p->foundFlag & 0x800)
+        p->matchFlag |= 1;
+    
+    for (i = p->bodyLength; i > 0; i -= len + 2) {
+        len = WL_ReadByte(pBuf + 1);
+        
+        WL_ReadByte(pBuf++);
+    }
 }
+
+/*
+The following functions have been removed to prevent IPA
 
 void RxManCtrlTask() { // RxCtrl.c:2717
     HEAP_MAN* pHeapMan; // r10 - :2719

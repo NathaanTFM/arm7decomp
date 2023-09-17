@@ -89,7 +89,7 @@ void SetParentTbttTxqTask() { // WlIntrTask.c:770
     if (pHeapMan->TxPri[0].Count) TxqPri(0); // :804
 }
 
-static RXFRM* TakeoutRxFrame(RXFRM_MAC* pMFrm, u32 length) { // WlIntrTask.c:832
+STATIC RXFRM* TakeoutRxFrame(RXFRM_MAC* pMFrm, u32 length) { // WlIntrTask.c:832
     RXPACKET* pPacket; // r0 - :834
     RXFRM* pFrm; // r0 - :835
     
