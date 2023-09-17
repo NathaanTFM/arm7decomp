@@ -198,9 +198,41 @@ u16 MLME_ReAssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:566
 }
 
 u16 MLME_DisAssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:632
-    WlMlmeDisAssReq* pReq; // r0 - :634
-    MLME_MAN* pMLME; // r5 - :635
+    WlMlmeDisAssReq* pReq = (WlMlmeDisAssReq*)pReqt; // r0 - :634
+    WlMlmeDisAssCfm *pCfm = (WlMlmeDisAssCfm*)pCfmt; // not in nef
+    MLME_MAN* pMLME = &wlMan->MLME; // r5 - :635
     TXFRM* pFrm; // r0 - :636
+    
+    pCfm->header.length = 1;
+    if (wlMan->Config.Mode == 0)
+        return 11;
+    
+    if (wlMan->Config.Mode != 1 && (pReq->peerMacAdrs[0] & 1) != 0)
+        return 5;
+    
+    if (wlMan->Work.STA != 64)
+        return 1;
+    
+    pFrm = (TXFRM*)MakeDisAssFrame(pReq->peerMacAdrs, pReq->reasonCode);
+    if (!pFrm)
+        return 8;
+    
+    pMLME->pReq.DisAss = pReq;
+    pMLME->pCfm.DisAss = pCfm;
+    pMLME->Work.DisAss.pTxFrm = pFrm;
+    pMLME->State = 113;
+    
+    if (pReq->peerMacAdrs[0] & 1) {
+        pFrm->FirmHeader.FrameTime = wlMan->Work.IntervalCount;
+        CAM_AddBcFrame(&wlMan->HeapMan.TmpBuf, SubtractAddr(pFrm, 0x10));
+        if ((wlMan->CamMan.PowerMgtMode & ~wlMan->CamMan.NotClass3) == 0)
+            TxqPri(2);
+        
+    } else {
+        DeleteTxFrameByAdrs(pReq->peerMacAdrs);
+        TxManCtrlFrame(pFrm);
+    }
+    return 128;
 }
 
 u16 MLME_StartReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:719
