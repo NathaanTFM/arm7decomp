@@ -215,8 +215,21 @@ u16 MA_MpReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:363
 }
 
 u16 MA_TestDataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:775
-    WlMaDataReq* pReq; // r0 - :782
-    TXFRM* pFrm; // r0 - :783
+    WlMaDataReq* pReq = (WlMaDataReq*)pReqt; // r0 - :782
+    WlMaDataCfm* pCfm = (WlMaDataCfm*)pCfmt; // not in nef
+    TXFRM* pFrm = (TXFRM*)&pReq->frame; // r0 - :783
+    
+    pCfm->header.length = 1;
+    pReq->header.code = -1;
+    pFrm->FirmHeader.CamAdrs = 0;
+    pFrm->MacHeader.Tx.MPDU = pFrm->FirmHeader.Length;
+    
+    CAM_IncFrameCount(pFrm);
+    MoveHeapBuf(&wlMan->HeapMan.RequestCmd, wlMan->HeapMan.TxPri, (HEAPBUF_HEADER*)pReq);
+    TxqPri(0);
+    return 0;
+    
+    
 }
 
 u16 MA_ClrDataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:850
