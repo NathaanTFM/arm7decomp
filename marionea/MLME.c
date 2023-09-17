@@ -137,9 +137,35 @@ u16 MLME_DeAuthReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:403
 }
 
 u16 MLME_AssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:497
-    WlMlmeAssReq* pReq; // r0 - :499
-    WORK_PARAM* pWork; // r4 - :500
-    MLME_MAN* pMLME; // r5 - :502
+    WlMlmeAssReq* pReq = (WlMlmeAssReq*)pReqt; // r0 - :499
+    WlMlmeAssCfm* pCfm = (WlMlmeAssCfm*)pCfmt; // not in nef
+    WORK_PARAM* pWork = &wlMan->Work; // r4 - :500
+    CONFIG_PARAM* pConfig = &wlMan->Config; // not in nef, exists probably
+    MLME_MAN* pMLME = &wlMan->MLME; // r5 - :502
+    
+    pCfm->header.length = 3;
+    if (pConfig->Mode != 3 && pConfig->Mode != 2)
+        return 11;
+    
+    if (pWork->STA < 0x30) return 1;
+    if (pReq->peerMacAdrs[0] & 1) return 5;
+    if (pReq->listenInterval == 0) return 5;
+    if (pReq->listenInterval > 0xFF) return 5;
+    if (pReq->timeOut > 2000) return 5;
+    if (pReq->timeOut < 10) return 5;
+    
+    WSetStaState(0x30);
+    WClearAids();
+    
+    pWork->ListenInterval = pReq->listenInterval;
+    pWork->CurrListenInterval = pReq->listenInterval;
+    
+    pMLME->pReq.Ass = pReq;
+    pMLME->pCfm.Ass = pCfm;
+    pMLME->State = 80;
+    
+    MLME_AssTask();
+    return 128;
 }
 
 u16 MLME_ReAssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:566
