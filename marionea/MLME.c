@@ -210,10 +210,38 @@ u16 MLME_StartReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:719
 }
 
 u16 MLME_MeasChanReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:803
-    MLME_MAN* pMLME; // r4 - :805
-    WlMlmeMeasChanReq* pReq; // r0 - :806
-    u32 ch; // r0 - :808
-    u32 i; // r8 - :808
+    MLME_MAN* pMLME = &wlMan->MLME; // r4 - :805
+    WlMlmeMeasChanReq* pReq = (WlMlmeMeasChanReq*)pReqt; // r0 - :806
+    WlMlmeMeasChanCfm *pCfm = (WlMlmeMeasChanCfm*)pCfmt; // not in nef
+    u32 i, ch; // r8, r0 - :808
+    
+    pCfm->header.length = 18;
+    if (wlMan->Work.STA != 0x20) return 1;
+    if (pReq->ccaMode > 3) return 5;
+    if (pReq->edThreshold > 0x3F) return 5;
+    if (pReq->measureTime == 0) return 5;
+    if (pReq->measureTime > 1000) return 5;
+    
+    for (i = 0; i < sizeof(pReq->channelList) / sizeof(*pReq->channelList); i++) {
+        ch = WL_ReadByte(&pReq->channelList[i]);
+        if (ch == 0)
+            break;
+        
+        if (!CheckEnableChannel(ch))
+            return 5;
+    }
+    
+    if (i == 0)
+        return 5;
+    
+    pMLME->pReq.MeasChannel = pReq;
+    pMLME->pCfm.MeasChannel = pCfm;
+    pMLME->State = 128;
+    
+    pCfm->resultCode = 128;
+    
+    MLME_MeasChannelTask();
+    return 128;
 }
 
 void MLME_ScanTask() { // MLME.c:886
