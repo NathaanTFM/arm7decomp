@@ -211,10 +211,37 @@ static void WlIntrMpEnd(u32 bMacBugPatch) { // WlIntr.c:1449
 } // :1531
 
 static void WlIntrStartTx() { // WlIntr.c:1548
-    TX_CTRL* pTxCtrl; // r0 - :1550
+    TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r0 - :1550
     u32 i, cnt; // None, r2 - :1552
     u16 sts; // r0 - :1564
     u16 adr; // r0 - :1565
+    
+    W_IF = 0x80;
+    
+    if (wlMan->WlOperation & 0x20) {
+        sts = W_RF_STATUS & 0xFF;
+        adr = W_RXTX_ADDR;
+        
+        if (sts >= 3 && sts <= 5 && adr >= (((u32)(pTxCtrl->Key[0].pMacFrm) >> 1) & 0xFFF) && adr <= (((u32)(pTxCtrl->Txq[2].pMacFrm) >> 1) & 0xFFF)) {
+            W_X_244h |= 0x80;
+            W_X_244h &= ~0x80;
+        }
+    }
+    
+    if (W_ID != 0x1440) {
+        if ((W_RF_PINS & 0x42) == 0x42) {
+            cnt = W_INTERNAL_14;
+            if (cnt) {
+                i = 0;
+                while (cnt == W_INTERNAL_14) {
+                    if (i++ > 0x3E8) {
+                        SetFatalErr(0x40);
+                        return;
+                    }
+                }
+            }
+        }
+    }
 }
 
 static void WlIntrStartRx() { // WlIntr.c:1631
