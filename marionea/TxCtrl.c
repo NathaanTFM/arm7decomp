@@ -82,10 +82,56 @@ u32 CheckFrameTimeout(TXFRM* pTxFrm) { // TxCtrl.c:381
 }
 
 void TxqEndData(TXFRM* pFrm, u32 flag) { // TxCtrl.c:442
-    HEAPBUF_MAN* pBufMan; // r5 - :444
-    WORK_PARAM* pWork; // r6 - :445
-    WlCounter* pCounter; // r0 - :446
-    void* pReq; // r7 - :447
+    HEAPBUF_MAN* pBufMan = &wlMan->HeapMan.TxPri[0]; // r5 - :444
+    WORK_PARAM* pWork = &wlMan->Work; // r6 - :445
+    WlCounter* pCounter = &wlMan->Counter; // r0 - :446
+    void* pReq = SubtractAddr(pFrm, 0x10); // r7 - :447
+    
+    CAM_DecFrameCount(pFrm);
+    
+    if ((pFrm->MacHeader.Tx.Status & 2) == 0) {
+        u16 unk1;
+        
+        pCounter->tx.success++;
+        
+        if (pFrm->Dot11Header.FrameCtrl.Bit.ToDS) {
+            if (pFrm->Dot11Header.Adrs3[0] & 1)
+                pCounter->tx.multicast++;
+            else
+                pCounter->tx.unicast++;
+            
+        } else {
+            if (pFrm->Dot11Header.Adrs1[0] & 1)
+                pCounter->tx.multicast++;            
+            else
+                pCounter->tx.unicast++;
+        }
+        
+    } else {
+        pCounter->tx.failed++;
+    }
+    
+    if (pFrm->Dot11Header.FrameCtrl.Bit.WEP) {
+        pCounter->tx.wep++;
+    }
+    
+    IssueMaDataConfirm(pBufMan, pReq);
+    wlMan->TxCtrl.Txq[0].Busy = 0;
+    
+    if (CAM_GetPowerMgtMode(pFrm->FirmHeader.CamAdrs) && (pFrm->Dot11Header.FrameCtrl.Data & 0x2000) == 0)
+        CAM_SetDoze(pFrm->FirmHeader.CamAdrs);
+    
+    if (flag) {
+        if (pBufMan->Count) {
+            TxqPri(0);
+            
+        } else if ((u16)(0x10000 + pWork->Mode - 2) <= 1 && pWork->STA == 64 && pWork->PowerMgtMode) {
+            if (CAM_GetFrameCount(pWork->APCamAdrs) == 0 && pWork->bExistTIM == 0) {
+                WSetPowerState(1);
+            }
+        }
+    }
+    
 }
 
 /*void TxqEndManCtrl(TXFRM* pFrm, u32 flag) { // TxCtrl.c:541
