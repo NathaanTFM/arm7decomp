@@ -88,7 +88,7 @@ void TxqEndData(TXFRM* pFrm, u32 flag) { // TxCtrl.c:442
     void* pReq; // r7 - :447
 }
 
-void TxqEndManCtrl(TXFRM* pFrm, u32 flag) { // TxCtrl.c:541
+/*void TxqEndManCtrl(TXFRM* pFrm, u32 flag) { // TxCtrl.c:541
     WORK_PARAM* pWork; // r8 - :543
     MLME_MAN* pMLME; // r9 - :544
     WlCounter* pCounter; // r0 - :545
@@ -100,6 +100,7 @@ void TxqEndManCtrl(TXFRM* pFrm, u32 flag) { // TxCtrl.c:541
     u32 type; // r7 - :552
     u32 i; // r4 - :552
 }
+(anti IPA gang)*/
 
 void TxqEndPsPoll(TXFRM* pFrm, u32 flag) { // TxCtrl.c:887
     WlCounter* pCounter = &wlMan->Counter; // r0 - :890
@@ -119,8 +120,39 @@ void TxqEndPsPoll(TXFRM* pFrm, u32 flag) { // TxCtrl.c:887
 }
 
 void TxqEndBroadCast(TXFRM* pFrm, u32 flag) { // TxCtrl.c:936
-    HEAP_MAN* pHeapMan; // r4 - :938
-    HEAPBUF_MAN* pBufMan; // r0 - :939
+    HEAP_MAN* pHeapMan = &wlMan->HeapMan; // r4 - :938
+    //HEAPBUF_MAN* pBufMan; // r0 - :939
+    
+    wlMan->Counter.tx.multicast++; // :942
+    
+    if (pFrm->Dot11Header.FrameCtrl.Bit.Type == 0) { // :954
+        CAM_IncFrameCount(pFrm); // :957
+        MoveHeapBuf(&pHeapMan->TxPri[2], &pHeapMan->TxPri[1], SubtractAddr(pFrm, 0x10)); // :958
+        TxqEndManCtrl(pFrm, 0); // :959
+        
+    } else {
+        IssueMaDataConfirm(&pHeapMan->TxPri[2], SubtractAddr(pFrm, 0x10)); // :965
+    }
+    
+    wlMan->TxCtrl.Txq[2].Busy = 0; // :969
+    
+    if (wlMan->TxCtrl.Txq[2].pMacFrm->Dot11Header.FrameCtrl.Bit.MoreData == 0) { // :973
+        W_TXREQ_RESET = 8; // :975
+        W_TXREQ_SET = 5; // :976
+        
+        if (flag) { // :978
+            if (pHeapMan->TxPri[1].Count) TxqPri(1); // :980
+            if (pHeapMan->TxPri[0].Count) TxqPri(0); // :981
+        }
+    }
+    
+    if (pHeapMan->TxPri[2].Count) { // :986
+        if (flag) // :988
+            TxqPri(2); // :990
+        
+    } else {
+        CAM_ClrTIMElementBitmap(0); // :996
+    }
 }
 
 void TxEndKeyData(TXQ* pTxq) { // TxCtrl.c:1014
