@@ -120,18 +120,21 @@ void TxqEndPsPoll(TXFRM* pFrm, u32 flag) { // TxCtrl.c:887
 }
 
 void TxqEndBroadCast(TXFRM* pFrm, u32 flag) { // TxCtrl.c:936
+    // so both of those variables are still "compiled in", which means 
+    // that both should be used (probably?)
+    // this function matches without pBufMan, but it seems like it's centered around txpri 2, so let's try this
     HEAP_MAN* pHeapMan = &wlMan->HeapMan; // r4 - :938
-    //HEAPBUF_MAN* pBufMan; // r0 - :939
+    HEAPBUF_MAN* pBufMan = &pHeapMan->TxPri[2]; // r0 - :939
     
     wlMan->Counter.tx.multicast++; // :942
     
     if (pFrm->Dot11Header.FrameCtrl.Bit.Type == 0) { // :954
         CAM_IncFrameCount(pFrm); // :957
-        MoveHeapBuf(&pHeapMan->TxPri[2], &pHeapMan->TxPri[1], SubtractAddr(pFrm, 0x10)); // :958
+        MoveHeapBuf(pBufMan, &pHeapMan->TxPri[1], SubtractAddr(pFrm, 0x10)); // :958
         TxqEndManCtrl(pFrm, 0); // :959
         
     } else {
-        IssueMaDataConfirm(&pHeapMan->TxPri[2], SubtractAddr(pFrm, 0x10)); // :965
+        IssueMaDataConfirm(pBufMan, SubtractAddr(pFrm, 0x10)); // :965
     }
     
     wlMan->TxCtrl.Txq[2].Busy = 0; // :969
@@ -146,7 +149,7 @@ void TxqEndBroadCast(TXFRM* pFrm, u32 flag) { // TxCtrl.c:936
         }
     }
     
-    if (pHeapMan->TxPri[2].Count) { // :986
+    if (pBufMan->Count) { // :986
         if (flag) // :988
             TxqPri(2); // :990
         
