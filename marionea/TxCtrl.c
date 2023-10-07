@@ -474,6 +474,16 @@ void StopBeaconFrame() { // TxCtrl.c:1652
 
 extern u16 BC_ADRS[3]; // from WlNic.c
 
+/*
+REG SWAP:
+(original -> current)
+
+r5 -> r6
+r6 -> r7
+r7 -> r8
+r8 -> r5
+*/
+
 void MakeBeaconFrame() { // TxCtrl.c:1692
     TXFRM_MAC* pFrm = wlMan->TxCtrl.Beacon.pMacFrm; // r0 - :1694
     CONFIG_PARAM* pConfig = &wlMan->Config; // r5 - :1695
@@ -520,65 +530,64 @@ void MakeBeaconFrame() { // TxCtrl.c:1692
     }
     
     pBuf += SetSupRateSet(pBuf); // :1757
-    WL_WriteByte(pBuf++, 3);
-    WL_WriteByte(pBuf++, 1);
-    WL_WriteByte(pBuf++, pWork->CurrChannel);
     
-    pWork->Ofst.Beacon.TIM = (u32)pBuf - (u32)pBody;
-    W_TXBUF_TIM = pWork->Ofst.Beacon.TIM + 2;
+    WL_WriteByte(pBuf++, 3); // :1760
+    WL_WriteByte(pBuf++, 1); // :1761
+    WL_WriteByte(pBuf++, pWork->CurrChannel); // :1762
     
-    WL_WriteByte(pBuf++, 5);
-    WL_WriteByte(pBuf++, 5);
-    WL_WriteByte(pBuf++, 0);
-    WL_WriteByte(pBuf++, pWork->DTIMPeriod);
-    WL_WriteByte(pBuf++, 0);
-    WL_WriteByte(pBuf++, 0);
-    WL_WriteByte(pBuf++, 0);
+    pWork->Ofst.Beacon.TIM = (u32)pBuf - (u32)pBody; // :1765
+    W_TXBUF_TIM = pWork->Ofst.Beacon.TIM + 2; // :1766
+    WL_WriteByte(pBuf++, 5); // :1767
+    WL_WriteByte(pBuf++, 5); // :1768
+    WL_WriteByte(pBuf++, 0); // :1769
+    WL_WriteByte(pBuf++, pWork->DTIMPeriod); // :1770
+    WL_WriteByte(pBuf++, 0); // :1771
+    WL_WriteByte(pBuf++, 0); // :1772
+    WL_WriteByte(pBuf++, 0); // :1773
     
-    pWork->Ofst.Beacon.GameInfo = (u32)pBuf - (u32)pBody;
-    pWork->GameInfoAlign = pWork->Ofst.Beacon.GameInfo & 1;
+    pWork->Ofst.Beacon.GameInfo = (u32)pBuf - (u32)pBody; // :1776
+    pWork->GameInfoAlign = pWork->Ofst.Beacon.GameInfo & 1; // :1777
+    WL_WriteByte(pBuf++, 0xDD); // :1778
+    WL_WriteByte(pBuf++, pWork->GameInfoLength + 8); // :1779
+    WL_WriteByte(pBuf++, 0x00); // :1780 // 00:09:BF:00 (OUI)
+    WL_WriteByte(pBuf++, 0x09); // :1781
+    WL_WriteByte(pBuf++, 0xBF); // :1782
+    WL_WriteByte(pBuf++, 0x00); // :1783
     
-    WL_WriteByte(pBuf++, 0xDD);
-    WL_WriteByte(pBuf++, pWork->GameInfoLength + 8);
-    WL_WriteByte(pBuf++, 0x00); // 00:09:BF:00 (OUI)
-    WL_WriteByte(pBuf++, 0x09);
-    WL_WriteByte(pBuf++, 0xBF);
-    WL_WriteByte(pBuf++, 0x00);
-    
-    if (pWork->PowerMgtMode == 1) {
-        WL_WriteByte(pBuf++, pConfig->ActiveZone);
-        WL_WriteByte(pBuf++, pConfig->ActiveZone >> 8);
+    if (pWork->PowerMgtMode == 1) { // :1784
+        WL_WriteByte(pBuf++, pConfig->ActiveZone); // :1786
+        WL_WriteByte(pBuf++, pConfig->ActiveZone >> 8); // :1787
+        
     } else {
-        WL_WriteByte(pBuf++, 0xFF);
-        WL_WriteByte(pBuf++, 0xFF);
+        WL_WriteByte(pBuf++, 0xFF); // :1791
+        WL_WriteByte(pBuf++, 0xFF); // :1792
     }
     
     vtsf = global_vtsf_var; // :1794
     WL_WriteByte(pBuf++, vtsf); // :1795
     WL_WriteByte(pBuf++, vtsf >> 8); // :1796
-    
     p = pWork->GameInfoAdrs; // :1797
     for (i = 0; i < pWork->GameInfoLength; i++) { // :1798
         WL_WriteByte(pBuf++, WL_ReadByte(p)); // :1800
         p++; // :1801
     }
     
-    if (pWork->GameInfoAlign != 0) {
-        p = (u8*)((u32)pWork->GameInfoAdrs + pWork->GameInfoLength - 1);
+    if (pWork->GameInfoAlign != 0) { // :1804
+        p = (u8*)((u32)pWork->GameInfoAdrs + pWork->GameInfoLength - 1); // :1807
         
-        for (i = 0; i < pWork->GameInfoLength; p--, i++) { // :1808
+        for (i = 0; i < pWork->GameInfoLength; i++, p--) { // :1808
             WL_WriteByte(p+1, WL_ReadByte(p)); // :1810
         }
     }
     
     if (wlMan->WlOperation & 4) { // :1814
         u16* pId = (u16*)(((u32)pBuf + 3) & ~3); // r0 - :1816
-        pId[0] = 0xB6B8;
-        pId[1] = 0x1D46;
+        pId[0] = 0xB6B8; // :1817
+        pId[1] = 0x1D46; // :1818
     }
     
-    pWork->bUpdateGameInfo = 0;
-    pFrm->MacHeader.Tx.MPDU = (u32)pBuf + 28 - (u32)pBody;
+    pWork->bUpdateGameInfo = 0; // :1822
+    pFrm->MacHeader.Tx.MPDU = (u32)pBuf + 28 - (u32)pBody; // :1825
 }
 
 void UpdateGameInfoElement() { // TxCtrl.c:1842
