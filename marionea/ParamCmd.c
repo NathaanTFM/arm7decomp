@@ -181,8 +181,35 @@ u16 PARAMSET_CCAModeEDThReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c
 u16 PARAMSET_LifeTimeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:555
     WlParamSetLifeTimeReq* pReq = (WlParamSetLifeTimeReq*)pReqt; // r0 - :557
     WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
-    CAM_ELEMENT* pCAM; // r2 - :558
+    CAM_ELEMENT* pCAM = wlMan->Config.pCAM; // r2 - :558
     u32 i; // r4 - :559
+    
+    pCfm->header.length = 1;
+    
+    if (pReq->tableNumber >= wlMan->Config.MaxStaNum && pReq->tableNumber != 0xFFFF)
+        return 5;
+    
+    if (pReq->frameLifeTime > 0x3F && pReq->frameLifeTime != 0xFFFF)
+        return 5;
+    
+    if (pReq->tableNumber == 0xFFFF) {
+        for (i = 1; i < wlMan->Config.MaxStaNum; i++) {
+            pCAM[i].maxLifeTime = pReq->camLifeTime;
+            if (pCAM[i].lifeTime)
+                pCAM[i].lifeTime = pReq->camLifeTime;
+        }
+        
+    } else if (pReq->tableNumber != 0) {
+        pCAM[pReq->tableNumber].maxLifeTime = pReq->camLifeTime;
+        if (pCAM[pReq->tableNumber].lifeTime) {
+            pCAM[pReq->tableNumber].lifeTime = pReq->camLifeTime;
+        }
+    }
+    
+    if (pReq->frameLifeTime)
+        WSetFrameLifeTime(pReq->frameLifeTime);
+    
+    return 0;
 }
 
 u16 PARAMSET_MaxConnReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:617
