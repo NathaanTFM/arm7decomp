@@ -732,7 +732,56 @@ REASSRES_FRAME* MakeReAssResFrame(u16 camAdrs, u16 statusCode, SSID_ELEMENT* pSS
     u32 i; // r6 - :2161
     u32 ofst; // r0 - :2161
     u8* p; // r7 - :2162
-    u32 len; // r8 - :2211
+    
+    // TODO: sizeof..?
+    pReq = (WlMaDataReq*)AllocateHeapBuf(&wlMan->HeapMan.TmpBuf, 0x60);
+    if (pReq == 0) {
+        SetFatalErr(2);
+        
+         // okay, this is actually really ugly, but "return 0" (which behaves the same)
+         // makes the decomp inaccurate
+        return (REASSRES_FRAME*)pReq;
+    }
+    
+    pReq->header.code = -1;
+    
+    if (statusCode == 0) {
+        aid = CAM_AllocateAID(camAdrs);
+        if (!aid)
+            statusCode = 19;
+    } else {
+        aid = 0;
+    }
+    
+    pFrm = (REASSRES_FRAME*)&pReq->frame;
+    InitManHeader((TXFRM*)pFrm, CAM_GetMacAdrs(camAdrs));
+    
+    pFrm->Body.CapaInfo.Data = wlMan->Work.CapaInfo;
+    pFrm->Body.StatusCode = statusCode;
+    pFrm->Body.AID = aid | 0xC000;
+    
+    ofst = SetSupRateSet(pFrm->Body.Buf) + 6;
+    
+    pFrm->FirmHeader.Length = ofst;
+    pFrm->MacHeader.Tx.MPDU = pFrm->FirmHeader.Length + 28;
+    pFrm->Dot11Header.FrameCtrl.Data = 0x30;
+    
+    p = (u8*)((u32)&pFrm->Dot11Header + pFrm->MacHeader.Tx.MPDU);
+    if (pSSID) {
+        u32 len = WL_ReadByte(&pSSID->Length); // r8 - :2211
+        WL_WriteByte(p, WL_ReadByte(&pSSID->ID)); p += 1;
+        WL_WriteByte(p, len); p += 1;
+        
+        for (i = 0; i < len; i++) {
+            WL_WriteByte(p, WL_ReadByte(&pSSID->SSID[i])); p += 1;
+        }
+        
+    } else {
+        WL_WriteByte(p, 0); p += 1;
+        WL_WriteByte(p, 0); p += 1;
+    }
+    
+    return pFrm;
 }
 
 PRBREQ_FRAME* MakeProbeReqFrame(u16* pDA) { // TxCtrl.c:2245
