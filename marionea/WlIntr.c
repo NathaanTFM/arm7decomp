@@ -103,9 +103,36 @@ static void WlIntrTxErr() { // WlIntr.c:625
     TXFRM_MAC* pMFrm; // r0 - :627
     u32 i; // r2 - :628
     
-    WORK_PARAM* pWork; // r0 - :650
-    TX_CTRL* pTxCtrl; // r3 - :651
-    u16* pIcv; // r0 - :662
+    W_IF = 8;
+    if (wlMan->Config.Diversity) {
+        if ((W_RF_PINS & 1) == 0) {
+            W_X_290h ^= 1;
+        }
+    }
+    
+    if (wlMan->WlOperation & 8) {
+        WORK_PARAM* pWork = &wlMan->Work; // r0 - :650
+        TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r3 - :651
+        
+        for (i = 0; i < 3; i++) {
+            if (pTxCtrl->Txq[i].Busy) {
+                pMFrm = pTxCtrl->Txq[i].pMacFrm;
+                
+                if (pMFrm->Dot11Header.FrameCtrl.Data & 0x4000) {
+                    if (pMFrm->MacHeader.Tx.rsv_RetryCount & 0xFF) {
+                        u16 *pIcv = (u16*)(((u32)&pMFrm->Dot11Header + pMFrm->MacHeader.Tx.MPDU - 7) & ~0x1); // r0 - :662
+                        
+                        if (pIcv[0] == 0 && pIcv[1] == 0) {
+                            pMFrm->MacHeader.Tx.rsv_RetryCount = 0;
+                            W_WEP_CNT = 0;
+                            W_WEP_CNT = 0x8000;
+                            pWork->WepErrCount++;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 static void WlIntrRxCntup() { // WlIntr.c:705
