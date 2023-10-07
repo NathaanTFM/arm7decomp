@@ -14,7 +14,7 @@ static void WlIntrRxEnd();
 static void WlIntrMpEnd(u32 bMacBugPatch);
 static void WlIntrStartTx();
 static void WlIntrStartRx();
-static void SetParentTbttTxq();
+STATIC void SetParentTbttTxq();
 STATIC u32 CheckKeyTxEnd();
 static u32 CheckKeyTxEndMain(TXQ* pTxq);
 
@@ -199,9 +199,39 @@ static void WlIntrStartRx() { // WlIntr.c:1631
     u16 curr, delt, tm_delt; // r0, r2, r0 - :1653
 }
 
-static void SetParentTbttTxq() { // WlIntr.c:1857
-    TX_CTRL* pTxCtrl; // r4 - :1859
-    u32 bTask; // r5 - :1860
+STATIC void SetParentTbttTxq() { // WlIntr.c:1857
+    TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r4 - :1859
+    u32 bTask = 0; // r5 - :1860
+    
+    ResetTxqPri(2);
+    ResetTxqPri(1);
+    ResetTxqPri(0);
+    
+    if (pTxCtrl->Txq[2].Busy) {
+        if (pTxCtrl->Txq[2].pMacFrm->MacHeader.Tx.Status) // Tx or Rx?
+            bTask = 1;
+        else
+            pTxCtrl->Txq[2].Busy = 0;
+    }
+    
+    if (pTxCtrl->Txq[1].Busy) {
+        if (pTxCtrl->Txq[1].pMacFrm->MacHeader.Tx.Status) // Tx or Rx?
+            bTask = 1;
+        else
+            pTxCtrl->Txq[1].Busy = 0;
+    }
+    
+    if (pTxCtrl->Txq[0].Busy) {
+        if (pTxCtrl->Txq[0].pMacFrm->MacHeader.Tx.Status) // Tx or Rx?
+            bTask = 1;
+        else
+            pTxCtrl->Txq[0].Busy = 0;
+    }
+    
+    if (bTask)
+        AddTask(0, 0xE);
+    
+    AddTask(0, 0x14);
 }
 
 void MacBugTxMp() { // WlIntr.c:1934
