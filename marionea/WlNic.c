@@ -958,18 +958,49 @@ void InitBaseBand() { // WlNic.c:3412
     BBP_Write(0x5A, 2);
 }
 
-/*
 void InitRF() { // WlNic.c:3455
-    u32 i; // r9 - :3458
-    u32 bytes; // r9 - :3458
-    u32 reg; // None - :3458
-    u32 num; // r8 - :3458
-    u32 eep_adrs; // r7 - :3458
-    RF_CONFIG* pRf; // r4 - :3459
-    u32 data; // None - :3461
+    // NB: reg and data might be swapped. depends on which one makes more sense
+    
+    u32 eep_adrs, num, reg, bytes, i; // r7, r8, None, r9, r9 - :3458
+    RF_CONFIG* pRf = &wlMan->Rf; // r4 - :3459
+    u32 data = 0; // None - :3461
+    
+    for (i = 0; i < 0x10; i++) { // :3510
+        FLASH_Read(2 * i + 0x44, 2, (u8*)&data); 
+        WIFI_REG(macTxRxRegAdrs[i]) = data; // :3526
+    }
+    
+    reg = ((u32)pRf->Bits >> 7) << 8; // :3545
+    reg |= (pRf->Bits & 0x7F); // :3547
+    W_RF_CNT = reg; // :3548
+    
+    eep_adrs = 0xCE; // :3552
+    
+    bytes = ((pRf->Bits & 0x7F) + 7) / 8; // :3556
+    num = pRf->InitNum; // :3557
+    
+    if (pRf->Id == 3) {
+        FLASH_Read(num + 0xCE, 1, (u8*)&pRf->BbpCnt);
+        for (i = 0; i < num; i++, eep_adrs++) {
+            reg = 0;
+            FLASH_Read(eep_adrs, 1, (u8*)&reg);
+            reg |= (i << 8) + 0x50000;
+            RF_Write(reg);
+        }
+        
+    } else {
+        // who writes these kind of loops what the fuck
+        for (reg = 0; num != 0; num--, eep_adrs += bytes) {
+            FLASH_Read(eep_adrs, bytes, (u8*)&reg);
+            RF_Write(reg);
+            
+            if (pRf->Id == 2) {
+                if ((reg >> 18) == 9)
+                    pRf->BkReg = reg & ~0x7C00;
+            }
+        }
+    }
 }
-TODO: optimization stuff IPA uncomment me etc
-*/
 
 void InitializeAlarm() { // WlNic.c:3672
     WL_MAN* pWl = wlMan; // r4 - :3674
