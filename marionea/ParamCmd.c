@@ -571,4 +571,29 @@ u16 PARAMGET_GameInfoReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:18
     WlParamGetGameInfoCfm* pCfm = (WlParamGetGameInfoCfm*)pCfmt; // r0 - :1860
     u8* p1, *p2; // r5, r6 - :1861
     u32 i; // r7 - :1862
+    
+    if (pCfm->header.length > 1)
+        pCfm->gameInfoLength = wlMan->Work.GameInfoLength;
+    
+    if (wlMan->Work.GameInfoLength > (2 * (pCfm->header.length - 2)))
+        return 4;
+    
+    if (pCfm->gameInfoLength > 0) {
+        if (wlMan->Work.GameInfoAlign & 1) {
+            p2 = (u8*)pCfm->gameInfo;
+            p1 = (u8*)wlMan->Work.GameInfoAdrs + 1;
+            
+            for (i = 0; i < pCfm->gameInfoLength; i++) {
+                WL_WriteByte(p2, WL_ReadByte(p1));
+                p2++;
+                p1++;
+            }
+            
+        } else {
+            MIi_CpuCopy16(wlMan->Work.GameInfoAdrs, pCfm->gameInfo, pCfm->gameInfoLength + 1);
+        }
+    }
+    
+    pCfm->header.length = (pCfm->gameInfoLength + 1) / 2 + 2;
+    return 0;
 }
