@@ -88,32 +88,30 @@ void AddTask(long nPriority, u32 nTaskID) { // TaskMan.c:291
         OS_SendMessage(wlMan->pRecvMsgQueue, 0, 0);
 }
 
-// TODO: register swap
-// (pTaskTbl is probably just pTaskMan->TaskTbl)
 u32 DeleteTask(u32 nPriority) { // TaskMan.c:362
     TASK_MAN* pTaskMan = &wlMan->TaskMan; // r4 - :364
     TASK_TBL* pTaskTbl; // r0 - :365
     u32 x, nTaskID; // r0, r5 - :366
     
-    x = OS_DisableIrqMask(0x1000010);
-    nTaskID = pTaskMan->EnQ[nPriority];
+    x = OS_DisableIrqMask(0x1000010); // :369
+    nTaskID = pTaskMan->EnQ[nPriority]; // :372
     
     if (nTaskID != 0xFFFF) {
-        pTaskTbl = &pTaskMan->TaskTbl[nTaskID];
-        pTaskTbl->Flag = 0;
+        pTaskTbl = pTaskMan->TaskTbl; // :375
+        pTaskTbl[nTaskID].Flag = 0; // :379
         
-        if (pTaskTbl->NextId == 0xFFFF) {
-            pTaskMan->EnQ[nPriority] = 0xFFFF;
-            pTaskMan->DeQ[nPriority] = 0xFFFF;
+        if (pTaskTbl[nTaskID].NextId == 0xFFFF) { // :382
+            pTaskMan->EnQ[nPriority] = 0xFFFF; // :384
+            pTaskMan->DeQ[nPriority] = 0xFFFF; // :385
             
         } else {
-            pTaskMan->EnQ[nPriority] = pTaskTbl->NextId;
-            pTaskTbl->NextId = 0xFFFF;
+            pTaskMan->EnQ[nPriority] = pTaskTbl[nTaskID].NextId; // :389
+            pTaskTbl[nTaskID].NextId = 0xFFFF; // :390
         }
     }
     
-    OS_EnableIrqMask(x);
-    return nTaskID;
+    OS_EnableIrqMask(x); // :395
+    return nTaskID; // :398
 }
 
 void LowestIdleTask() { // TaskMan.c:416
