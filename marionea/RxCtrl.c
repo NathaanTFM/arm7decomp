@@ -1,6 +1,13 @@
 #include "Mongoose.h"
 
+STATIC void RxDisAssFrame(DISASS_FRAME* pFrm);
+STATIC void RxAssReqFrame(ASSREQ_FRAME* pFrm);
+STATIC void RxProbeReqFrame(PRBREQ_FRAME* pFrm);
+STATIC void RxDeAuthFrame(DEAUTH_FRAME* pFrm);
+
 STATIC void ElementChecker(ELEMENT_CHECKER* p);
+STATIC void RxAuthFrame(AUTH_FRAME* pFrm);
+STATIC void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk);
 
 /*
 Empty function IPA
@@ -290,6 +297,163 @@ STATIC void RxAssReqFrame(ASSREQ_FRAME* pFrm) { // RxCtrl.c:1228
         TxManCtrlFrame((TXFRM*)pTxFrm);
 }
 
+// THIS ONE MUST BE INLINED
+static inline void RxAssResFrame(ASSRES_FRAME* pFrm) {
+    WORK_PARAM* pWork = &wlMan->Work;
+    MLME_MAN* pMLME = &wlMan->MLME;
+    ASSRES_BODY* pAssRes = &pFrm->Body;
+    
+    if (pWork->Mode != 2 && pWork->Mode != 3)
+        return;
+    
+    if (pMLME->State != 81)
+        return;
+    
+    if (!MatchMacAdrs(pMLME->pReq.Ass->peerMacAdrs, pFrm->Dot11Header.SA))
+        return;
+    
+    ClearTimeOut();
+    if (pAssRes->StatusCode == 0) {
+        WSetAids(pAssRes->AID & 0xFFF);
+        MakePsPollFrame(pWork->AID);
+        WSetMacAdrs1(pWork->LinkAdrs, pFrm->Dot11Header.SA);
+        pWork->APCamAdrs = CAM_Search(pFrm->Dot11Header.SA);
+        CAM_SetStaState(pWork->APCamAdrs, 0x40);
+    }
+    
+    if (pAssRes->StatusCode == 0) {
+        pMLME->pCfm.Ass->resultCode = 0;
+        pMLME->pCfm.Ass->statusCode = 0;
+        WSetStaState(0x40);
+        
+    } else {
+        pMLME->pCfm.Ass->resultCode = 12;
+        pMLME->pCfm.Ass->statusCode = pAssRes->StatusCode;
+    }
+    
+    pMLME->pCfm.Ass->aid = pWork->AID;
+    pMLME->State = 83;
+    AddTask(2, 3);
+}
+
+// THIS ONE MUST BE INLINED
+static inline void RxReAssReqFrame(REASSREQ_FRAME* pFrm) {
+    WL_MAN* pWlMan = wlMan;
+    REASSREQ_BODY* pReAssReq;
+    DEAUTH_FRAME* pTxDeAuthFrm;
+    REASSRES_FRAME* pTxFrm; 
+    u32 bodyLen;
+    u16 stsCode;
+    u16 cam_adrs;
+    ELEMENT_CHECKER elementCheck;
+
+    bodyLen = pFrm->FirmHeader.Length;
+    pReAssReq = &pFrm->Body;
+    
+    if (bodyLen <= 10)
+        return;
+    
+    if (pWlMan->Work.Mode != 1)
+        return;
+    
+    if (IsExistManFrame(pFrm->Dot11Header.SA, 0x30))
+        return;
+    
+    cam_adrs = pFrm->FirmHeader.CamAdrs;
+    
+    if (CAM_GetStaState(cam_adrs) < 0x30) {
+        if (IsExistManFrame(pFrm->Dot11Header.SA, 0xC0)) // :1276
+            return;
+            
+        pTxDeAuthFrm = MakeDeAuthFrame(pFrm->Dot11Header.SA, 6, 1); 
+        if (pTxDeAuthFrm) 
+            TxManCtrlFrame((TXFRM*)pTxDeAuthFrm); 
+        
+        return;
+    }
+    
+    if (CAM_GetStaState(cam_adrs) == 0x40) {
+        CAM_SetStaState(cam_adrs, 0x30);
+        MLME_IssueDisAssIndication(pFrm->Dot11Header.SA, 1);
+        
+    } else if (CAM_GetAID(cam_adrs) != 0) {
+        return;
+    }
+    
+    MIi_CpuClear32(0, &elementCheck, sizeof(ELEMENT_CHECKER));
+    elementCheck.pElement = pReAssReq->Buf;
+    elementCheck.bodyLength = bodyLen - 10;
+    elementCheck.foundFlag = 0x800;
+    ElementChecker(&elementCheck);
+    
+    // holy
+    if (
+        (pReAssReq->CapaInfo.Data & 0xFFC2) != 0
+        || (!pWlMan->Config.WepMode && pReAssReq->CapaInfo.Bit.Privacy == 1)
+        || (pWlMan->Config.WepMode && pReAssReq->CapaInfo.Bit.Privacy == 0)
+    ) {
+        stsCode = 10;
+        
+    } else {
+        CAM_SetCapaInfo(cam_adrs, pReAssReq->CapaInfo.Data); // :1325
+        
+        if ((elementCheck.matchFlag & 1) == 0) { // :1328
+            stsCode = 1; // :1331
+            
+        } else if ((elementCheck.matchFlag & 4) == 0) { // :1336
+            stsCode = 18; // :1341
+            
+        } else {
+            CAM_SetSupRate(cam_adrs, elementCheck.rateSet.Support); // :1346
+            stsCode = 0; // :1349
+        }
+    }
+    
+    pTxFrm = MakeReAssResFrame(cam_adrs, stsCode, elementCheck.pSSID); // :1354
+    if (pTxFrm)
+        TxManCtrlFrame((TXFRM*)pTxFrm);
+}
+
+// THIS ONE MUST BE INLINED
+static inline void RxReAssResFrame(REASSRES_FRAME* pFrm) {
+    WORK_PARAM* pWork = &wlMan->Work;
+    MLME_MAN* pMLME = &wlMan->MLME;
+    REASSRES_BODY* pReAssRes = &pFrm->Body;
+    
+    if (pWork->Mode != 2 && pWork->Mode != 3)
+        return;
+    
+    if (pMLME->State != 97)
+        return;
+    
+    if (!MatchMacAdrs(pMLME->pReq.ReAss->newApMacAdrs, pFrm->Dot11Header.SA))
+        return;
+    
+    ClearTimeOut();
+    if (pReAssRes->StatusCode == 0) {
+        WSetAids(pReAssRes->AID & 0xFFF);
+        MakePsPollFrame(pWork->AID);
+        WSetMacAdrs1(pWork->LinkAdrs, pFrm->Dot11Header.SA);
+        pWork->APCamAdrs = CAM_Search(pFrm->Dot11Header.SA);
+        CAM_SetStaState(pWork->APCamAdrs, 0x40);
+        WSetStaState(0x40);
+    }
+    
+    if (pReAssRes->StatusCode == 0) {
+        pMLME->pCfm.ReAss->resultCode = 0;
+        pMLME->pCfm.ReAss->statusCode = 0;
+        WSetStaState(0x40);
+        
+    } else {
+        pMLME->pCfm.ReAss->resultCode = 12;
+        pMLME->pCfm.ReAss->statusCode = pReAssRes->StatusCode;
+    }
+    
+    pMLME->pCfm.ReAss->aid = pWork->AID;
+    pMLME->State = 99;
+    AddTask(2, 4);
+}
+
 STATIC void RxProbeReqFrame(PRBREQ_FRAME* pFrm) { // RxCtrl.c:1703
     PRBRES_FRAME* pTxFrm; // r0 - :1705
     ELEMENT_CHECKER elementCheck; // None - :1706
@@ -316,9 +480,9 @@ STATIC void RxProbeReqFrame(PRBREQ_FRAME* pFrm) { // RxCtrl.c:1703
 }
 
 /*
-IPA prevention stuff
+(IPA)
 
-static void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCtrl.c:1758
+STATIC void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCtrl.c:1758
     MLME_MAN* pMLME; // r6 - :1760
     WlMlmeScanCfm* pCfm; // r7 - :1761
     PRBRES_BODY* pPrbRes; // r0 - :1762
@@ -333,8 +497,12 @@ static void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCt
     u8* pDst; // r11 - :1767
     u8* pSrc; // r9 - :1767
 }
+*/
 
-static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
+/*
+(IPA)
+
+STATIC void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
     WORK_PARAM* pWork; // r4 - :1995
     MLME_MAN* pMLME; // r5 - :1996
     AUTH_BODY* pAuth; // r0 - :1997
@@ -372,6 +540,27 @@ STATIC void RxDeAuthFrame(DEAUTH_FRAME* pFrm) { // RxCtrl.c:2418
     }
 }
 
+// THIS ONE MUST BE INLINED
+static inline void RxPsPollFrame(PSPOLL_FRAME* pFrm) {
+    HEAP_MAN* pHeapMan = &wlMan->HeapMan;
+    u32 cam_adrs = pFrm->FirmHeader.CamAdrs;
+    
+    if (CAM_GetStaState(cam_adrs) != 64)
+        return;
+    
+    CAM_SetAwake(cam_adrs);
+    if (pHeapMan->TxPri[1].Count)
+        TxqPri(1);
+    
+    if (pHeapMan->TxPri[0].Count)
+        TxqPri(0);
+}
+
+// THIS ONE MUST BE INLINED
+static inline void RxCfEndFrame() { 
+    // it's empty lol
+}
+
 STATIC void ElementChecker(ELEMENT_CHECKER* p) { // RxCtrl.c:2564
     WORK_PARAM* pWork = &wlMan->Work; // r4 - :2566
     u8* pBuf; // r5 - :2567
@@ -392,22 +581,183 @@ STATIC void ElementChecker(ELEMENT_CHECKER* p) { // RxCtrl.c:2564
     }
 }
 
-/*
-The following functions have been removed to prevent IPA
-
 void RxManCtrlTask() { // RxCtrl.c:2717
-    HEAP_MAN* pHeapMan; // r10 - :2719
-    WlCounter* pCounter; // r0 - :2720
+    HEAP_MAN* pHeapMan = &wlMan->HeapMan; // r10 - :2719
+    WlCounter* pCounter = &wlMan->Counter; // r0 - :2720
     u32 mode; // r5 - :2721
     RXFRM* pFrm; // r0 - :2722
     RXPACKET* pPacket; // r6 - :2723
     MAN_HEADER* pDot11Header; // r0 - :2724
-    u32 subtype; // r9 - :2725
-    u32 type; // r8 - :2725
-    u32 cam_adrs; // r7 - :2725
-    u32 seqctrl; // None - :2789
+    u32 cam_adrs, type, subtype; // r7, r8, r9 - :2725
+    
+    pPacket = (RXPACKET*)pHeapMan->RxManCtrl.Head;
+    mode = wlMan->Work.Mode;
+    
+    if (pPacket == (RXPACKET*)-1) return;
+    if (pPacket->frame.Dot11Header.Adrs1[0] & 1)
+        pCounter->rx.multicast++;
+    else
+        pCounter->rx.unicast++;
+    
+    pCounter->rx.fragment += (pPacket->frame.MacHeader.Rx.Status & 0xF0) / 16 - 1;
+    
+    type = pPacket->frame.Dot11Header.FrameCtrl.Bit.Type;
+    subtype = pPacket->frame.Dot11Header.FrameCtrl.Bit.SubType;
+    
+    cam_adrs = CAM_SearchAdd(pPacket->frame.Dot11Header.Adrs2);
+    pPacket->frame.FirmHeader.CamAdrs = cam_adrs;
+    
+    if (cam_adrs == 0xFF) {
+        pPacket->frame.FirmHeader.CamAdrs = 0;
+        
+        if (mode == 1 && type == 0) {
+            switch (subtype) {
+                case 11:
+                    RxAuthFrame((AUTH_FRAME*)&pPacket->frame); // :2772
+                    break;
+                    
+                case 4:
+                    RxProbeReqFrame((PRBREQ_FRAME*)&pPacket->frame); // :2773
+                    break;
+                    
+                case 0:
+                    RxAssReqFrame((ASSREQ_FRAME*)&pPacket->frame); // :2774
+                    break;
+            }
+        }
+        
+        goto fast_exit;
+    }
+    
+    CAM_UpdateLifeTime(cam_adrs); // :2783
+    CAM_SetRSSI(cam_adrs, (u8)pPacket->frame.MacHeader.Rx.rsv_RSSI);
+    
+    if (type == 0) {
+        u32 seqctrl = pPacket->frame.Dot11Header.SeqCtrl.Data; // None - :2789
+        if (seqctrl == CAM_GetLastSeqCtrl(cam_adrs)) {
+            pCounter->rx.duplicateErr++;
+            goto fast_exit;
+        }
+        
+        CAM_SetLastSeqCtrl(cam_adrs, seqctrl);
+    }
+    
+    switch (mode) {
+        case 1:
+            CAM_SetPowerMgtMode(cam_adrs, pPacket->frame.Dot11Header.FrameCtrl.Bit.PowerMan); // :2810
+            
+            if (type == 0) {
+                switch (subtype) {
+                    case 8:
+                        RxBeaconFrame((BEACON_FRAME*)&pPacket->frame);
+                        break;
+                        
+                    case 0:
+                        RxAssReqFrame((ASSREQ_FRAME*)&pPacket->frame);
+                        break;
+                        
+                    case 2:
+                        RxReAssReqFrame((REASSREQ_FRAME*)&pPacket->frame);
+                        break;
+                        
+                    case 4:
+                        RxProbeReqFrame((PRBREQ_FRAME*)&pPacket->frame);
+                        break;
+                        
+                    case 5:
+                        RxProbeResFrame((PRBRES_FRAME*)&pPacket->frame, 0);
+                        break;
+                        
+                    case 10:
+                        RxDisAssFrame((DISASS_FRAME*)&pPacket->frame);
+                        break;
+                        
+                    case 11:
+                        RxAuthFrame((AUTH_FRAME*)&pPacket->frame);
+                        break;
+                        
+                    case 12:
+                        RxDeAuthFrame((DEAUTH_FRAME*)&pPacket->frame);
+                        break;
+                        
+                    default:
+                        break;
+                }
+                
+            } else if (type == 1) {
+                if (subtype == 10)
+                    RxPsPollFrame((PSPOLL_FRAME*)&pPacket->frame);
+            }
+            break;
+        
+        case 2:
+        case 3:
+            if (type == 0) {
+                switch (subtype) {
+                    case 8:
+                        RxBeaconFrame((BEACON_FRAME*)&pPacket->frame);
+                        break;
+                        
+                    case 1:
+                        RxAssResFrame((ASSRES_FRAME*)&pPacket->frame);
+                        break;
+                        
+                    case 3:
+                        RxReAssResFrame((REASSRES_FRAME*)&pPacket->frame);
+                        break;
+                        
+                    case 5:
+                        RxProbeResFrame((PRBRES_FRAME*)&pPacket->frame, 0);
+                        break;
+                        
+                    case 10:
+                        RxDisAssFrame((DISASS_FRAME*)&pPacket->frame);
+                        break;
+                        
+                    case 11:
+                        RxAuthFrame((AUTH_FRAME*)&pPacket->frame);
+                        break;
+                        
+                    case 12:
+                        RxDeAuthFrame((DEAUTH_FRAME*)&pPacket->frame);
+                        break;
+                        
+                    default:
+                        break;
+                }
+                
+            } else if (type == 1) {
+                if (subtype == 14 || subtype == 15) {
+                    RxCfEndFrame();
+                }
+            }
+            
+            break;
+    }
+    
+    
+fast_exit:
+    ReleaseHeapBuf(&pHeapMan->RxManCtrl, pPacket); // :2884
+    if (pHeapMan->RxManCtrl.Count != 0)
+        AddTask(1, 7); // :2889
 }
 
+// THIS ONE MUST BE INLINED
+static inline void SetChallengeText(u32 camAdrs, AUTH_FRAME* pFrm) {
+    u32 i; // r6 - :2924
+    u32 txtLen; // r4 - :2924
+    u16* pText; // r5 - :2924
+    u16 rnd; // r6 - :2924
+}
+
+// THIS ONE MUST BE INLINED
+static inline u32 CheckChallengeText(AUTH_FRAME* pFrm) {
+    u32 i; // r7 - :2963
+    u32 txtLen; // r6 - :2963
+    u16* pText; // r5 - :2963
+}
+
+/* Removed to prevent IPA (inter-procedure   analysis?)
 void DefragTask() { // RxCtrl.c:3011
     HEAP_MAN* pHeapMan; // None - :3013
     RXPACKET* pPacket; // r8 - :3014
@@ -416,6 +766,32 @@ void DefragTask() { // RxCtrl.c:3011
     u32 fc; // r4 - :3017
 }
 */
+
+// THIS ONE MUST BE INLINED
+static inline void NewDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl) {
+    DEFRAG_LIST* pList;
+    RXPACKET* pPacket;
+    RXFRM* pFrm; 
+    u32 i; 
+    u32 pos; 
+    u32 fragCnt; 
+    u32 SrcOfst;
+    u32 WSize; 
+    u32 OvrCnt;
+}
+
+// THIS ONE MUST BE INLINED
+static inline void MoreDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl) {
+    HEAP_MAN* pHeapMan;
+    DEFRAG_LIST* pList;
+    RXFRM* pFrm;
+    u32 i; 
+    u32 fragCnt;
+    u32 length;
+    u32 OvrCnt; 
+    u32 SrcOfst; 
+    u32 WSize;
+}
 
 void DefragTimerTask() { // RxCtrl.c:3348
     DEFRAG_LIST* pList = wlMan->RxCtrl.DefragList; // r5 - :3350

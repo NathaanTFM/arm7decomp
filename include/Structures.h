@@ -4021,3 +4021,17 @@ typedef struct {
     TIM_ELEMENT* pTIM; // offset 24
     GAME_INFO_ELEMENT* pGMIF; // offset 28
 } ELEMENT_CHECKER;
+
+
+// THESE STURCTURES ARE FROM AN OLDER VERSION (they were "optimized" away)
+typedef struct {
+    FRAME_CTRL FrameCtrl; // offset 00
+    unsigned short DurationID; // offset 02
+    unsigned short BSSID[3]; // offset 04
+    unsigned short TA[3]; // offset 0a
+} PSPOLL_HEADER;
+typedef struct {
+    FIRM_HEADER FirmHeader; // offset 00
+    MAC_HEADER MacHeader; // offset 08
+    PSPOLL_HEADER Dot11Header; // offset 14
+} PSPOLL_FRAME;
