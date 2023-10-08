@@ -715,12 +715,44 @@ u32 MLME_IssueBeaconSendIndication() { // MLME.c:2267
 }
 
 u32 MLME_IssueBeaconRecvIndication(void* pRxFrm) { // MLME.c:2304
-    WORK_PARAM* pWork; // r4 - :2306
-    RXFRM* pFrm; // r0 - :2307
+    WORK_PARAM* pWork = &wlMan->Work; // r4 - :2306
+    RXFRM* pFrm = (RXFRM*)pRxFrm; // r0 - :2307
     WlMlmeBeaconRecvInd* pInd; // r5 - :2308
     u32 i; // r4 - :2309
-    u8* p1; // r6 - :2310
-    u8* p2; // r7 - :2310
+    u8 *p1, *p2; // r6, r7 - :2310
+    
+    pInd = (WlMlmeBeaconRecvInd*)AllocateHeapBuf(&wlMan->HeapMan.TmpBuf, wlMan->Work.GameInfoLength + 62); // sizeof?
+    if (!pInd) {
+        SetFatalErr(1);
+        return 0;
+    }
+    
+    pInd->header.code = 141;
+    pInd->header.length = (pWork->GameInfoLength + 1) / 2 + 22;
+    WL_WriteByte(&pInd->rssi, pFrm->MacHeader.Rx.rsv_RSSI);
+    WL_WriteByte(&pInd->rate, pFrm->MacHeader.Rx.Service_Rate);
+    WSetMacAdrs1(pInd->srcMacAdrs, pFrm->Dot11Header.Adrs2);
+    pInd->gameInfoLength = pWork->GameInfoLength;
+    
+    if (pInd->gameInfoLength) {
+        if (pWork->GameInfoAlign & 1) {
+            p1 = (u8*)pWork->GameInfoAdrs + 1;
+            p2 = (u8*)pInd->gameInfo;
+            
+            for (i = 0; i < pInd->gameInfoLength; i++) {
+                WL_WriteByte(p2, WL_ReadByte(p1));
+                p1++;
+                p2++;
+            }
+            
+            
+        } else {
+            MIi_CpuCopy16(pWork->GameInfoAdrs, pInd->gameInfo, pInd->gameInfoLength + 1);
+        }
+    }
+    
+    SendMessageToWmDirect(&wlMan->HeapMan.TmpBuf, pInd);
+    return 1;
 }
 
 void InitializeMLME() { // MLME.c:2382
