@@ -329,13 +329,69 @@ void CAM_ClrTIMElementBitmap(u32 camAdrs) { // CAM.c:1089
 }
 
 void CAM_TimerTask() { // CAM.c:1158
-    WL_MAN* pWlMan; // r2 - :1160
-    CAM_ELEMENT* pCAM; // r7 - :1161
+    WL_MAN* pWlMan = wlMan; // r2 - :1160
+    CAM_ELEMENT* pCAM = &wlMan->Config.pCAM[1]; // r7 - :1161
     DEAUTH_FRAME* pTxDeAuthFrm; // r0 - :1162
-    u32 i; // r9 - :1163
-    u32 pos; // r8 - :1163
-    u32 state; // r0 - :1164
-    u32 cnt; // r10 - :1164
+    u32 pos, i; // r8, r9 - :1163
+    u32 cnt, state; // r10, r0 - :1164
+    
+    cnt = pWlMan->CamMan.Count;
+    
+    for (i = 0, pos = 1; pos < pWlMan->Config.MaxStaNum; pos++, pCAM++) { // :1168
+        if (pCAM->state) {
+            if (pCAM->lifeTime != 0 && pCAM->lifeTime != 0xFFFF) {
+                pCAM->lifeTime--;
+                
+                if (pCAM->lifeTime == 0) {
+                    if (pCAM->state >= 0x20) {
+                        state = CAM_GetStaState(pos);
+                        CAM_SetStaState(pos, 0x20);
+                        DeleteTxFrames(pos);
+                        
+                        if (pWlMan->Work.Mode == 1) {
+                            if (state > 0x20) {
+                                wlMan->CamMan.NotSetTIM |= (1 << pos);
+                                CAM_SetPowerMgtMode(pos, 0);
+                                CAM_SetAwake(pos);
+                                
+                                pTxDeAuthFrm = MakeDeAuthFrame(pCAM->macAdrs, 1, 0);
+                                if (pTxDeAuthFrm) {
+                                    pTxDeAuthFrm->FirmHeader.FrameId = 1;
+                                    TxManCtrlFrame((TXFRM*)pTxDeAuthFrm);
+                                    
+                                    i++;
+                                    continue;
+                                }
+                                
+                                MLME_IssueDeAuthIndication(pCAM->macAdrs, 1);
+                            }
+                            
+                        } else if (pos == pWlMan->Work.APCamAdrs) {
+                            pTxDeAuthFrm = MakeDeAuthFrame(pCAM->macAdrs, 1, 0);
+                            if (pTxDeAuthFrm) {
+                                pTxDeAuthFrm->FirmHeader.FrameId = 1;
+                                TxManCtrlFrame((TXFRM*)pTxDeAuthFrm);
+                                
+                                i++;
+                                continue;
+                            }
+                            
+                            WSetStaState(0x20);
+                            WClearAids();
+                            MLME_IssueDeAuthIndication(pCAM->macAdrs, 1);
+                        }
+                    }
+                    
+                    pCAM->state = 0;
+                    pWlMan->CamMan.Count--;
+                }
+            }
+            i++;
+        }
+            
+        if (i >= cnt)
+            break;
+    }
 }
 
 void CAM_Delete(u16 camAdrs) { // CAM.c:1267
