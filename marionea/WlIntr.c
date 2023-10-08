@@ -136,11 +136,47 @@ static void WlIntrTxErr() { // WlIntr.c:625
 }
 
 static void WlIntrRxCntup() { // WlIntr.c:705
-    RX_CTRL* pRxCtrl; // r1 - :707
-    TXQ* pTxq; // r12 - :708
+    RX_CTRL* pRxCtrl = &wlMan->RxCtrl; // r1 - :707
+    TXQ* pTxq = wlMan->TxCtrl.Txq; // r12 - :708
     u32 isr; // r2 - :709
-    u16 map; // r0 - :726
-    u16 curr; // r0 - :784
+    
+    W_IF = 4;
+    isr = W_RXSTAT_INC_IF;
+    
+    if ((wlMan->WlOperation & 8) != 0 && (isr & 0x400) != 0) {
+        u16 map = W_TXREQ_READ; // r0 - :726
+        
+        if (!( ((map & 1) && pTxq[0].Busy)
+            || ((map & 4) && pTxq[1].Busy)
+            || ((map & 8) && pTxq[2].Busy)
+            || (W_RF_PINS & 1)))
+        {
+            W_WEP_CNT = 0; // :743
+            W_WEP_CNT = 0x8000;
+            pRxCtrl->IcvOkCntFlag = 0;
+            
+        } else {
+            if (pRxCtrl->IcvOkCntFlag++ > 12) { // :757
+                pRxCtrl->IcvOkCntFlag = 0; // :765
+                W_WEP_CNT = 0;
+                W_WEP_CNT = 0x8000;
+                wlMan->Work.WepErrCount++;
+            }
+            
+        }
+    }
+    
+    if ((wlMan->WlOperation & 1) != 0 && (isr & 0x60) != 0) {
+        u16 curr = W_RXBUF_WRCSR; // r0 - :784
+        
+        if (curr >= (W_RXBUF_END - 0x4000) / 2 || curr < ((W_RXBUF_BEGIN - 0x4000) / 2)) {
+            W_RXBUF_WR_ADDR = W_RXBUF_READCSR;
+            W_RXCNT = 0x8001;
+        }
+        
+        WCheckTxBuf();
+    }
+    
 }
 
 static void WlIntrTxEnd() { // WlIntr.c:857
