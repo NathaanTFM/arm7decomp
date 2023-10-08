@@ -1,13 +1,23 @@
 #include "Mongoose.h"
 
-STATIC void RxDisAssFrame(DISASS_FRAME* pFrm);
-STATIC void RxAssReqFrame(ASSREQ_FRAME* pFrm);
-STATIC void RxProbeReqFrame(PRBREQ_FRAME* pFrm);
-STATIC void RxDeAuthFrame(DEAUTH_FRAME* pFrm);
-
-STATIC void ElementChecker(ELEMENT_CHECKER* p);
-STATIC void RxAuthFrame(AUTH_FRAME* pFrm);
+static void RxDisAssFrame(DISASS_FRAME* pFrm);
+static void RxAssReqFrame(ASSREQ_FRAME* pFrm);
+static void RxAssResFrame(ASSRES_FRAME* pFrm);
+static void RxReAssReqFrame(REASSREQ_FRAME* pFrm);
+static void RxReAssResFrame(REASSRES_FRAME* pFrm);
+static void RxProbeReqFrame(PRBREQ_FRAME* pFrm);
 STATIC void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk);
+STATIC void RxAuthFrame(AUTH_FRAME* pFrm);
+static void RxDeAuthFrame(DEAUTH_FRAME* pFrm);
+static void RxPsPollFrame(PSPOLL_FRAME* pFrm);
+static void RxCfEndFrame();
+STATIC void ElementChecker(ELEMENT_CHECKER* p);
+static void SetChallengeText(u32 camAdrs, AUTH_FRAME* pFrm);
+static u32 CheckChallengeText(AUTH_FRAME* pFrm);
+static void NewDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl);
+static void MoreDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl);
+
+
 
 /*
 Empty function IPA
@@ -180,7 +190,7 @@ void RxBeaconFrame(BEACON_FRAME* pFrm) { // RxCtrl.c:740
 }
 */
 
-STATIC void RxDisAssFrame(DISASS_FRAME* pFrm) { // RxCtrl.c:1146
+static void RxDisAssFrame(DISASS_FRAME* pFrm) { // RxCtrl.c:1146
     WORK_PARAM* pWork = &wlMan->Work; // r1 - :1148
     DEAUTH_FRAME* pDeAuth; // r0 - :1149
     u32 st, cam_adrs = pFrm->FirmHeader.CamAdrs; // r0, r5 - :1150
@@ -220,7 +230,7 @@ STATIC void RxDisAssFrame(DISASS_FRAME* pFrm) { // RxCtrl.c:1146
     }
 }
 
-STATIC void RxAssReqFrame(ASSREQ_FRAME* pFrm) { // RxCtrl.c:1228
+static void RxAssReqFrame(ASSREQ_FRAME* pFrm) { // RxCtrl.c:1228
     CONFIG_PARAM* pConfig = &wlMan->Config; // r4 - :1230
     ASSREQ_BODY* pAssReq = &pFrm->Body; // r0 - :1231
     DEAUTH_FRAME* pTxDeAuthFrm; // r0 - :1232
@@ -298,7 +308,7 @@ STATIC void RxAssReqFrame(ASSREQ_FRAME* pFrm) { // RxCtrl.c:1228
 }
 
 // THIS ONE MUST BE INLINED
-static inline void RxAssResFrame(ASSRES_FRAME* pFrm) {
+static void RxAssResFrame(ASSRES_FRAME* pFrm) {
     WORK_PARAM* pWork = &wlMan->Work;
     MLME_MAN* pMLME = &wlMan->MLME;
     ASSRES_BODY* pAssRes = &pFrm->Body;
@@ -337,7 +347,7 @@ static inline void RxAssResFrame(ASSRES_FRAME* pFrm) {
 }
 
 // THIS ONE MUST BE INLINED
-static inline void RxReAssReqFrame(REASSREQ_FRAME* pFrm) {
+static void RxReAssReqFrame(REASSREQ_FRAME* pFrm) {
     WL_MAN* pWlMan = wlMan;
     REASSREQ_BODY* pReAssReq;
     DEAUTH_FRAME* pTxDeAuthFrm;
@@ -415,7 +425,7 @@ static inline void RxReAssReqFrame(REASSREQ_FRAME* pFrm) {
 }
 
 // THIS ONE MUST BE INLINED
-static inline void RxReAssResFrame(REASSRES_FRAME* pFrm) {
+static void RxReAssResFrame(REASSRES_FRAME* pFrm) {
     WORK_PARAM* pWork = &wlMan->Work;
     MLME_MAN* pMLME = &wlMan->MLME;
     REASSRES_BODY* pReAssRes = &pFrm->Body;
@@ -454,7 +464,7 @@ static inline void RxReAssResFrame(REASSRES_FRAME* pFrm) {
     AddTask(2, 4);
 }
 
-STATIC void RxProbeReqFrame(PRBREQ_FRAME* pFrm) { // RxCtrl.c:1703
+static void RxProbeReqFrame(PRBREQ_FRAME* pFrm) { // RxCtrl.c:1703
     PRBRES_FRAME* pTxFrm; // r0 - :1705
     ELEMENT_CHECKER elementCheck; // None - :1706
     
@@ -516,7 +526,7 @@ STATIC void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
 }
 */
 
-STATIC void RxDeAuthFrame(DEAUTH_FRAME* pFrm) { // RxCtrl.c:2418
+static void RxDeAuthFrame(DEAUTH_FRAME* pFrm) { // RxCtrl.c:2418
     WORK_PARAM* pWork = &wlMan->Work; // r1 - :2420
     u32 cam_adrs = pFrm->FirmHeader.CamAdrs; // r5 - :2422
     
@@ -541,7 +551,7 @@ STATIC void RxDeAuthFrame(DEAUTH_FRAME* pFrm) { // RxCtrl.c:2418
 }
 
 // THIS ONE MUST BE INLINED
-static inline void RxPsPollFrame(PSPOLL_FRAME* pFrm) {
+static void RxPsPollFrame(PSPOLL_FRAME* pFrm) {
     HEAP_MAN* pHeapMan = &wlMan->HeapMan;
     u32 cam_adrs = pFrm->FirmHeader.CamAdrs;
     
@@ -557,7 +567,7 @@ static inline void RxPsPollFrame(PSPOLL_FRAME* pFrm) {
 }
 
 // THIS ONE MUST BE INLINED
-static inline void RxCfEndFrame() { 
+static void RxCfEndFrame() { 
     // it's empty lol
 }
 
@@ -743,7 +753,7 @@ fast_exit:
 }
 
 // THIS ONE MUST BE INLINED
-static inline void SetChallengeText(u32 camAdrs, AUTH_FRAME* pFrm) {
+static void SetChallengeText(u32 camAdrs, AUTH_FRAME* pFrm) {
     u32 i; // r6 - :2924
     u32 txtLen; // r4 - :2924
     u16* pText; // r5 - :2924
@@ -751,7 +761,7 @@ static inline void SetChallengeText(u32 camAdrs, AUTH_FRAME* pFrm) {
 }
 
 // THIS ONE MUST BE INLINED
-static inline u32 CheckChallengeText(AUTH_FRAME* pFrm) {
+static u32 CheckChallengeText(AUTH_FRAME* pFrm) {
     u32 i; // r7 - :2963
     u32 txtLen; // r6 - :2963
     u16* pText; // r5 - :2963
@@ -768,7 +778,7 @@ void DefragTask() { // RxCtrl.c:3011
 */
 
 // THIS ONE MUST BE INLINED
-static inline void NewDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl) {
+static void NewDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl) {
     DEFRAG_LIST* pList;
     RXPACKET* pPacket;
     RXFRM* pFrm; 
@@ -781,7 +791,7 @@ static inline void NewDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl) {
 }
 
 // THIS ONE MUST BE INLINED
-static inline void MoreDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl) {
+static void MoreDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl) {
     HEAP_MAN* pHeapMan;
     DEFRAG_LIST* pList;
     RXFRM* pFrm;
