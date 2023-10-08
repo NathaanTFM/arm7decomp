@@ -130,10 +130,44 @@ u16 MLME_AuthReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:336
 }
 
 u16 MLME_DeAuthReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:403
-    WlMlmeDeAuthReq* pReq; // r0 - :405
-    WlMlmeDeAuthCfm* pCfm; // r0 - :406
-    MLME_MAN* pMLME; // r5 - :407
+    WlMlmeDeAuthReq* pReq = (WlMlmeDeAuthReq*)pReqt; // r0 - :405
+    WlMlmeDeAuthCfm* pCfm = (WlMlmeDeAuthCfm*)pCfmt; // r0 - :406
+    MLME_MAN* pMLME = &wlMan->MLME; // r5 - :407
     TXFRM* pFrm; // r0 - :408
+    
+    pCfm->header.length = 4;
+    if (wlMan->Config.Mode != 3 && wlMan->Config.Mode != 2 && wlMan->Config.Mode != 1)
+        return 11;
+    
+    if (wlMan->Work.STA < 0x30)
+        return 1;
+    
+    if ((u16)(0x10000 + wlMan->Config.Mode - 2) <= 1 && pReq->peerMacAdrs[0] & 1)
+        return 5;
+    
+    WSetMacAdrs1(pCfm->peerMacAdrs, pReq->peerMacAdrs);
+    
+    pFrm = (TXFRM*)MakeDeAuthFrame(pCfm->peerMacAdrs, pReq->reasonCode, 0);
+    if (!pFrm)
+        return 8;
+    
+    pMLME->pReq.DeAuth = pReq;
+    pMLME->pCfm.DeAuth = pCfm;
+    pMLME->Work.DeAuth.pTxFrm = pFrm;
+    pMLME->State = 65;
+    
+    if (pReq->peerMacAdrs[0] & 1) {
+        pFrm->FirmHeader.FrameTime = wlMan->Work.IntervalCount;
+        CAM_AddBcFrame(&wlMan->HeapMan.TmpBuf, SubtractAddr(pFrm, 0x10));
+        if ((wlMan->CamMan.PowerMgtMode & ~wlMan->CamMan.NotClass3) == 0)
+            TxqPri(2);
+        
+    } else {
+        DeleteTxFrameByAdrs(pReq->peerMacAdrs);
+        TxManCtrlFrame(pFrm);
+        
+    }
+    return 128;
 }
 
 u16 MLME_AssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:497
