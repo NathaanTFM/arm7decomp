@@ -1,6 +1,7 @@
 #include "Mongoose.h"
 
 extern u16 MP_ADRS[3];
+extern u16 MPKEY_ADRS[3];
 
 u16 MA_DataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:48
     WlMaDataReq* pReq = (WlMaDataReq*)pReqt; // r0 - :51
@@ -83,15 +84,67 @@ u16 MA_DataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:48
 }
 
 u16 MA_KeyDataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:223
-    WlMaKeyDataReq* pReq; // r0 - :225
-    WORK_PARAM* pWork; // r0 - :226
-    CONFIG_PARAM* pConfig; // r4 - :227
-    TX_CTRL* pTxCtrl; // r5 - :228
-    u32 wlOperation; // r6 - :229
+    WlMaKeyDataReq* pReq = (WlMaKeyDataReq*)pReqt; // r0 - :225
+    WlMaKeyDataCfm* pCfm = (WlMaKeyDataCfm*)pCfmt;
+    WORK_PARAM* pWork = &wlMan->Work; // r0 - :226
+    CONFIG_PARAM* pConfig = &wlMan->Config; // r4 - :227
+    TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r5 - :228
+    u32 wlOperation = wlMan->WlOperation; // r6 - :229
     TXFRM_MAC* pFrm; // r7 - :230
-    u32 x; // r4 - :231
-    u32 pos; // r0 - :231
-    u16* pId; // r0 - :319
+    u32 pos, x; // r0, r4 - :231
+    
+    pCfm->header.length = 1;
+    
+    if (pConfig->Mode != 2)
+        return 11;
+    
+    if (pReq->length > 0x204)
+        return 5;
+    
+    pos = pTxCtrl->Key[0].Busy ? 1 : 0;
+    
+    if (pTxCtrl->Key[pos].Busy)
+        return 8;
+    
+    if (W_TXBUF_REPLY1 & 0x8000)
+        return 8;
+    
+    pFrm = pTxCtrl->Key[pos].pMacFrm;
+    pFrm->MacHeader.Tx.Status = 0;
+    pFrm->MacHeader.Tx.rsv_RetryCount = 0;
+    pFrm->MacHeader.Tx.Service_Rate = 0x14;
+    pFrm->MacHeader.Tx.MPDU = pReq->length + 30;
+    pFrm->Dot11Header.FrameCtrl.Data = 0x118;
+    WSetMacAdrs3(pFrm->Dot11Header.Adrs1, pWork->BSSID, pConfig->MacAdrs, MPKEY_ADRS);
+    *((u16*)pFrm->Body) = pReq->wmHeader; // this line is weird
+    
+    if (pReq->length) {
+        if (pos == 0)
+            WUpdateCounter();
+        
+        DMA_Write(pFrm->Body + 2, pReq->keyDatap, pReq->length);
+    }
+    
+    if (wlOperation & 4) {
+        u16* pId = (u16*)(((u32)&pFrm->Body[2 + pReq->length] + 3) & ~3); // r0 - :319
+        pId[0] = 0xB6B8;
+        pId[1] = 0x1D46;
+    }
+    
+    x = OS_DisableIrqMask(0x1000000);
+    
+    pTxCtrl->Key[pos].Busy = 2;
+    pTxCtrl->Key[pos].InCount++;
+    W_TXBUF_REPLY1 = (((u32)pFrm & 0x3FFF) >> 1) | 0x8000;
+    
+    if (pConfig->NullKeyRes == 0) {
+        WSetKSID();
+    }
+    
+    OS_EnableIrqMask(x);
+    return 0;
+    
+    
 }
 
 u16 MA_MpReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:363
