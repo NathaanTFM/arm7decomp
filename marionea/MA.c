@@ -3,12 +3,83 @@
 extern u16 MP_ADRS[3];
 
 u16 MA_DataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:48
-    WlMaDataReq* pReq; // r0 - :51
-    WORK_PARAM* pWork; // r6 - :52
-    CONFIG_PARAM* pConfig; // r7 - :53
-    HEAP_MAN* pHeapMan; // r0 - :54
-    TXFRM* pFrm; // r0 - :55
+    WlMaDataReq* pReq = (WlMaDataReq*)pReqt; // r0 - :51
+    WlMaDataCfm* pCfm = (WlMaDataCfm*)pCfmt;
+    WORK_PARAM* pWork = &wlMan->Work; // r6 - :52
+    CONFIG_PARAM* pConfig = &wlMan->Config; // r7 - :53
+    HEAP_MAN* pHeapMan = &wlMan->HeapMan; // r0 - :54
+    TXFRM* pFrm = (TXFRM*)&pReq->frame; // r0 - :55
     u32 camAdrs; // r8 - :56
+    
+    if (pFrm->FirmHeader.Length > 0x5E4)
+        return 5;
+    
+    if (pConfig->Mode == 1) {
+        camAdrs = CAM_Search(pFrm->Dot11Header.Adrs1);
+        if (camAdrs == 255 || CAM_GetStaState(camAdrs) != 0x40)
+            return 10;
+        
+    } else {
+        camAdrs = pWork->APCamAdrs;
+    }
+    
+    pFrm->FirmHeader.CamAdrs = camAdrs;
+    pFrm->FirmHeader.FrameTime = wlMan->Work.IntervalCount;
+    
+    // Could it be Rx.Service_Rate instead of Tx.rsv_AppRate?
+    if (pFrm->MacHeader.Tx.rsv_AppRate & 0xFF) {
+        pFrm->MacHeader.Tx.Service_Rate = pFrm->MacHeader.Tx.rsv_AppRate;
+        pFrm->MacHeader.Tx.rsv_AppRate = 0;
+    
+    } else {
+        pFrm->MacHeader.Tx.Service_Rate = CAM_GetTxRate(camAdrs);    
+    }
+    
+    if (pFrm->FirmHeader.Length == 0) {
+        pFrm->Dot11Header.FrameCtrl.Data = (pWork->FrameCtrl | 0x40) & ~0x4000;
+        pFrm->MacHeader.Tx.MPDU = 28;
+        
+    } else {
+        pFrm->Dot11Header.FrameCtrl.Data = pWork->FrameCtrl;
+        if (pConfig->WepMode == 0) {
+            pFrm->MacHeader.Tx.MPDU = pFrm->FirmHeader.Length + 28;
+        } else {
+            pFrm->MacHeader.Tx.MPDU = pFrm->FirmHeader.Length + 36;
+        }
+    }
+    
+    switch (pConfig->Mode) {
+        case 1:
+            WSetMacAdrs1(pFrm->Dot11Header.Adrs3, pFrm->Dot11Header.Adrs2);
+            WSetMacAdrs1(pFrm->Dot11Header.Adrs2, pWork->BSSID);
+            
+            if (camAdrs == 0) {
+                CAM_AddBcFrame(&pHeapMan->RequestCmd, pReq);
+                if ((wlMan->CamMan.PowerMgtMode & ~wlMan->CamMan.NotClass3) == 0) {
+                    TxqPri(2);
+                }
+                
+            } else {
+                CAM_IncFrameCount(pFrm);
+                MoveHeapBuf(&pHeapMan->RequestCmd, pHeapMan->TxPri, (HEAPBUF_HEADER*)pReq);
+                TxqPri(0);
+            }
+            
+            break;
+            
+        case 2:
+        case 3:
+            WSetMacAdrs1(pFrm->Dot11Header.Adrs3, pFrm->Dot11Header.Adrs1);
+            WSetMacAdrs1(pFrm->Dot11Header.Adrs1, pWork->BSSID);
+            
+            CAM_IncFrameCount(pFrm);
+            MoveHeapBuf(&pHeapMan->RequestCmd, pHeapMan->TxPri, (HEAPBUF_HEADER*)pReq);
+            TxqPri(0);
+            
+            break;
+    }
+    
+    return 129;
 }
 
 u16 MA_KeyDataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:223
