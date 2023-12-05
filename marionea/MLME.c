@@ -1,5 +1,7 @@
 #include "Mongoose.h"
 
+extern u16 BC_ADRS[3]; // WL_NIC.c
+
 STATIC void MLME_ScanTimeOut(void *unused);
 static void MLME_JoinTimeOut(void *unused);
 static void MLME_AuthTimeOut(void *unused);
@@ -270,9 +272,42 @@ u16 MLME_DisAssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:632
 }
 
 u16 MLME_StartReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:719
-    WlMlmeStartReq* pReq; // r0 - :721
-    WORK_PARAM* pWork; // r4 - :722
-    CONFIG_PARAM* pConfig; // r5 - :723
+    WlMlmeStartReq* pReq = (WlMlmeStartReq*)pReqt; // r0 - :721
+    WlMlmeStartCfm* pCfm = (WlMlmeStartCfm*)pCfmt;
+    WORK_PARAM* pWork = &wlMan->Work; // r4 - :722
+    CONFIG_PARAM* pConfig = &wlMan->Config; // r5 - :723
+    
+    pCfm->header.length = 1;
+    if (pConfig->Mode != 1 && pConfig->Mode != 0) return 11;
+    if (pWork->STA != 32) return 1;
+    if (pReq->ssidLength > 0x20) return 5;
+    if (pReq->ssidLength == 0) return 5;
+    if (pReq->beaconPeriod < 10) return 5;
+    if (pReq->beaconPeriod > 1000) return 5;
+    if (pReq->dtimPeriod == 0) return 5;
+    if (pReq->dtimPeriod > 0xFF) return 5;
+    if ((pReq->channel & 0xFFF0) != 0) return 5;
+    if (!CheckEnableChannel(pReq->channel)) return 5;
+    if (pReq->basicRateSet == 0) return 5;
+    if ((pReq->basicRateSet & (u32)(-0x1000)) != 0) return 5; // WHAT?
+    if (pReq->supportRateSet == 0) return 5;
+    if ((pReq->supportRateSet & (u32)(-0x1000)) != 0) return 5; // WHAT?
+    if (pReq->gameInfoLength > 0x80) return 5;
+    if (FLASH_VerifyCheckSum(0)) return 14;
+    if (pConfig->Mode == 0)
+        WSetBssid(BC_ADRS);
+    else
+        WSetBssid(pConfig->MacAdrs);
+    
+    WSetSsid(pReq->ssidLength, pReq->ssid);
+    WSetBeaconPeriod(pReq->beaconPeriod);
+    WSetDTIMPeriod(pReq->dtimPeriod);
+    WSetChannel(pReq->channel, 0);
+    WSetRateSet((RATE_SET *)&pReq->basicRateSet); // ugly!!
+    WInitGameInfo(pReq->gameInfoLength, pReq->gameInfo);
+    pWork->bUpdateGameInfo = 0;
+    WStart();
+    return 0;
 }
 
 u16 MLME_MeasChanReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:803
