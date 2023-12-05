@@ -95,9 +95,46 @@ u16 MLME_ScanReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:166
 }
 
 u16 MLME_JoinReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:245
-    WORK_PARAM* pWork; // r0 - :247
-    MLME_MAN* pMLME; // r4 - :249
-    WlMlmeJoinReq* pReq; // r0 - :250
+    WORK_PARAM* pWork = &wlMan->Work; // r0 - :247
+    WL_MAN *pWlMan = wlMan;
+    MLME_MAN* pMLME = &wlMan->MLME; // r4 - :249
+    WlMlmeJoinReq* pReq = (WlMlmeJoinReq*)pReqt; // r0 - :250
+    WlMlmeJoinCfm* pCfm = (WlMlmeJoinCfm*)pCfmt;
+    
+    pCfm->header.length = 5;
+    if (pWlMan->Config.Mode != 3 && pWlMan->Config.Mode != 2) return 11;
+    if (pWork->STA < 0x20) return 1;
+    WSetStaState(0x20);
+    if ((pReq->bssDesc.bssid[0] & 1) != 0) return 5;
+    if (pReq->bssDesc.ssidLength == 0) return 5;
+    if (pReq->bssDesc.ssidLength > 32) return 5;
+    if (pReq->bssDesc.beaconPeriod < 10) return 5;
+    if (pReq->bssDesc.beaconPeriod > 1000) return 5;
+    if (pReq->bssDesc.dtimPeriod > 0xFF) return 5;
+    if ((pReq->bssDesc.channel & 0xFFF0) != 0) return 5;
+    if (!CheckEnableChannel(pReq->bssDesc.channel)) return 5;
+    if ((pReq->bssDesc.rateSet.basic & (u32)(-0x1000)) != 0) return 5; // WHAT?
+    if ((pReq->bssDesc.rateSet.support & (u32)(-0x1000)) != 0) return 5; // WHAT?
+    if (pReq->bssDesc.rateSet.basic == 0) return 5;
+    if ((pReq->bssDesc.rateSet.support | pReq->bssDesc.rateSet.basic) == 0) return 5; // makes the cond above useless
+    if (pReq->timeOut > 2000) return 5;
+    if (FLASH_VerifyCheckSum(0)) return 14;
+    
+    if (pReq->bssDesc.capaInfo & 0x20)
+        WSetPreambleType(1);
+    else
+        WSetPreambleType(0);
+    
+    WSetBssid(pReq->bssDesc.bssid);
+    WSetSsid(pReq->bssDesc.ssidLength, pReq->bssDesc.ssid);
+    WSetBeaconPeriod(pReq->bssDesc.beaconPeriod);
+    WSetChannel(pReq->bssDesc.channel, 0);
+    WSetRateSet((RATE_SET*)&pReq->bssDesc.rateSet); // ugly
+    pMLME->pReq.Join = pReq;
+    pMLME->pCfm.Join = pCfm;
+    pMLME->State = 32;
+    AddTask(2, 1);
+    return 128;
 }
 
 u16 MLME_AuthReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:336
