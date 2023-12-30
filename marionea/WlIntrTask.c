@@ -9,11 +9,63 @@ void WlIntrTxBeaconTask() { // WlIntrTask.c:77
 }
 
 void WlIntrTxEndTask() { // WlIntrTask.c:106
-    WORK_PARAM* pWork; // r0 - :108
-    TX_CTRL* pTxCtrl; // r8 - :109
+    WORK_PARAM* pWork = &wlMan->Work; // r0 - :108
+    TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r8 - :109
     TXQ* pTxq; // r9 - :110
     long i; // r10 - :114
-    u16* pIcv; // r0 - :143
+    
+    for (i = 2; i >= 0; i--) { // :116
+        pTxq = &pTxCtrl->Txq[i]; // :118
+        
+        if (((*(u16*)((u32)&W_TXBUF_LOC1 + 4 * i) & 0x8000) != 0) || !pTxq->Busy) { // :120
+            continue;
+        }
+        
+        if (pTxq->pFrm) {
+            pTxq->pFrm->MacHeader.Tx.Status = pTxq->pMacFrm->MacHeader.Tx.Status;
+            pTxq->pFrm->Dot11Header.FrameCtrl.Data = pTxq->pMacFrm->Dot11Header.FrameCtrl.Data;
+            
+            if (pTxq->pMacFrm->Dot11Header.FrameCtrl.Data & 0x4000) { // :137
+                if (wlMan->WlOperation & 8) { // :141
+                    u16 *pIcv = (u16*)(((u32)&pTxq->pMacFrm->Dot11Header + pTxq->pMacFrm->MacHeader.Tx.MPDU - 7) & ~0x1); // r0 - :143
+                    
+                    if (pIcv[0] == 0 && pIcv[1] == 0) { // :145
+                        W_WEP_CNT = 0;
+                        W_WEP_CNT = 0x8000;
+                        ++pWork->WepErrCount;
+                        
+                        if (CheckFrameTimeout(pTxq->pFrm)) {
+                            pTxq->pFrm->MacHeader.Tx.Status = 2;
+                            ++pTxq->OutCount;
+                            ++pTxCtrl->TimeOutFrm;
+                            pTxq->pEndFunc(pTxq->pFrm, 1);
+                            
+                        } else {
+                            pTxq->pFrm->MacHeader.Tx.rsv_RetryCount = 0;
+                            *(u16*)((u32)&W_TXBUF_LOC1 + 4 * i) |= 0x8000u;
+                        }
+                        
+                        continue;
+                        
+                    }
+                }
+                
+                pTxq->pFrm->MacHeader.Tx.rsv_RetryCount += pTxq->pMacFrm->MacHeader.Tx.rsv_RetryCount & 0xFF;
+                
+            } else {
+                pTxq->pFrm->MacHeader.Tx.rsv_RetryCount = pTxq->pMacFrm->MacHeader.Tx.rsv_RetryCount & 0xFF;
+            }
+            
+            ++pTxq->OutCount; 
+            pTxq->pEndFunc(pTxq->pFrm, 2);
+            
+        } else {
+            ++pTxq->OutCount;
+            pTxq->pEndFunc((TXFRM *)pTxq->pMacFrm, 3);
+        }
+    }
+    
+    
 }
 
 void WlIntrRxEndTask() { // WlIntrTask.c:240
