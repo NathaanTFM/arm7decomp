@@ -23,7 +23,7 @@ void WVR_Begin(int handle) { // wvr_sp.c:113
 void WVR_Shutdown() { // wvr_sp.c:229
     REG_POWERCNT &= ~2;
     PM_SetLEDPattern(PM_LED_PATTERN_ON);
-    PMi_SetLed(PM_LED_ON);
+    PMi_SetLED(PM_LED_ON);
 }
 
 #pragma dont_inline on
