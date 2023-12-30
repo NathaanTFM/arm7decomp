@@ -383,11 +383,85 @@ u16 MLME_MeasChanReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:803
 }
 
 void MLME_ScanTask() { // MLME.c:886
-    MLME_MAN* pMLME; // r8 - :888
-    WORK_PARAM* pWork; // r9 - :889
+    MLME_MAN* pMLME = &wlMan->MLME; // r8 - :888
+    WORK_PARAM* pWork = &wlMan->Work; // r9 - :889
     void* pFrm; // r0 - :890
-    u32 bTask; // r4 - :891
+    u32 bTask = 0; // r4 - :891
     u16 ch; // r0 - :892
+    
+    switch (pMLME->State) {
+        case 16:
+            WSetStaState(0x20);
+            pWork->Mode = 2;
+            pMLME->pCfm.Scan->bssDescCount = 0;
+            pMLME->pCfm.Scan->foundMap = 0;
+            pMLME->Work.Scan.ChannelCount = 0;
+            pMLME->Work.Scan.bFound = 0;
+            if (pMLME->pReq.Scan->scanType == 0) {
+                pMLME->Work.Scan.TxPeriod = (pMLME->pReq.Scan->maxChannelTime + 3) / 4;
+                if (pMLME->Work.Scan.TxPeriod < 10) {
+                    pMLME->Work.Scan.TxPeriod = 10;
+                }
+                
+            } else {
+                pMLME->Work.Scan.TxPeriod = pMLME->pReq.Scan->maxChannelTime;
+            }
+            
+            pMLME->pCfm.Scan->resultCode = 0;
+            // falls to next case
+            
+        case 17:
+            ch = WL_ReadByte(&pMLME->pReq.Scan->channelList[pMLME->Work.Scan.ChannelCount]);
+            if (ch == 0) {
+                pMLME->State = 21;
+                bTask = 1;
+                break;
+            }
+            
+            pMLME->Work.Scan.ChannelCount++;
+            pMLME->Work.Scan.ElapseTime = 0;
+            if (FLASH_VerifyCheckSum(0)) {
+                pMLME->pCfm.Scan->resultCode = 14;
+                pMLME->State = 21;
+                bTask = 1;
+                break;
+            }
+            
+            if (pMLME->State == 16) {
+                WSetChannel(ch, 0);
+                WStart();
+            } else {
+                WSetChannel(ch, 0);
+            }
+            pMLME->State = 18;
+            
+        case 18:
+        case 19:
+            pMLME->State = 19;
+            if (pMLME->pReq.Scan->scanType == 0) {
+                pFrm = MakeProbeReqFrame(pMLME->pReq.Scan->bssid);
+                if (!pFrm) {
+                    pMLME->pCfm.Scan->resultCode = 8;
+                    pMLME->State = 21;
+                    bTask = 1;
+                    break;
+                }
+                
+                TxManCtrlFrame(pFrm);
+            }
+            SetupTimeOut(pMLME->Work.Scan.TxPeriod, MLME_ScanTimeOut);
+            break;
+        
+        case 21:
+            pMLME->State = 0;
+            WStop();
+            pWork->Mode = wlMan->Config.Mode;
+            IssueMlmeConfirm();
+            break;
+    }
+    
+    if (bTask)
+        AddTask(2, 0);
 }
 
 STATIC void MLME_ScanTimeOut(void *unused) { // MLME.c:1114
