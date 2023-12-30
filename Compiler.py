@@ -262,14 +262,14 @@ for directory in ("marionea",):#, "libraries"):
             
 if "-e" in sys.argv:
     emptyFuncs.sort(key = lambda x: (x[2], x[1]))
-    print("+-" + "-" * 30 + "-+-" + "-" * 40 + "-+-" + "-" * 8 + "-+")
-    print("| %-30s | %-40s | %-8s |" % ("path", "name", "size"))
-    print("+-" + "-" * 30 + "-+-" + "-" * 40 + "-+-" + "-" * 8 + "-+")
+    print("+-" + "-" * 50 + "-+-" + "-" * 40 + "-+-" + "-" * 8 + "-+")
+    print("| %-50s | %-40s | %-8s |" % ("path", "name", "size"))
+    print("+-" + "-" * 50 + "-+-" + "-" * 40 + "-+-" + "-" * 8 + "-+")
     
     for path, name, size in emptyFuncs:
-        print("| %-30s | %-40s | %8d |" % (path, name, size))
+        print("| %-50s | %-40s | %8d |" % (path, name, size))
         
-    print("+-" + "-" * 30 + "-+-" + "-" * 40 + "-+-" + "-" * 8 + "-+")
+    print("+-" + "-" * 50 + "-+-" + "-" * 40 + "-+-" + "-" * 8 + "-+")
     
 
 for name, rawAsm, rawSrc in disasmQueue:
