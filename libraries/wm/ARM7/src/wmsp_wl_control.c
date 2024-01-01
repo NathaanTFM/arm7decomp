@@ -55,6 +55,26 @@ WlMlmePowerMgtCfm* WMSP_WL_MlmePowerManagement(u16* buf, u16 pwrMgtMode, u16 wak
 WlMlmeScanCfm* WMSP_WL_MlmeScan(u16* buf, u32 bufSize, u16* bssid, u16 ssidLength, u8* ssid, u16 scanType, u8* channelList, u16 maxChannelTime) { // wmsp_wl_control.c:131
     WlMlmeScanReq* req; // r0 - :134
     WlMlmeScanCfm* cfm; // r0 - :135
+    
+    req = (WlMlmeScanReq*)buf;
+    CLEAR_WL_RSV(req);
+    
+    req->header.code = 2;
+    req->header.length = 31;
+    MIi_CpuCopy16(bssid, req->bssid, sizeof(req->bssid));
+    req->ssidLength = ssidLength;
+    MIi_CpuCopy16(ssid, req->ssid, sizeof(req->ssid));
+    req->scanType = scanType;
+    MIi_CpuCopy16(channelList, req->channelList, sizeof(req->channelList));
+    req->bssidMaskCount = 0;
+    req->maxChannelTime = maxChannelTime;
+    
+    cfm = GET_CFM(req);
+    cfm->header.code = req->header.code;
+    cfm->header.length = bufSize / 2 - 44;
+    
+    WMSP_WlRequest((u16 *)req);
+    return cfm;
 }
 
 WlMlmeJoinCfm* WMSP_WL_MlmeJoin(u16* buf, u16 timeOut, WlBssDesc* bssDesc) { // wmsp_wl_control.c:181
