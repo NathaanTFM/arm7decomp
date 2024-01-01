@@ -1,8 +1,34 @@
 #include "Mongoose.h"
 
+#define CLEAR_WL_RSV(req) \
+    do { (req)->wlRsv[0] = 0; \
+         (req)->wlRsv[1] = 0; \
+         (req)->wlRsv[2] = 0; \
+         (req)->wlRsv[3] = 0; \
+         (req)->wlRsv[4] = 0; \
+         (req)->wlRsv[5] = 0; \
+    } while (0)
+
+#define GET_CFM(req) \
+    (void *)((u8*)req + ((req)->header.length * 2) + 0x10)
+
 WlMlmeResetCfm* WMSP_WL_MlmeReset(u16* buf, u16 mib) { // wmsp_wl_control.c:48
     WlMlmeResetReq* req; // r0 - :50
     WlMlmeResetCfm* cfm; // r0 - :51
+    
+    req = (WlMlmeResetReq*)buf;
+    CLEAR_WL_RSV(req);
+    
+    req->header.code = 0;
+    req->header.length = 1;
+    req->mib = mib;
+    
+    cfm = GET_CFM(req);
+    cfm->header.code = req->header.code;
+    cfm->header.length = 1;
+    
+    WMSP_WlRequest((u16 *)req);
+    return cfm;
 }
 
 WlMlmePowerMgtCfm* WMSP_WL_MlmePowerManagement(u16* buf, u16 pwrMgtMode, u16 wakeUp, u16 recieveDtims) { // wmsp_wl_control.c:85
