@@ -21,10 +21,30 @@ static void (*WmspRequestFuncTable[46])(void*) = {
 }; // :30
 
 void WMSP_RequestThread() { // wmsp_request.c:89
-    struct WMSPWork* p; // r0 - :93
-    struct WMStatus* status; // r9 - :94
+    struct WMSPWork* p = &wmspW; // r0 - :93
+    struct WMStatus* status = p->status; // r9 - :94
     void* msg; // None - :95
     u16 apiid; // r10 - :96
+    
+    for (;;) {
+        OS_ReceiveMessage(&p->requestQ, &msg, 1);
+        if (!msg) {
+            OS_ExitThread();
+            break;
+        }
+        apiid = *(u16*)msg;
+        if (apiid & 0x8000)
+            apiid &= ~0x8000;
+        
+        if (apiid < 0x2E) {
+            status->apiBusy = 1;
+            status->BusyApiid = apiid;
+            WmspRequestFuncTable[apiid](msg);
+            status->apiBusy = 0;
+        }
+        
+        *(u16*)msg = apiid | 0x8000;
+    }
 }
 
 static void WmspRequestFuncDummy() { // wmsp_request.c:145
