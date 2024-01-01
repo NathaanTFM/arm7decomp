@@ -34,6 +34,22 @@ WlMlmeResetCfm* WMSP_WL_MlmeReset(u16* buf, u16 mib) { // wmsp_wl_control.c:48
 WlMlmePowerMgtCfm* WMSP_WL_MlmePowerManagement(u16* buf, u16 pwrMgtMode, u16 wakeUp, u16 recieveDtims) { // wmsp_wl_control.c:85
     WlMlmePowerMgtReq* req; // r0 - :88
     WlMlmePowerMgtCfm* cfm; // r0 - :89
+    
+    req = (WlMlmePowerMgtReq*)buf;
+    CLEAR_WL_RSV(req);
+    
+    req->header.code = 1;
+    req->header.length = 3;
+    req->pwrMgtMode = pwrMgtMode;
+    req->wakeUp = wakeUp;
+    req->recieveDtims = recieveDtims;
+    
+    cfm = GET_CFM(req);
+    cfm->header.code = req->header.code;
+    cfm->header.length = 1;
+    
+    WMSP_WlRequest((u16 *)req);
+    return cfm;
 }
 
 WlMlmeScanCfm* WMSP_WL_MlmeScan(u16* buf, u32 bufSize, u16* bssid, u16 ssidLength, u8* ssid, u16 scanType, u8* channelList, u16 maxChannelTime) { // wmsp_wl_control.c:131
