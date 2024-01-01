@@ -80,6 +80,22 @@ WlMlmeScanCfm* WMSP_WL_MlmeScan(u16* buf, u32 bufSize, u16* bssid, u16 ssidLengt
 WlMlmeJoinCfm* WMSP_WL_MlmeJoin(u16* buf, u16 timeOut, WlBssDesc* bssDesc) { // wmsp_wl_control.c:181
     WlMlmeJoinReq* req; // r0 - :183
     WlMlmeJoinCfm* cfm; // r0 - :184
+    
+    req = (WlMlmeJoinReq*)buf;
+    CLEAR_WL_RSV(req);
+    
+    req->header.code = 3;
+    req->header.length = 34;
+    req->timeOut = timeOut;
+    req->rsv = 0;
+    MIi_CpuCopy16(bssDesc, &req->bssDesc, sizeof(req->bssDesc));
+    
+    cfm = GET_CFM(req);
+    cfm->header.code = req->header.code;
+    cfm->header.length = 5;
+    
+    WMSP_WlRequest((u16 *)req);
+    return cfm;
 }
 
 WlMlmeAuthCfm* WMSP_WL_MlmeAuthenticate(u16* buf, u16* peerMacAdrs, u16 algorithm, u16 timeOut) { // wmsp_wl_control.c:223
