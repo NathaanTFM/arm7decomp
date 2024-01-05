@@ -48,24 +48,88 @@ static u32 SetGameInfoElement(u8* pBuf) {
     return i;
 }
 
-/*
 void TxqPri(u32 pri) { // TxCtrl.c:64
-    WORK_PARAM* pWork; // r11 - :66
-    TX_CTRL* pTxCtrl; // r4 - :67
-    TXQ* pTxq; // r5 - :68
-    HEAPBUF_MAN* pBufMan; // r6 - :69
-    WlMaDataReq* pNextTxReq; // r7 - :70
-    WlMaDataReq* pTxReq; // None - :70
+    WORK_PARAM* pWork = &wlMan->Work; // r11 - :66
+    TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r4 - :67
+    TXQ* pTxq = &pTxCtrl->Txq[pri]; // r5 - :68
+    HEAPBUF_MAN* pBufMan = &wlMan->HeapMan.TxPri[pri]; // r6 - :69
+    WlMaDataReq *pTxReq, *pNextTxReq; // None, r7 - :70
     TXFRM* pTxFrm; // r8 - :71
     TXFRM_MAC* pMacTxFrm; // r4 - :72
-    u16* pMREG; // r0 - :73
-    u32 adrs; // r0 - :74
-    u32 cam_adrs; // r9 - :74
-    u32 fc; // r0 - :74
-    u32 x; // None - :74
+    volatile u16* pMREG; // r0 - :73
+    u32 x, fc, cam_adrs, adrs; // None, r0, r9, r0 - :74
+    
+    if (pBufMan->Count != 0) {
+        x = OS_DisableIrqMask(0x1000000);
+        if (pTxq->Busy) {
+            OS_EnableIrqMask(x);
+            return;
+        }
+        
+        pNextTxReq = (WlMaDataReq*)pBufMan->Head; // :106
+        
+        for (;;) {
+            if (pNextTxReq == (WlMaDataReq*)-1) {
+                OS_EnableIrqMask(x);
+                return;
+            }
+            pTxReq = (WlMaDataReq*)pNextTxReq;
+            pNextTxReq = (WlMaDataReq*)GetHeapBufNextAdrs((HEAPBUF_HEADER*)pNextTxReq);
+            pTxFrm = (TXFRM*)&pTxReq->frame;
+            cam_adrs = pTxFrm->FirmHeader.CamAdrs;
+            
+            if (CheckFrameTimeout(pTxFrm)) {
+                pTxCtrl->TimeOutFrm++;
+                pTxFrm->MacHeader.Tx.Status = 2;
+                pTxq->OutCount++;
+                pTxq->pEndFunc(pTxFrm, 0);
+                continue;
+            }
+            
+            if (pri == 0 || (pri == 1 && CAM_GetStaState(cam_adrs) == 0x40)) { // :140
+                if (!CAM_IsActive(cam_adrs))  // :144
+                    continue;
+                    
+                if (CAM_GetStaState(cam_adrs) != 0x40) { // :146
+                    pTxFrm->MacHeader.Tx.Status = 2; // :150
+                    IssueMaDataConfirm(pBufMan, SubtractAddr(pTxFrm, 0x10)); // :151
+                    CAM_DecFrameCount(pTxFrm); // :152
+                    continue; // :154
+                }; 
+            }
+            
+            break;
+        }
+        
+        pTxq->Busy = 1;
+        pTxq->InCount++;
+        pTxq->pFrm = pTxFrm;
+        pMacTxFrm = pTxq->pMacFrm;
+        
+        if (pWork->PowerState == 0)
+            WSetPowerState(2);
+        
+        CopyTxFrmToMacBuf(pMacTxFrm, pTxReq);
+        if (pWork->Mode == 1 && ((cam_adrs == 0 && pBufMan->Count > 1) || (cam_adrs != 0 && CAM_GetFrameCount(cam_adrs) > 1))) {
+            pMacTxFrm->Dot11Header.FrameCtrl.Data |= 0x2000;
+        }
+        
+        fc = pTxFrm->Dot11Header.FrameCtrl.Data;
+        pMREG = &W_TXBUF_LOC1 + 2 * pri;
+        adrs = ((u32)pMacTxFrm & 0x3FFF) >> 1;
+        
+        if ((fc & 0xC) == 4) {
+            *pMREG = (adrs & 0xFFFF) | 0xA000;
+            
+        } else if ((fc & 0xFC) == 0x50) {
+            *pMREG = (adrs & 0xFFFF) | 0x9000;
+            
+        } else {
+            *pMREG = (adrs & 0xFFFF) | 0x8000;
+        }
+        OS_EnableIrqMask(x);
+    }
 }
-IPA
-*/
 
 void CopyTxFrmToMacBuf(TXFRM_MAC* pMacTxFrm, WlMaDataReq* pTxReq) { // TxCtrl.c:298
     TXFRM* pTxFrm = (TXFRM*)&pTxReq->frame; // r0 - :300
