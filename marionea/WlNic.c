@@ -837,9 +837,9 @@ u32 WCheckSSID(u16 len, u8* pSSID) { // WlNic.c:2494
     pMask = pWork->SSIDMask;
     
     for (i = 0; i < len; i++) {
-        mask = WL_ReadByte(pMask++);
-        ssid = WL_ReadByte(pSSID++);
-        myss = WL_ReadByte(pBuf++);
+        mask = WL_ReadByte(pMask); pMask++;
+        ssid = WL_ReadByte(pSSID); pSSID++;
+        myss = WL_ReadByte(pBuf); pBuf++;
         
         if ((ssid | mask) != (myss | mask)) {
             return 0;
