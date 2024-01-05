@@ -42,6 +42,7 @@
 #define global_vtsf_var (*(u16*)0x0380FFF0)
 #define wlMan (*(WL_MAN**)0x0380FFF4)
 
+#define REG_VCOUNT (*(volatile u16*)0x4000006)
 #define REG_IME (*(volatile u16*)0x4000208)
 #define REG_POWERCNT (*(volatile u16*)0x4000304)
 
@@ -60,5 +61,7 @@ static inline BOOL OS_DisableIrq() {
     REG_IME = 0;
     return (BOOL)prep;
 }
+
+extern struct WMSPWork wmspW;
 
 #pragma optimize_for_size on
