@@ -114,13 +114,8 @@ u32 CheckFrameTimeout(TXFRM* pTxFrm) { // TxCtrl.c:381
     
     timeout = pWork->FrameLifeTime * 8;
     
-    if (pTxFrm->Dot11Header.FrameCtrl.Bit.Type != 0) { // :390
+    if (pTxFrm->Dot11Header.FrameCtrl.Bit.Type != 0 || (pWork->Mode == 1 && (pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 1 || pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 3 || pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 0xB))) { // :390
         timeout /= 8;
-        
-    } else if (pWork->Mode == 1) { // :393
-        if (pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 1 || pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 3 || pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 0xB)
-            timeout /= 8;
-        
     }
     
     return timeout < (u16)(pWork->IntervalCount - pTxFrm->FirmHeader.FrameTime); // :415
