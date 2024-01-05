@@ -3,6 +3,51 @@
 static u32 SetSupRateSet(u8* pBuf);
 static u32 SetSSIDElement(u8* pBuf);
 
+// This function is inlined away
+static u32 SetDSParamSet(u8 *pBuf) {
+    WL_WriteByte(pBuf, 3);
+    WL_WriteByte(pBuf + 1, 1);
+    WL_WriteByte(pBuf + 2, wlMan->Work.CurrChannel);
+    return 3;
+}
+
+// This function is inlined away
+static u32 SetGameInfoElement(u8* pBuf) {
+    WORK_PARAM* pWork = &wlMan->Work;
+    CONFIG_PARAM* pConfig = &wlMan->Config;
+    u32 i, j, vtsf;
+    u8* p;
+    
+    i = 0;
+    
+    WL_WriteByte(&pBuf[i++], 0xDD);
+    WL_WriteByte(&pBuf[i++], wlMan->Work.GameInfoLength + 8);
+    WL_WriteByte(&pBuf[i++], 0);
+    WL_WriteByte(&pBuf[i++], 9);
+    WL_WriteByte(&pBuf[i++], 0xBF);
+    WL_WriteByte(&pBuf[i++], 0);
+    WL_WriteByte(&pBuf[i++], pConfig->ActiveZone & 0xFF);
+    WL_WriteByte(&pBuf[i++], pConfig->ActiveZone >> 8);
+    vtsf = global_vtsf_var;
+    WL_WriteByte(&pBuf[i++], vtsf & 0xFF);
+    WL_WriteByte(&pBuf[i], vtsf >> 8);
+    i++; // i hate everything about this
+    
+    if (pWork->GameInfoLength) {
+        p = (u8 *)pWork->GameInfoAdrs;
+        
+        if (pWork->GameInfoAlign & 1)
+            p++;
+        
+        for (j = 0; j < pWork->GameInfoLength; j++) {
+            WL_WriteByte(pBuf + i, WL_ReadByte(p));
+            i++; p++;
+        }
+    }
+    
+    return i;
+}
+
 /*
 void TxqPri(u32 pri) { // TxCtrl.c:64
     WORK_PARAM* pWork; // r11 - :66
@@ -871,10 +916,41 @@ PRBREQ_FRAME* MakeProbeReqFrame(u16* pDA) { // TxCtrl.c:2245
 }
 
 PRBRES_FRAME* MakeProbeResFrame(u16* pDA) { // TxCtrl.c:2294
-    WORK_PARAM* pWork; // r4 - :2296
+    WORK_PARAM* pWork = &wlMan->Work; // r4 - :2296
     WlMaDataReq* pReq; // r0 - :2297
     PRBRES_FRAME* pFrm; // r0 - :2298
     u32 ofst; // r9 - :2299
+    
+    if (!IsEnableManagement())
+        return 0;
+    
+    // TODO: sizeof..?
+    pReq = (WlMaDataReq*)AllocateHeapBuf(&wlMan->HeapMan.TmpBuf, pWork->GameInfoLength + 120);
+    if (pReq == 0) {
+        SetFatalErr(2);
+        
+        // okay, this is actually really ugly, but "return 0" (which behaves the same)
+        // makes the decomp inaccurate
+        return (PRBRES_FRAME*)pReq;
+    }
+    
+    pReq->header.code = -1;
+    
+    pFrm = (PRBRES_FRAME*)&pReq->frame;
+    InitManHeader((TXFRM*)pFrm, pDA);
+    
+    pFrm->Body.BeaconInterval = pWork->BeaconPeriod;
+    pFrm->Body.CapaInfo.Data = pWork->CapaInfo;
+    
+    ofst = SetSSIDElement(pFrm->Body.Buf);
+    ofst += SetSupRateSet(pFrm->Body.Buf + ofst);
+    ofst += SetDSParamSet(pFrm->Body.Buf + ofst);
+    ofst += SetGameInfoElement(pFrm->Body.Buf + ofst);
+    
+    pFrm->FirmHeader.Length = ofst + 12;
+    pFrm->MacHeader.Tx.MPDU = pFrm->FirmHeader.Length + 28; // check
+    pFrm->Dot11Header.FrameCtrl.Data = 0x50;
+    return pFrm;
 }
 
 AUTH_FRAME* MakeAuthFrame(u16* pDA, u16 txtLen, u32 bCheck) { // TxCtrl.c:2355
