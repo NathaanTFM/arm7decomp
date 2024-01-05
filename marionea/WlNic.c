@@ -746,15 +746,68 @@ void WInitCounter() { // WlNic.c:2243
     MIi_CpuClear32(0, &wlMan->Counter, sizeof(wlMan->Counter));
 }
 
-/*
 void WUpdateCounter() { // WlNic.c:2277
-    WlCounter* pCounter; // r0 - :2279
+    WlCounter* pCounter = &wlMan->Counter; // r0 - :2279
     u16 tmp; // r0 - :2281
     
-    // this function is a mess, TODO
+    pCounter->rx.plcpErr += W_RXSTAT & 0xFF;
+    
+    tmp = W_RXSTAT_0;
+    pCounter->rx.lengthErr += tmp >> 8;
+    pCounter->rx.rateErr += tmp & 0xFF;
+    
+    tmp = W_RXSTAT_1;
+    pCounter->rx.pathErr += tmp >> 8;
+    pCounter->rx.bufOvfErr += tmp & 0xFF;
+    
+    tmp = W_RXSTAT_2;
+    pCounter->rx.fcsOk += tmp >> 8;
+    pCounter->rx.fcsErr += tmp & 0xFF;
+    
+    pCounter->rx.fcErr += W_RXSTAT_3 & 0xFF;
+    pCounter->rx.rts += W_RXSTAT_4 & 0xFF;
+    
+    tmp = W_RXSTAT_5;
+    pCounter->rx.wep += tmp >> 8;
+    pCounter->rx.icvErr += tmp & 0xFF;
+
+    tmp = W_RXSTAT_6;
+    pCounter->rx.duplicateErr += tmp & 0xFF;
+    pCounter->rx.mpDuplicateErr += tmp >> 8;
+    
+    pCounter->tx.ackErr += W_TX_ERR_COUNT & 0xFF;
+    
+    tmp = W_CMD_STAT;
+    pCounter->multiPoll.keyResponseErr[0] += tmp >> 8;
+    
+    tmp = W_CMD_STAT_0;
+    pCounter->multiPoll.keyResponseErr[1] += tmp & 0xFF;
+    pCounter->multiPoll.keyResponseErr[2] += tmp >> 8;
+    
+    tmp = W_CMD_STAT_1;
+    pCounter->multiPoll.keyResponseErr[3] += tmp & 0xFF;
+    pCounter->multiPoll.keyResponseErr[4] += tmp >> 8;
+    
+    tmp = W_CMD_STAT_2;
+    pCounter->multiPoll.keyResponseErr[5] += tmp & 0xFF;
+    pCounter->multiPoll.keyResponseErr[6] += tmp >> 8;
+    
+    tmp = W_CMD_STAT_3;
+    pCounter->multiPoll.keyResponseErr[7] += tmp & 0xFF;
+    pCounter->multiPoll.keyResponseErr[8] += tmp >> 8;
+    
+    tmp = W_CMD_STAT_4;
+    pCounter->multiPoll.keyResponseErr[9] += tmp & 0xFF;
+    pCounter->multiPoll.keyResponseErr[10] += tmp >> 8;
+    
+    tmp = W_CMD_STAT_5;
+    pCounter->multiPoll.keyResponseErr[11] += tmp & 0xFF;
+    pCounter->multiPoll.keyResponseErr[12] += tmp >> 8;
+    
+    tmp = W_CMD_STAT_6;
+    pCounter->multiPoll.keyResponseErr[13] += tmp & 0xFF;
+    pCounter->multiPoll.keyResponseErr[14] += tmp >> 8;
 }
-IPA blablablabah
-*/
 
 u32 WCheckSSID(u16 len, u8* pSSID) { // WlNic.c:2494
     WORK_PARAM* pWork = &wlMan->Work; // r2 - :2496
