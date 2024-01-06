@@ -180,10 +180,94 @@ static void WlIntrRxCntup() { // WlIntr.c:705
 }
 
 static void WlIntrTxEnd() { // WlIntr.c:857
-    TX_CTRL* pTxCtrl; // r7 - :859
+    TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r7 - :859
     u32 txFrm; // r8 - :860
-    u16 setmap, pollmap; // r0, r1 - :993
-    WlMpKeyData* pKeyData; // r2 - :994
+    
+    W_IF = 2;
+    if (wlMan->Work.STA == 18) {
+        IntrCarrierSuppresionSignal(); // :873
+        
+    } else {
+        txFrm = W_TXSTAT & 0xF00;
+        
+        switch (txFrm) { // :882
+            case 0x300:
+                if (pTxCtrl->Flag & 2)
+                    SetParentTbttTxq();
+                
+                wlMan->Counter.tx.beacon++;
+                AddTask(0, 8);
+                break;
+                
+            case 0x800:
+                if (pTxCtrl->RetryLimit <= (u16)(pTxCtrl->Mp.pMacFrm->MacHeader.Tx.rsv_RetryCount & 0xFF)) {
+                    W_TXREQ_RESET = 2;
+                    pTxCtrl->MpBlkCnt++;
+                }
+                pTxCtrl->pMpEndInd->mpKey.txCount++;
+                break;
+                
+            case 0xB00:
+                W_RX_MAC_0 = 0xFFFF;
+                W_RX_MAC_1 = 0xFFFF;
+                W_INTERNAL_11 = 0xFFFF;
+                W_INTERNAL_12 = 0xFFFF;
+                
+                if (pTxCtrl->Mp.Busy) {
+                    if (pTxCtrl->Mp.pMacFrm->Dot11Header.SeqCtrl.Data == 0xFFFF && pTxCtrl->Mp.pMacFrm->MacHeader.Tx.rsv_RetryCount > 0) {
+                        pTxCtrl->Mp.pMacFrm->MacHeader.Tx.rsv_RetryCount = 0;
+                        pTxCtrl->Mp.pMacFrm->MacHeader.Tx.Status2 = pTxCtrl->SetKeyMap;
+                    }
+                }
+                
+                u16 setmap, pollmap; // r0, r1 - :993
+                WlMpKeyData* pKeyData; // r2 - :994
+                
+                pollmap = pTxCtrl->Mp.pMacFrm->MacHeader.Tx.Status2;
+                setmap = pTxCtrl->SetKeyMap;
+                pKeyData = pTxCtrl->pMpEndInd->mpKey.data;
+                
+                if (pollmap > 1 && wlMan->Config.Diversity) {
+                    if ((W_RF_PINS & 1) == 0) {
+                        W_X_290h = W_X_290h ^ 1;
+                    }
+                }
+                
+                if (wlMan->WlOperation & 0x40) {
+                    while (pollmap > 1) {
+                        pollmap = pollmap / 2;
+                        setmap = setmap / 2;
+                        
+                        if (pollmap & 1) {
+                            pKeyData->noResponse++;
+                        }
+                        if (setmap & 1) {
+                            pKeyData = (WlMpKeyData*)((u32)pKeyData + pTxCtrl->pMpEndInd->mpKey.length);
+                        }
+                    }
+                }
+                
+                break;
+        }
+        
+        if (txFrm != 0x800 && (W_TXREQ_READ & 2) == 0) {
+            if (pTxCtrl->Mp.Busy) {
+                W_TXBUF_RESET = 2;
+                W_POWER_unk = 0;
+                
+                if (W_IF & 0x1000) {
+                    pTxCtrl->MpLastOk++;
+                } else {
+                    WlIntrMpEnd(2);
+                }
+                pTxCtrl->MpRstCnt++;
+            }
+            
+            W_TXREQ_SET = 2;
+        }
+        
+        AddTask(0, 0xE);
+    }
 }
 
 static void WlIntrRxEnd() { // WlIntr.c:1101
