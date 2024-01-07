@@ -480,19 +480,88 @@ void WSetDefaultParameters() { // WlNic.c:1223
 
 #pragma dont_inline off
 
-/*
 u16 WSetChannel(u16 channel, u32 bDirect) { // WlNic.c:1312
     u32 reg; // None - :1315
     u32 bkpwr; // r8 - :1316
-    u32 adrs; // None - :1318
-    u32 i; // r10 - :1318
-    u32 flash_adrs; // r9 - :1318
+    u32 flash_adrs, i, adrs; // r9, r10, None - :1318
     void (*pFlashReadFunc)(u32, u32, u8*); // r0 - :1319
-    u32 st; // r0 - :1340
-    u32 ps; // r0 - :1340
+    
+    if (bDirect)
+        pFlashReadFunc = FLASH_DirectRead;
+    else
+        pFlashReadFunc = FLASH_Read;
+    
+    if (!CheckEnableChannel(channel))
+        return 5;
+    
+    bkpwr = W_POWERFORCE;
+    W_POWERFORCE = 0x8001;
+    
+    u32 ps, st; // r0, r0 - :1340
+    do {
+        ps = W_POWERSTATE >> 8; // :1342
+        st = W_RF_STATUS; // :1343
+        
+    } while (ps != 2 || (st != 0 && st != 9));
+    
+    wlMan->Work.CurrChannel = channel;
+    
+    switch (wlMan->Rf.Id) {
+        case 2:
+        case 5:
+            reg = 0;
+            
+            pFlashReadFunc(6 * (channel - 1) + 0xF2, 3, (u8*)&reg);
+            RF_Write(reg);
+            
+            pFlashReadFunc(6 * (channel - 1) + 0xF5, 3, (u8*)&reg);
+            RF_Write(reg);
+            
+            reg = 0;
+            
+            if (wlMan->Rf.BkReg & 0x10000) {
+                if ((wlMan->Rf.BkReg & 0x8000) == 0) {
+                    pFlashReadFunc((channel - 1) + 0x154u, 1, (u8*)&reg);
+                    reg = wlMan->Rf.BkReg | (reg << 27 >> 17);
+                    RF_Write(reg);
+                }
+                
+            } else {
+                pFlashReadFunc((channel - 1) + 0x146U, 1, (u8*)&reg);
+                BBP_Write(0x1E, reg);
+            }
+            
+            break;
+            
+        case 3:
+            flash_adrs = wlMan->Rf.InitNum + 0xCF;
+            
+            for (i = 0; i < wlMan->Rf.BbpCnt; i++) {
+                reg = 0;
+                adrs = 0;
+                pFlashReadFunc(flash_adrs, 1, (u8*)&adrs);
+                pFlashReadFunc(flash_adrs + channel, 1, (u8*)&reg);
+                BBP_Write(adrs, reg);
+                flash_adrs += 15;
+            }
+            
+            for (i = 0; i < wlMan->Rf.ChanNum; i++) {
+                reg = 0;
+                pFlashReadFunc(flash_adrs, 1, (u8*)&reg);
+                reg <<= 8;
+                pFlashReadFunc(flash_adrs + channel, 1, (u8*)&reg);
+                reg |= 0x50000;
+                RF_Write(reg);
+                flash_adrs += 15;
+            }
+            
+            break;
+    }
+    
+    W_POWERFORCE = bkpwr;
+    W_POWER_unk = 3;
+    return 0;
 }
-Guys, check out my IPA!
-*/
 
 u16 WSetRateSet(RATE_SET* pRateSet) { // WlNic.c:1487
     RATE_SET* pWRS = &wlMan->Work.RateSet; // r0 - :1489
