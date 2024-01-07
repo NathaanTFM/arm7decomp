@@ -139,6 +139,41 @@ void IntrCarrierSuppresionSignal() { // DevCmd.c:644
 }
 
 u16 DEV_TestRxReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:690
-    WlDevTestRxReq* pReq; // r0 - :692
-    WORK_PARAM* pWork; // r4 - :694
+    WlDevTestRxReq* pReq = (WlDevTestRxReq*)pReqt; // r0 - :692
+    WlDevTestRxCfm* pCfm = (WlDevTestRxCfm*)pCfmt;
+    WORK_PARAM* pWork = &wlMan->Work; // r4 - :694
+    
+    pCfm->header.length = 1;
+    if ((pWork->STA & 0xF0) != 0x10) 
+        return 1;
+    
+    switch (pReq->control) {
+        case 1:
+            if (pWork->STA != 0x10) {
+                return 1;
+                
+            } else {
+                WSetChannel(pReq->channel, 1);
+                pWork->Mode = 0;
+                WStart();
+                WSetForcePowerState(0x8000);
+            }
+            
+            pWork->STA = 0x11;
+            break;
+        
+        case 0:
+            if (pWork->STA == 0x11) {
+                WSetForcePowerState(0);
+                WStop();
+                
+            } else {
+                return 1;
+            }
+            
+            pWork->STA = 0x10;
+            break;
+    }
+    
+    return 0;
 }
