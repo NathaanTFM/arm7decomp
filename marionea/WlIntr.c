@@ -18,6 +18,20 @@ STATIC void SetParentTbttTxq();
 STATIC u32 CheckKeyTxEnd();
 static u32 CheckKeyTxEndMain(TXQ* pTxq);
 
+// missing function from latest, but exists
+static void MultiPollRevicedClearSeq() { 
+    TX_CTRL* pTxCtrl = &wlMan->TxCtrl;
+    u16 bkKeyIn;
+    
+    if (pTxCtrl->BkKeyOut != 0xFFFF) {
+        bkKeyIn = W_TXBUF_REPLY1;
+        W_TXBUF_REPLY1 = pTxCtrl->BkKeyOut;
+        W_RXCNT = W_RXCNT | 0x80;
+        W_TXBUF_REPLY1 = bkKeyIn;
+        pTxCtrl->BkKeyOut = 0xFFFF;
+    }
+}
+
 #pragma dont_inline on
 
 void WlIntr() { // WlIntr.c:80
@@ -364,13 +378,89 @@ static void WlIntrStartTx() { // WlIntr.c:1548
     }
 }
 
-static void WlIntrStartRx() { // WlIntr.c:1631
-    WORK_PARAM* pWork; // r4 - :1633
-    TX_CTRL* pTxCtrl; // r5 - :1634
+void WlIntrStartRx() { // WlIntr.c:1631
+    WORK_PARAM* pWork = &wlMan->Work; // r4 - :1633
+    TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r5 - :1634
     
-    u32 i, tm; // r8, r6 - :1651
-    u16* p; // r0 - :1652
-    u16 curr, delt, tm_delt; // r0, r2, r0 - :1653
+    W_IF = 0x40;
+    
+    if (wlMan->WlOperation & 0x20 && pTxCtrl->BkKeyOut == 0xFFFF && (W_RF_PINS & 3) == 3) {
+        u32 i, tm; // r8, r6 - :1651
+        u16* p; // r0 - :1652
+        u16 curr, delt, tm_delt; // r0, r2, r0 - :1653
+    
+        if (W_RXTX_ADDR < (int)((W_RXBUF_BEGIN / 2) & 0xFFF))
+            return;
+        
+        {
+            curr = (u16)W_RXBUF_WRCSR;
+            
+            p = (u16*)&W_MACMEM(2 * curr);
+            p = (u16*)AdjustRingPointer(p + 4);
+            p = (u16*)AdjustRingPointer(p + 2);
+            
+            if ((*p & 0xE7FF) == 0x228) {
+                p = (u16 *)AdjustRingPointer(p + 1);
+                tm = W_US_COUNT0 - 0x10000; 
+                
+                for (;;) {
+                    delt = W_RXTX_ADDR - curr;
+                    if (delt & 0x8000)
+                        delt += (u16)(pWork->Ofst.RxBuf.Size >> 1);
+                    
+                    if (delt > 0xE) 
+                        break;
+
+                    delt = W_US_COUNT0 - tm;
+
+                    // somehow i couldn't do it without a goto
+                    if (delt > 0x40)
+                        goto exit;
+                }
+            
+                p += 4;
+                for (i = 0; i < 3; i++) {
+                    p = (u16*)AdjustRingPointer(p);
+                    if (*(p++) != pWork->BSSID[i])
+                        return;
+                    
+                }
+                
+                p = (u16*)AdjustRingPointer(p + 5);
+                    
+                for (;;) {
+                    delt = W_RXTX_ADDR - curr;
+                    if (delt & 0x8000)
+                        delt += (u16)(pWork->Ofst.RxBuf.Size >> 1);
+                    
+                    if (delt > 0x14) 
+                        break;
+                    
+                    delt = W_US_COUNT0 - tm;
+                    if (delt > 0x70)
+                        goto exit;
+                }
+                
+                if ((*p & (1 << W_AID_LOW)) == 0) {
+                    pTxCtrl->BkKeyOut = W_TXBUF_REPLY2;
+                    W_TXBUF_RESET = 0x40;
+                    pWork->NotPollTxErrCount++;
+                    while ((W_RF_PINS & 3) == 3);
+                    
+                    // fix variable?
+                    W_X_244h = W_X_244h | 0x40;
+                    W_X_244h = W_X_244h & 0xFFBF;
+                    W_X_228h = 8;
+                    W_X_228h = 0;
+                    
+                    MultiPollRevicedClearSeq();
+                }
+            }
+        }
+    }
+
+    exit: ;
+    
 }
 
 STATIC void SetParentTbttTxq() { // WlIntr.c:1857
