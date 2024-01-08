@@ -165,30 +165,209 @@ u32 RxMpAckFrame(RXFRM* pFrm) { // RxCtrl.c:645
     return 0;
 }
 
-/*
-Empty function IPA
-
 void RxBeaconFrame(BEACON_FRAME* pFrm) { // RxCtrl.c:740
-    BEACON_BODY* pBeacon; // r0 - :742
-    WORK_PARAM* pWork; // r7 - :743
-    MLME_MAN* pMLME; // r4 - :744
-    CONFIG_PARAM* pConfig; // r8 - :745
-    HEAP_MAN* pHeapMan; // r9 - :746
+    BEACON_BODY* pBeacon = &pFrm->Body; // r0 - :742 - unused
+    WORK_PARAM* pWork = &wlMan->Work; // r7 - :743
+    MLME_MAN* pMLME = &wlMan->MLME; // r4 - :744
+    CONFIG_PARAM* pConfig = &wlMan->Config; // r8 - :745
+    HEAP_MAN* pHeapMan = &wlMan->HeapMan; // r9 - :746
     ELEMENT_CHECKER elementCheck; // None - :747
-    u32 ofst; // r4 - :748
-    u32 n2; // r0 - :748
-    u32 n1; // r4 - :748
-    u32 n; // r0 - :748
-    u32 cam_adrs; // r11 - :749
-    u32 BodyLen; // r5 - :749
+    u32 n, n1, n2, ofst; // r0, r4, r0, r4 - :748
+    u32 BodyLen, cam_adrs; // r5, r11 - :749
     u64 lltsf; // None - :750
-    u16 t2[4]; // None - :751
-    u16 t1[4]; // None - :751
+    u16 t1[4], t2[4]; // None, None - :751
     u16* ptsf; // r0 - :752
-    u32 actZone; // r0 - :886
-    u16 dtimCnt; // r0 - :1039
+    
+    wlMan->Counter.rx.beacon++; // :758
+    cam_adrs = CAM_SearchAdd(pFrm->Dot11Header.SA); // :761
+    pFrm->FirmHeader.CamAdrs = cam_adrs; // :762
+    
+    if (cam_adrs != 0xFF) { // :763
+        CAM_SetRSSI(cam_adrs, pFrm->MacHeader.Tx.MPDU); // :766
+        BodyLen = pFrm->FirmHeader.Length; // :769
+        if (BodyLen > 12) { // :772
+            MIi_CpuClear32(0, &elementCheck, sizeof(elementCheck)); // :785
+            elementCheck.pElement = pFrm->Body.Buf; // :786
+            elementCheck.bodyLength = BodyLen - 12; // :787
+            elementCheck.matchFlag = 2; // :788
+            if (pWork->SSIDLength == 0) { // :789
+                elementCheck.matchFlag |= 1; // :791
+            }
+            elementCheck.foundFlag = 56; // :793
+            elementCheck.rxStatus = pFrm->MacHeader.Rx.Status; // :794
+            elementCheck.capability = pFrm->Body.CapaInfo.Data; // :795
+            ElementChecker(&elementCheck); // :796
+            
+            if (elementCheck.pCFP && (pFrm->Dot11Header.Duration & 0x8000) != 0) { // :802
+                W_CONTENTFREE = (
+                    WL_ReadByte(&elementCheck.pCFP->CFPDurRemain.u8[0])
+                    + (WL_ReadByte(&elementCheck.pCFP->CFPDurRemain.u8[1]) << 8)
+                ); // :804
+            }
+            
+            if (pMLME->State == 0x13 && pMLME->pReq.Scan->scanType == 1) { // :808
+                if ((elementCheck.matchFlag & 9) == 9) { // :812
+                    RxProbeResFrame((PRBRES_FRAME*)pFrm, &elementCheck); // :816
+                }
+                
+                // :818 missing?
+                // (goes to if pSSID UpdateApList)
+                
+            } else {
+                if ((elementCheck.matchFlag & 8) != 0) { // :821
+                    if (pMLME->State == 0x21) { // :830
+                        ClearTimeOut(); // :833
+                        if ((elementCheck.matchFlag & 0x30) != 0x30) { // :839
+                            pMLME->Work.Scan.MaxConfirmLength = 12; // :841
+                            pMLME->Work.Scan.ChannelCount = 10; // :842
+                            
+                        } else if (pFrm->Body.BeaconInterval > 1000) { // :855
+                            pMLME->Work.Scan.MaxConfirmLength = 12; // :857
+                            pMLME->Work.Scan.ChannelCount = 1; // :858
+                            
+                        } else {
+                            pMLME->Work.Scan.MaxConfirmLength = 0; // :865
+                            if ((elementCheck.foundFlag & 2) != 0 && (elementCheck.matchFlag & 2) == 0) { // :869
+                                WSetChannel(elementCheck.channel, 0); // :874
+                            }
+                            CAM_SetSupRate(cam_adrs, elementCheck.rateSet.Support); // :878
+                            
+                            if (pWork->Mode == 2) { // :881
+                                if (elementCheck.pGMIF) { // :883
+                                    u32 actZone = (WL_ReadByte(&elementCheck.pGMIF->ActZone[0])) + (WL_ReadByte(&elementCheck.pGMIF->ActZone[1]) << 8); // r0 - :886
+                                    WSetActiveZoneTime(actZone, 1); // :887
+                                    
+                                    global_vtsf_var = (WL_ReadByte(&elementCheck.pGMIF->VTSF[0])) + (WL_ReadByte(&elementCheck.pGMIF->VTSF[1]) << 8); // :890
+                                    
+                                    // :891 missing?
+                                    
+                                } else {
+                                    WSetActiveZoneTime(0xFFFF, 1); // :894
+                                    global_vtsf_var = 0; // :895
+                                }
+                            }
+                            
+                            WSetDTIMPeriod(WL_ReadByte(&elementCheck.pTIM->DTIMPeriod)); // :900
+                            pWork->DTIMCount = WL_ReadByte(&elementCheck.pTIM->DTIMPeriod); // :901
+                            WSetBeaconPeriod(pFrm->Body.BeaconInterval); // :904
+                            pWork->bSynchro = 1; // :907
+                            pWork->bFirstTbtt = 1; // :908
+                            
+                            if (pWork->Mode == 2) // :911
+                                W_POWER_unk = 3; // :913
+                            
+                            W_POWER_TX = W_POWER_TX | 1; // :915
+                        }
+                        
+                        WSetMacAdrs1(pMLME->pCfm.Auth->peerMacAdrs, pFrm->Dot11Header.SA); // :919
+                        pMLME->State = 0x25; // :922
+                        AddTask(2, 1); // :925
+                    }
+                    
+                    switch (pWork->Mode) { // :929, incl cases.
+                        case 2:
+                            if (elementCheck.pGMIF) { // :936
+                                WSetActiveZoneTime((WL_ReadByte(&elementCheck.pGMIF->ActZone[0])) + (WL_ReadByte(&elementCheck.pGMIF->ActZone[1]) << 8), 0); // :939
+                                global_vtsf_var = (WL_ReadByte(&elementCheck.pGMIF->VTSF[0])) + (WL_ReadByte(&elementCheck.pGMIF->VTSF[1]) << 8); // :942
+                                pWork->GameInfoLength = WL_ReadByte(&elementCheck.pGMIF->Length) - 8; // :945
+                                
+                                if (pWork->GameInfoLength > 0x80) // :949
+                                    pWork->GameInfoLength = 0; // :952
+                                
+                                if (pWork->GameInfoLength != 0) { // :955
+                                    if ((int)elementCheck.pGMIF & 1) { // :957
+                                        // unaligned
+                                        MIi_CpuCopy16(&elementCheck.pGMIF->GameInfo[-1], pWork->GameInfoAdrs, pWork->GameInfoLength + 2); // :959
+                                        pWork->GameInfoAlign = 1; // :960
+                                        
+                                        // :961 missing
+                                        
+                                    } else {
+                                        // aligned
+                                        MIi_CpuCopy16(&elementCheck.pGMIF->GameInfo[0], pWork->GameInfoAdrs, pWork->GameInfoLength + 1); // :964
+                                        pWork->GameInfoAlign = 0; // :965
+                                    }
+                                }
+                            }
+                        
+                        case 3:
+                            pWork->BeaconLostCnt = 0; // :974
+                            CAM_UpdateLifeTime(cam_adrs); // :977
+
+                            lltsf = *(u64*)pFrm->Body.TimeStamp;
+                            n = (pWork->BeaconPeriod << 10);
+                            lltsf = ((lltsf / n) + 1) * n;
+                            ptsf = (u16*)&lltsf;
+                            W_US_COMPARE3 = ptsf[3]; // :987
+                            W_US_COMPARE2 = ptsf[2]; // :988
+                            W_US_COMPARE1 = ptsf[1]; // :989
+                            W_US_COMPARE0 = ptsf[0] | 1; // :990
+                            
+                            if (pWork->Mode == 2 && pWork->bFirstTbtt) { // :993
+                                lltsf -= n;
+                                
+                                // check dest variable?
+                                n = OS_DisableInterrupts(); // :999
+                                
+                                t1[0] = W_US_COUNT0; // :1000
+                                t1[1] = W_US_COUNT1; // :1001
+                                t1[2] = W_US_COUNT2; // :1002
+                                t1[3] = W_US_COUNT3; // :1003
+                                
+                                t2[0] = W_US_COUNT0; // :1004
+                                t2[1] = W_US_COUNT1; // :1005
+                                t2[2] = W_US_COUNT2; // :1006
+                                t2[3] = W_US_COUNT3; // :1007
+                                
+                                OS_RestoreInterrupts(n); // :1008
+
+                                if (t1[0] < t2[0])
+                                    n = ((*(u64*)t1) - lltsf) >> 10;
+                                else
+                                    n = ((*(u64*)t2) - lltsf) >> 10; // :1016
+                                    
+                                if (n < pConfig->ActiveZone) { // :1018
+                                    W_POST_BEACON = pConfig->ActiveZone - n; // :1020
+                                } else {
+                                    W_POST_BEACON = 0; // :1024
+                                }
+                            }
+                            
+                            if (pWork->STA == 0x40 && elementCheck.pTIM && pWork->PowerMgtMode == 1) { // :1035
+                                u16 dtimCnt = WL_ReadByte(&elementCheck.pTIM->DTIMCount); // r0 - :1039
+                                if (pWork->DTIMCount != dtimCnt) { // :1041
+                                    pWork->DTIMCount = dtimCnt; // :1045
+                                }
+                                pWork->bExistTIM = 0; // :1049
+                                if (dtimCnt == 0 && (WL_ReadByte(&elementCheck.pTIM->BitmapCtrl) & 1) != 0) // :1054
+                                    pWork->bExistTIM |= 1; // :1057
+                                
+                                ofst = WL_ReadByte(&elementCheck.pTIM->BitmapCtrl) & 0xFE; // :1063
+                                n1 = 8 * ofst; // :1064
+                                n2 = 8 * (ofst + WL_ReadByte(&elementCheck.pTIM->Length) - 3); // :1065
+                                if (n1 <= pWork->AID && pWork->AID <= n2) { // :1066
+                                    n = pWork->AID - n1; // :1069
+                                    if ((WL_ReadByte(&elementCheck.pTIM->VitrualBitmap[n >> 3]) & (1 << (n & 7))) != 0) { // :1073
+                                        pWork->bExistTIM |= 2; // :1076
+                                        TxPsPollFrame(); // :1079
+                                    }
+                                }
+                                
+                                if (pHeapMan->TxPri[0].Count == 0 && pHeapMan->TxPri[1].Count == 0 && pWork->bExistTIM == 0) // :1089
+                                    WSetPowerState(1); // :1098
+                            }
+                    }
+                    if (pConfig->BcnTxRxIndMsg) { // :1105
+                        MLME_IssueBeaconRecvIndication((RXFRM*)pFrm); // :1107
+                    }
+                }
+            }
+            if (elementCheck.pSSID) { // :1115
+                UpdateApList(elementCheck.channel, pFrm, elementCheck.pSSID); // :1117
+            }
+        }
+    }
 }
-*/
 
 static void RxDisAssFrame(DISASS_FRAME* pFrm) { // RxCtrl.c:1146
     WORK_PARAM* pWork = &wlMan->Work; // r1 - :1148
