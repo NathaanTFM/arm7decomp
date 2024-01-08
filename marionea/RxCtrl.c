@@ -248,7 +248,7 @@ void RxBeaconFrame(BEACON_FRAME* pFrm) { // RxCtrl.c:740
                             }
                             
                             WSetDTIMPeriod(WL_ReadByte(&elementCheck.pTIM->DTIMPeriod)); // :900
-                            pWork->DTIMCount = WL_ReadByte(&elementCheck.pTIM->DTIMPeriod); // :901
+                            pWork->DTIMCount = WL_ReadByte(&elementCheck.pTIM->DTIMCount); // :901
                             WSetBeaconPeriod(pFrm->Body.BeaconInterval); // :904
                             pWork->bSynchro = 1; // :907
                             pWork->bFirstTbtt = 1; // :908
@@ -296,7 +296,13 @@ void RxBeaconFrame(BEACON_FRAME* pFrm) { // RxCtrl.c:740
 
                             lltsf = *(u64*)pFrm->Body.TimeStamp;
                             n = (pWork->BeaconPeriod << 10);
-                            lltsf = ((lltsf / n) + 1) * n;
+                            
+                            // this avoids a reg swap
+                            // lltsf = ((lltsf / n) + 1) * n
+                            lltsf /= n;
+                            lltsf++;
+                            lltsf *= n;
+                            
                             ptsf = (u16*)&lltsf;
                             W_US_COMPARE3 = ptsf[3]; // :987
                             W_US_COMPARE2 = ptsf[2]; // :988
