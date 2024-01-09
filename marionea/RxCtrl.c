@@ -6,7 +6,7 @@ static void RxAssResFrame(ASSRES_FRAME* pFrm);
 static void RxReAssReqFrame(REASSREQ_FRAME* pFrm);
 static void RxReAssResFrame(REASSRES_FRAME* pFrm);
 static void RxProbeReqFrame(PRBREQ_FRAME* pFrm);
-STATIC void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk);
+static void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk);
 static void RxAuthFrame(AUTH_FRAME* pFrm);
 static void RxDeAuthFrame(DEAUTH_FRAME* pFrm);
 static void RxPsPollFrame(PSPOLL_FRAME* pFrm);
@@ -17,7 +17,7 @@ static u32 CheckChallengeText(AUTH_FRAME* pFrm);
 static void NewDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl);
 static void MoreDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl);
 
-
+extern u16 NULL_ADRS[3];
 
 /*
 Empty function IPA
@@ -674,25 +674,135 @@ static void RxProbeReqFrame(PRBREQ_FRAME* pFrm) { // RxCtrl.c:1703
     
 }
 
-/*
-(IPA)
-
-STATIC void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCtrl.c:1758
-    MLME_MAN* pMLME; // r6 - :1760
+static void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCtrl.c:1758
+    MLME_MAN* pMLME = &wlMan->MLME; // r6 - :1760
     WlMlmeScanCfm* pCfm; // r7 - :1761
     PRBRES_BODY* pPrbRes; // r0 - :1762
     WlBssDesc* pDesc; // r8 - :1763
-    u32 len; // r0 - :1764
-    u32 id; // r0 - :1764
-    u32 j; // r5 - :1764
-    u32 i; // r8 - :1764
-    u32 bodyLen; // r9 - :1764
+    u32 bodyLen, i, j, id, len; // r9, r8, r5, r0, r0 - :1764
     ELEMENT_CHECKER elementCheck; // None - :1765
     u16* pBssidMask; // r9 - :1766
-    u8* pDst; // r11 - :1767
-    u8* pSrc; // r9 - :1767
+    u8 *pSrc, *pDst; // r9, r11 - :1767
+
+    if (pMLME->State != 0x13)
+        return;
+    
+    pCfm = pMLME->pCfm.Scan;
+    pBssidMask = pMLME->pReq.Scan->bssidMask;
+    for (i = 0; i < pMLME->pReq.Scan->bssidMaskCount; i++) {
+        if (MatchMacAdrs(pBssidMask, pFrm->Dot11Header.BSSID)) {
+            pCfm->foundMap |= (1 << i);
+            return;
+        }
+        pBssidMask += 3;
+    }
+
+    pDesc = pCfm->bssDescList;
+    for (j = 0; j < pCfm->bssDescCount; j++) {
+        if (MatchMacAdrs(pFrm->Dot11Header.BSSID, pDesc->bssid))
+            return;
+
+        pDesc = (WlBssDesc*)((u32)pDesc + 2 * pDesc->length);
+    }
+
+    MIi_CpuClear16(0, pDesc, 0x40);
+    bodyLen = pFrm->FirmHeader.Length;
+
+    if (bodyLen <= 12)
+        return;
+
+    pPrbRes = &pFrm->Body;
+    if (!pChk) {
+        pChk = &elementCheck;
+        MIi_CpuClear32(0, &elementCheck, sizeof(elementCheck));
+        elementCheck.pElement = pPrbRes->Buf;
+        elementCheck.bodyLength = bodyLen - 12;
+        elementCheck.matchFlag = 0x3;
+        elementCheck.foundFlag = 0x38;
+        elementCheck.rxStatus = pFrm->MacHeader.Tx.Status;
+        elementCheck.capability = pPrbRes->CapaInfo.Data;
+        ElementChecker(&elementCheck);
+    }
+
+    if (pChk->pGMIF) {
+        pDesc->gameInfoLength = WL_ReadByte(&pChk->pGMIF->Length) - 8;
+        pDesc->length = ((u32)pDesc->gameInfoLength + 65) / 2;
+    } else {
+        pDesc->length = ((u32)pChk->otherElementLength + 65) / 2;
+    }
+
+    if ((pChk->matchFlag & 1) == 1 && wlMan->MLME.Work.Scan.MaxConfirmLength >= pDesc->length) {
+        pDesc->capaInfo = pPrbRes->CapaInfo.Data;
+        WSetMacAdrs1(pDesc->bssid, pFrm->Dot11Header.BSSID);
+        pDesc->beaconPeriod = pPrbRes->BeaconInterval;
+        pDesc->rssi = (u8)pFrm->MacHeader.Tx.MPDU;
+
+        if (pChk->pGMIF) {
+            for (i = 0; i < pDesc->gameInfoLength; i++) {
+                WL_WriteByte(&pDesc->gameInfo[i], WL_ReadByte(&pChk->pGMIF->GameInfo[i]));
+            }
+            
+        } else {
+            pDesc->otherElementCount = pChk->otherElementCount;
+            if (pChk->otherElementCount != 0) {
+                pSrc = (u8*)pPrbRes->Buf;
+                pDst = (u8*)pDesc->gameInfo;
+
+                for (i = 0; i < pChk->otherElementCount; ) {
+                    id = WL_ReadByte(pSrc);
+                    len = WL_ReadByte(pSrc + 1);
+                    if (id > 6 && pSrc != (u8*)pChk->pGMIF) {
+                        // i don't get any of this
+                        for (j = 0; j < len + 2; j++) {
+                            WL_WriteByte(pDst, WL_ReadByte(pSrc));
+                            pDst++; pSrc++;
+                        }
+                        i++;
+                        
+                    } else {
+                        pSrc += len + 2;
+                    }
+                }
+            }
+        }
+
+        if (pChk->pSSID) {
+            pDesc->ssidLength = WL_ReadByte(&pChk->pSSID->Length);
+            for (i = 0; i < pDesc->ssidLength; i++) {
+                WL_WriteByte(&pDesc->ssid[i], WL_ReadByte(&pChk->pSSID->SSID[i]));
+            }
+            
+        } else {
+            pDesc->ssidLength = 0;
+            for (i = 0; i < 0x20; i++) {
+                WL_WriteByte(&pDesc->ssid[i], 0);
+            }
+        }
+
+        pDesc->rateSet.basic = pChk->rateSet.Basic;
+        pDesc->rateSet.support = pChk->rateSet.Support;
+        pDesc->channel = pChk->channel;
+
+        if (pChk->pCFP)
+            pDesc->cfpPeriod = WL_ReadByte(&pChk->pCFP->CFPPeriod);
+
+        if (pChk->pTIM)
+            pDesc->dtimPeriod = WL_ReadByte(&pChk->pTIM->DTIMPeriod);
+
+        pCfm->header.length += pDesc->length;
+        pCfm->bssDescCount++;
+        pMLME->Work.Scan.MaxConfirmLength -= pDesc->length;
+
+        if (pMLME->Work.Scan.MaxConfirmLength < 0x20) {
+            ClearTimeOut();
+            pMLME->State = 0x15;
+            AddTask(2, 0);
+        }
+        
+    } else {
+        WSetMacAdrs1(pDesc->bssid, NULL_ADRS);
+    }
 }
-*/
 
 static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
     WORK_PARAM* pWork = &wlMan->Work; // r4 - :1995
