@@ -7,7 +7,7 @@ static void RxReAssReqFrame(REASSREQ_FRAME* pFrm);
 static void RxReAssResFrame(REASSRES_FRAME* pFrm);
 static void RxProbeReqFrame(PRBREQ_FRAME* pFrm);
 STATIC void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk);
-STATIC void RxAuthFrame(AUTH_FRAME* pFrm);
+static void RxAuthFrame(AUTH_FRAME* pFrm);
 static void RxDeAuthFrame(DEAUTH_FRAME* pFrm);
 static void RxPsPollFrame(PSPOLL_FRAME* pFrm);
 static void RxCfEndFrame();
@@ -694,22 +694,198 @@ STATIC void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCt
 }
 */
 
-/*
-(IPA)
-
-STATIC void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
-    WORK_PARAM* pWork; // r4 - :1995
-    MLME_MAN* pMLME; // r5 - :1996
-    AUTH_BODY* pAuth; // r0 - :1997
+static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
+    WORK_PARAM* pWork = &wlMan->Work; // r4 - :1995
+    MLME_MAN* pMLME = &wlMan->MLME; // r5 - :1996
+    AUTH_BODY* pAuth = &pFrm->Body; // r0 - :1997
     AUTH_FRAME* pTxFrm; // r4 - :1998
     u32 cam_adrs; // r6 - :1999
     u32 bTxAuth; // r7 - :2000
-    u16 stsCode; // r9 - :2001
-    u16 seqNum; // r8 - :2001
+    u16 seqNum, stsCode; // r8, r9 - :2001
     TXQ* pTxq; // r1 - :2013
     u16 map; // r0 - :2014
+
+    if (wlMan->WlOperation & 8) {
+        pTxq = wlMan->TxCtrl.Txq;
+        map = W_TXREQ_READ;
+        if (
+            ((map & 1) == 0 || !pTxq[0].Busy)
+            && ((map & 4) == 0 || !pTxq[1].Busy)
+            && ((map & 8) == 0 || !pTxq[2].Busy)
+            && (W_RF_PINS & 1) == 0
+        ) {
+            W_WEP_CNT = 0;
+            W_WEP_CNT = 0x8000;
+            wlMan->RxCtrl.IcvOkCntFlag = 0;
+        }
+    }
+
+    if (!IsExistManFrame(pFrm->Dot11Header.SA, 0xB0)) {
+        cam_adrs = pFrm->FirmHeader.CamAdrs;
+        bTxAuth = 0;
+        seqNum = pFrm->Body.SeqNum + 1;
+
+        if (cam_adrs == 0) {
+            stsCode = 19;
+            bTxAuth = 1;
+            goto exit; // TODO: remove this goto?
+        }
+
+        if (pWork->Mode == 1) {
+            if (CAM_GetStaState(cam_adrs) > 0x20) {
+                CAM_SetStaState(cam_adrs, 0x20);
+                MLME_IssueDeAuthIndication(pFrm->Dot11Header.SA, 1);
+            }
+            if ((pFrm->MacHeader.Tx.Status & 0x400) != 0 && CAM_GetAuthSeed(cam_adrs) != 0) {
+                bTxAuth = 1;
+                pFrm->Body.AlgoType = 1;
+                stsCode = 15;
+                seqNum = 4;
+                CAM_SetAuthSeed(cam_adrs, 0);
+                goto exit; // TODO: remove this goto?
+            }
+        }
+
+        switch (pFrm->Body.AlgoType) {
+            case 0:
+                if (pWork->Mode == 1 && wlMan->Config.AuthAlgo == 1) {
+                    stsCode = 13;
+                    bTxAuth = 1;
+                }
+                
+                else if (pWork->Mode == 1) { // :2103
+                    bTxAuth = 1;
+                    if (pFrm->Body.SeqNum == 1) { // :2105
+                        stsCode = 0;
+                        
+                    } else {
+                        stsCode = 14;
+                        seqNum = 2;
+                    }
+                }
+
+                else if (pWork->Mode != 1) { // "else" does not match
+                    if (pFrm->Body.SeqNum == 2) {
+                        if (pMLME->pReq.Auth->algorithm == 0 && MatchMacAdrs(pMLME->pReq.Auth->peerMacAdrs, pFrm->Dot11Header.SA) && pMLME->State == 0x31) {
+                            ClearTimeOut();
+                            if (pFrm->Body.StatusCode == 0) {
+                                WSetStaState(0x30);
+                                pMLME->pCfm.Auth->resultCode = 0;
+                                pMLME->pCfm.Auth->statusCode = 0;
+                                
+                            } else {
+                                pMLME->pCfm.Auth->resultCode = 12;
+                                pMLME->pCfm.Auth->statusCode = pFrm->Body.StatusCode;
+                            }
+                            pMLME->State = 0x35;
+                            AddTask(2, 2);
+                        }
+                    }
+                }
+                
+                break;
+
+            case 1:
+                if (pWork->Mode == 1) {
+                    CAM_SetStaState(cam_adrs, 0x20);
+                    if (pFrm->Body.SeqNum == 1) {
+                        pTxFrm = MakeAuthFrame(pFrm->Dot11Header.SA, 0x80, 1);
+                        if (pTxFrm) {
+                            pTxFrm->Body.AlgoType = pFrm->Body.AlgoType;
+                            pTxFrm->Body.SeqNum = seqNum;
+                            pTxFrm->Body.StatusCode = 0;
+                            SetChallengeText(cam_adrs, pTxFrm);
+                            TxManCtrlFrame((TXFRM*)pTxFrm);
+                        }
+                        
+                    } else if (pFrm->Body.SeqNum == 3) {
+                        if (CAM_GetStaState(cam_adrs) != 32 || CAM_GetAuthSeed(cam_adrs) == 0) {
+                            stsCode = 1;
+                            bTxAuth = 1;
+                            
+                        } else if (!CheckChallengeText(pFrm)) {
+                            stsCode = 15;
+                            bTxAuth = 1;
+                            CAM_SetAuthSeed(cam_adrs, 0);
+                            
+                        } else {
+                            CAM_SetAuthSeed(cam_adrs, 0);
+                            stsCode = 0;
+                            bTxAuth = 1;
+                        }
+                        
+                    } else {
+                        CAM_SetAuthSeed(cam_adrs, 0);
+                        stsCode = 14;
+                        seqNum = 2;
+                        bTxAuth = 1;
+                    }
+                    
+                } else {
+                    if (pMLME->pReq.Auth->algorithm == 1 && MatchMacAdrs(pMLME->pReq.Auth->peerMacAdrs, pFrm->Dot11Header.SA)) {
+                        if (pFrm->Body.SeqNum == 2) {
+                            if (pMLME->State == 0x31) {
+                                if (pFrm->Body.StatusCode != 0) {
+                                    ClearTimeOut();
+                                    pMLME->State = 0x35;
+                                    pMLME->pCfm.Auth->resultCode = 12;
+                                    pMLME->pCfm.Auth->statusCode = pFrm->Body.StatusCode;
+                                    AddTask(2, 2);
+                                    WSetStaState(0x20);
+                                    
+                                } else {
+                                    pMLME->State = 0x33;
+                                    if (WL_ReadByte(&pFrm->Body.ChallengeText.ID) == 16) {
+                                        pTxFrm = MakeAuthFrame(pFrm->Dot11Header.SA, WL_ReadByte(&pFrm->Body.ChallengeText.Length), 1);
+                                        if (pTxFrm) {
+                                            pTxFrm->Dot11Header.FrameCtrl.Data |= 0x4000;
+                                            MIi_CpuCopy16(&pFrm->Body, &pTxFrm->Body, WL_ReadByte(&pFrm->Body.ChallengeText.Length) + 8);
+                                            pTxFrm->Body.AlgoType = pFrm->Body.AlgoType;
+                                            pTxFrm->Body.SeqNum = 3;
+                                            pTxFrm->Body.StatusCode = 0;
+                                            TxManCtrlFrame((TXFRM*)pTxFrm);
+                                        }
+                                    }
+                                }
+                            }
+                            
+                        } else if (pFrm->Body.SeqNum == 4 && pMLME->State == 0x33) {
+                            ClearTimeOut();
+                            if (pFrm->Body.StatusCode != 0) {
+                                pMLME->pCfm.Auth->resultCode = 12;
+                                pMLME->pCfm.Auth->statusCode = pFrm->Body.StatusCode;
+                            } else {
+                                WSetStaState(0x30);
+                                pMLME->pCfm.Auth->resultCode = 0;
+                                pMLME->pCfm.Auth->statusCode = 0;
+                            }
+                            pMLME->State = 0x35;
+                            AddTask(2, 2);
+                        }
+                    }
+                }
+
+                break;
+
+            default:
+                if (pWork->Mode == 1) {
+                    stsCode = 13;
+                    bTxAuth = 1;
+                }
+        }
+
+exit:
+        if (bTxAuth) {
+            pTxFrm = MakeAuthFrame(pFrm->Dot11Header.SA, 0, stsCode != 0);
+            if (pTxFrm) {
+                pTxFrm->Body.AlgoType = pFrm->Body.AlgoType;
+                pTxFrm->Body.SeqNum = seqNum;
+                pTxFrm->Body.StatusCode = stsCode;
+                TxManCtrlFrame((TXFRM*)pTxFrm);
+            }
+        }
+    }
 }
-*/
 
 static void RxDeAuthFrame(DEAUTH_FRAME* pFrm) { // RxCtrl.c:2418
     WORK_PARAM* pWork = &wlMan->Work; // r1 - :2420
@@ -937,19 +1113,48 @@ fast_exit:
         AddTask(1, 7); // :2889
 }
 
-// THIS ONE MUST BE INLINED
-static void SetChallengeText(u32 camAdrs, AUTH_FRAME* pFrm) {
-    u32 i; // r6 - :2924
-    u32 txtLen; // r4 - :2924
-    u16* pText; // r5 - :2924
-    u16 rnd; // r6 - :2924
+static void SetChallengeText(unsigned long camAdrs, AUTH_FRAME* pFrm) {
+    u32 i;
+    u32 txtLen;
+    u16* pText;
+    u16 rnd;
+
+    rnd = W_RANDOM + (W_RANDOM << 8);
+    if (rnd == 0) rnd = 1;
+
+    RND_seed(rnd);
+    CAM_SetAuthSeed(camAdrs, rnd);
+
+    pText = (u16*)pFrm->Body.ChallengeText.Text;
+    txtLen = WL_ReadByte(&pFrm->Body.ChallengeText.Length);
+
+    for (i = 0; i < txtLen; i += 2) {
+        *(pText++) = RND_rand();
+    }
 }
 
-// THIS ONE MUST BE INLINED
 static u32 CheckChallengeText(AUTH_FRAME* pFrm) {
-    u32 i; // r7 - :2963
-    u32 txtLen; // r6 - :2963
-    u16* pText; // r5 - :2963
+    u32 i;
+    u32 txtLen;
+    u16* pText;
+    
+    if (WL_ReadByte(&pFrm->Body.ChallengeText) != 16)
+        return 0;
+    
+    RND_seed(CAM_GetAuthSeed(pFrm->FirmHeader.CamAdrs));
+    
+    pText = (u16*)pFrm->Body.ChallengeText.Text;
+    txtLen = WL_ReadByte(&pFrm->Body.ChallengeText.Length);
+
+    for (i = 0; i < txtLen/2; i++) {
+        if (*(pText++) != RND_rand())
+            return 0;
+    }
+
+    if (((txtLen & 1) != 0) && ((*pText) & 0xFF) != (RND_rand() & 0xFF))
+        return 0;
+    
+    return 1;
 }
 
 /* Removed to prevent IPA (inter-procedure   analysis?)
