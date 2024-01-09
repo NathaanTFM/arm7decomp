@@ -582,16 +582,6 @@ void StopBeaconFrame() { // TxCtrl.c:1652
 
 extern u16 BC_ADRS[3]; // from WlNic.c
 
-/*
-REG SWAP:
-(original -> current)
-
-r5 -> r6
-r6 -> r7
-r7 -> r8
-r8 -> r5
-*/
-
 void MakeBeaconFrame() { // TxCtrl.c:1692
     TXFRM_MAC* pFrm = wlMan->TxCtrl.Beacon.pMacFrm; // r0 - :1694
     CONFIG_PARAM* pConfig = &wlMan->Config; // r5 - :1695
@@ -600,7 +590,7 @@ void MakeBeaconFrame() { // TxCtrl.c:1692
     u8* pBuf; // r0 - :1698
     u8* p; // r4 - :1699
     u32 i, vtsf; // r7, r4 - :1700
-    u16* p16; // r8 - :1701
+    u16* p16 = (u16*)pFrm; // r8 - :1701
     
     pFrm->MacHeader.Tx.Status = 0; // :1707
     pFrm->MacHeader.Tx.Status2 = 0; // :1708
@@ -695,7 +685,7 @@ void MakeBeaconFrame() { // TxCtrl.c:1692
     }
     
     pWork->bUpdateGameInfo = 0; // :1822
-    pFrm->MacHeader.Tx.MPDU = (u32)pBuf + 28 - (u32)pBody; // :1825
+    /*pFrm->MacHeader.Tx.MPDU*/ p16[5] = (u32)pBuf + 28 - (u32)pBody; // :1825
 }
 
 void UpdateGameInfoElement() { // TxCtrl.c:1842
