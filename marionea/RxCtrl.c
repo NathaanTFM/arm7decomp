@@ -1042,23 +1042,107 @@ static void RxCfEndFrame() {
     // it's empty lol
 }
 
-STATIC void ElementChecker(ELEMENT_CHECKER* p) { // RxCtrl.c:2564
+static void ElementChecker(ELEMENT_CHECKER* p) { // RxCtrl.c:2564
     WORK_PARAM* pWork = &wlMan->Work; // r4 - :2566
     u8* pBuf; // r5 - :2567
     long i; // r6 - :2568
     u32 len; // r7 - :2569
     
     p->channel = pWork->CurrChannel;
-    
     pBuf = p->pElement;
     
     if (p->foundFlag & 0x800)
         p->matchFlag |= 1;
     
     for (i = p->bodyLength; i > 0; i -= len + 2) {
-        len = WL_ReadByte(pBuf + 1);
+        u32 unk = WL_ReadByte(pBuf++);
+        len = WL_ReadByte(pBuf++);
         
-        WL_ReadByte(pBuf++);
+        switch (unk) {
+            case 0:
+                if (len <= 0x20) {
+                    p->foundFlag |= 1;
+                    p->pSSID = (SSID_ELEMENT*)(pBuf-2);
+                    if (len == 0 && (p->foundFlag & 0x800) != 0) {
+                        p->matchFlag |= 1;
+                    } else {
+                        p->matchFlag &= ~1;
+                        if (WCheckSSID(len, pBuf)) {
+                            p->matchFlag |= 1;
+                        }
+                    }
+                }
+                break;
+            case 1:
+                if (len >= 1) {
+                    p->foundFlag |= 4;
+                    WElement2RateSet((SUP_RATE_ELEMENT *)(pBuf - 2), &p->rateSet);
+                    if ((p->rateSet.Basic & ~(pWork->RateSet.Basic | pWork->RateSet.Support)) == 0 && pWork->RateSet.Basic == (pWork->RateSet.Basic & (p->rateSet.Basic | p->rateSet.Support))) {
+                        p->matchFlag |= 4;
+                    } else {
+                        p->matchFlag &= ~4;
+                    }
+                }
+                break;
+            
+            case 2:
+            case 6:
+                break;
+            
+            case 3:
+                if (len >= 1) {
+                    p->foundFlag |= 2;
+                    p->channel = WL_ReadByte(pBuf);
+                    if (p->channel == wlMan->MLME.pReq.Join->bssDesc.channel) {
+                        p->matchFlag |= 2;
+                    } else {
+                        p->matchFlag &= ~2;
+                    }
+                }
+                break;
+            
+            case 5:
+                if (len >= 3) {
+                    p->foundFlag |= 0x100;
+                    p->pTIM = (TIM_ELEMENT*)(pBuf - 2);
+                }
+                break;
+            
+            case 4:
+                if (len >= 6) {
+                    p->foundFlag |= 0x200;
+                    p->pCFP = (CF_PARAM_ELEMENT*)(pBuf - 2);
+                }
+                break;
+            
+            case 221: // 0xDD
+                // 00:09:BF:00
+                if (len < 8 || WL_ReadByte(pBuf) != 0 || WL_ReadByte(pBuf+1) != 0x09 || WL_ReadByte(pBuf+2) != 0xBF || WL_ReadByte(pBuf+3) != 0) {
+                    p->otherElementCount++;
+                    p->otherElementLength += len + 2;
+                    
+                } else {
+                    p->foundFlag |= 0x400;
+                    p->pGMIF = (GAME_INFO_ELEMENT*)(pBuf - 2);
+                }
+                break;
+            
+            default:
+                p->otherElementCount++;
+                p->otherElementLength += len + 2;
+                break;
+
+        }
+        pBuf += len;
+    }
+    if ((p->foundFlag & 8) != 0 && ((pWork->BSSID[0] & 1) != 0 || (p->rxStatus & 0x8000) != 0)) {
+        p->matchFlag |= 8;
+    }
+    if ((p->foundFlag & 0x30) != 0) {
+        if ((p->capability & 3) == (pWork->CapaInfo & 3))
+            p->matchFlag |= 0x10;
+        if ((p->capability & 0x10) == (pWork->CapaInfo & 0x10))
+            p->matchFlag |= 0x20;
     }
 }
 
