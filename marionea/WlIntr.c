@@ -77,13 +77,92 @@ static void WlIntrPreTbtt() { // WlIntr.c:175
 }
 
 static void WlIntrTbtt() { // WlIntr.c:240
-    WORK_PARAM* pWork; // r5 - :242
-    CONFIG_PARAM* pConfig; // r7 - :243
-    TX_CTRL* pTxCtrl; // r8 - :244
+    WORK_PARAM* pWork = &wlMan->Work; // r5 - :242
+    CONFIG_PARAM* pConfig = &wlMan->Config; // r7 - :243
+    TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r8 - :244
     u8* p; // r0 - :245
     u32 txq, i, vtsf; // r0, r7, r0 - :246
     u32 bWakeUp; // r1 - :247
     TXQ* pTxq; // r9 - :411
+
+    W_IF = 0x4000;
+    switch (pWork->Mode) {
+        case 1:
+            p = &pTxCtrl->Beacon.pMacFrm->Body[pWork->Ofst.Beacon.GameInfo];
+            vtsf = global_vtsf_var;
+            WL_WriteByte(&p[8], vtsf);
+            WL_WriteByte(&p[9], vtsf >> 8);
+
+            if (pWork->PowerMgtMode == 1) {
+                W_POST_BEACON = pConfig->ActiveZone + W_POST_BEACON + 1;
+            }
+
+            wlMan->CamMan.PowerState = ~wlMan->CamMan.PowerMgtMode | wlMan->CamMan.NotClass3;
+
+            txq = W_TXBUSY;
+            if ((txq & 0x18) != 0 || (txq & 0x6) == 0x2) {
+                pTxCtrl->Flag &= ~2;
+                SetParentTbttTxq();
+            } else {
+                pTxCtrl->Flag |= 2;
+            }
+            break;
+        
+        case 2:
+            if (pWork->bSynchro) {
+                W_POST_BEACON = pConfig->ActiveZone + W_POST_BEACON + 1;
+            } else {
+                W_POST_BEACON = 0xFFFF;
+            }
+
+            if (pWork->bFirstTbtt == 2)
+                WSetPowerState(2);
+            
+            //break;
+        
+        case 3:
+            if (pWork->STA != 0x40) {
+                bWakeUp = 1;
+                
+            } else {
+                bWakeUp = 0;
+                if (pWork->CurrListenInterval == 1)
+                    bWakeUp = 1;
+
+                if (pWork->RxDtims != 0 && (pWork->DTIMCount == 1 || (pWork->DTIMCount == 0 && pWork->DTIMPeriod == 1)))
+                    bWakeUp = 1;
+            }
+
+            if (bWakeUp) {
+                W_POWER_TX |= 1;
+            } else {
+                W_POWER_TX &= ~1;
+            }
+
+            if (W_CMD_COUNT > 10)
+                W_POWER_unk = 0;
+
+            pWork->CurrListenInterval--;
+            if (pWork->CurrListenInterval == 0) {
+                pWork->CurrListenInterval = pWork->ListenInterval;
+            }
+
+            if ((pWork->DTIMCount--) == 0) {
+                pWork->DTIMCount = pWork->DTIMPeriod - 1;
+            }
+
+            for (i = 0; i < 2; i++) {
+                pTxq = &pTxCtrl->Txq[i];
+                if (pTxq->Busy && pTxq->pFrm->MacHeader.Tx.Status == 0 && CheckFrameTimeout(pTxq->pFrm)) {
+                    ResetTxqPri(i);
+                    pTxq->pMacFrm->MacHeader.Tx.Status = 2;
+                    AddTask(0, 0xE);
+                    pTxCtrl->TimeOutFrm++;
+                }
+            }
+            W_TXREQ_SET = 13;
+            break;
+    }
 }
 
 static void WlIntrActEnd() { // WlIntr.c:457
