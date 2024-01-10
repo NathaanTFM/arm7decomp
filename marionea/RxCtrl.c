@@ -19,23 +19,125 @@ static void MoreDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl);
 
 extern u16 NULL_ADRS[3];
 
-/*
-Empty function IPA
-
 void RxDataFrameTask() { // RxCtrl.c:66
     DEAUTH_FRAME* pDeAuth; // r0 - :68
     WlMaDataInd* pInd; // r5 - :69
     RXFRM* pFrm; // r0 - :70
-    CONFIG_PARAM* pConfig; // r0 - :71
-    WORK_PARAM* pWork; // r6 - :72
-    MLME_MAN* pMLME; // r1 - :73
-    HEAP_MAN* pHeapMan; // r7 - :74
-    WlCounter* pCounter; // r0 - :75
-    u32 multiCast; // r2 - :76
-    u32 err; // r9 - :76
-    u32 camAdrs; // r8 - :76
+    CONFIG_PARAM* pConfig = &wlMan->Config; // r0 - :71
+    WORK_PARAM* pWork = &wlMan->Work; // r6 - :72
+    MLME_MAN* pMLME = &wlMan->MLME; // r1 - :73
+    HEAP_MAN* pHeapMan = &wlMan->HeapMan; // r7 - :74
+    WlCounter* pCounter = &wlMan->Counter; // r0 - :75
+    u32 camAdrs, err, multiCast; // r8, r9, r2 - :76
+
+    pInd = (WlMaDataInd*)pHeapMan->RxData.Head;
+    if (pInd == (WlMaDataInd*)-1)
+        return;
+
+    pFrm = (RXFRM*)&pInd->frame;
+
+    multiCast = 0;
+    if (pFrm->Dot11Header.FrameCtrl.Bit.ToDS) {
+        if ((pFrm->Dot11Header.Adrs3[0] & 1) != 0)
+            multiCast = 1;
+    } else {
+        if ((pFrm->Dot11Header.Adrs1[0] & 1) != 0)
+            multiCast = 1;
+    }
+
+    if (pWork->STA != 0x40 && (pConfig->MulticastPass == 0 || multiCast == 0 || pWork->STA != 0x20 || pWork->bSynchro != 1 || (pMLME->State & 0xF0) == 0x30)) {
+        ReleaseHeapBuf(&pHeapMan->RxData, pInd);
+        
+    } else {
+        err = 1;
+        if (multiCast) {
+            pCounter->rx.multicast++;
+        } else {
+            pCounter->rx.unicast++;
+        }
+        pCounter->rx.fragment += (pFrm->MacHeader.Tx.Status & 0xF0) / 16 - 1;
+
+        switch (pWork->Mode) {
+            case 1:
+                if ((pFrm->Dot11Header.FrameCtrl.Data & 1) == 0) {
+                    camAdrs = CAM_Search(pFrm->Dot11Header.Adrs2);
+                    if (camAdrs == 0xFF || CAM_GetStaState(camAdrs) != 0x40) {
+                        if (CAM_GetStaState(camAdrs) == 0x30) {
+                            if (!IsExistManFrame(pFrm->Dot11Header.Adrs2, 0xA0)) {
+                                pDeAuth = (DEAUTH_FRAME*)MakeDisAssFrame(pFrm->Dot11Header.Adrs2, 7);
+                                
+                            } else {
+                                break;
+                            }
+                            
+                        } else {
+                            if (!IsExistManFrame(pFrm->Dot11Header.Adrs2, 0xC0)) {
+                                pDeAuth = MakeDeAuthFrame(pFrm->Dot11Header.Adrs2, 7, 1);
+                                
+                            } else {
+                                break;
+                            }
+                        }
+                        if (pDeAuth)
+                            TxManCtrlFrame((TXFRM*)pDeAuth);
+                        
+                    } else {
+                        CAM_SetPowerMgtMode(camAdrs, pFrm->Dot11Header.FrameCtrl.Bit.PowerMan);
+                        
+                        if (pFrm->Dot11Header.SeqCtrl.Data == CAM_GetLastSeqCtrl(camAdrs)) {
+                            pCounter->rx.duplicateErr++;
+                        } else {
+                            WSetMacAdrs1(pFrm->Dot11Header.Adrs1, pFrm->Dot11Header.Adrs3);
+                            err = 0;
+                        }
+                    }
+                }
+                break;
+            
+            case 2:
+            case 3:
+                if ((pFrm->Dot11Header.FrameCtrl.Data & 1) == 0) {
+                    if (pWork->PowerMgtMode != 0 && (pFrm->Dot11Header.FrameCtrl.Data & 0x2000) == 0) {
+                        if ((pFrm->Dot11Header.Adrs1[0] & 1) != 0) {
+                            pWork->bExistTIM &= ~1;
+                        } else if (pWork->Mode != 3) {
+                            pWork->bExistTIM &= ~2;
+                        }
+                        
+                        if (pWork->bExistTIM == 0 && pHeapMan->TxPri[0].Count == 0 && pHeapMan->TxPri[1].Count == 0) {
+                            WSetPowerState(1);
+                        }
+                    }
+
+                    camAdrs = pWork->APCamAdrs;
+                    if (pFrm->Dot11Header.SeqCtrl.Data == CAM_GetLastSeqCtrl(camAdrs)) {
+                        pCounter->rx.duplicateErr++;
+                    } else {
+                        WSetMacAdrs1(pFrm->Dot11Header.Adrs2, pFrm->Dot11Header.Adrs3);
+                        err = 0;
+                    }
+                }
+                break;
+        }
+
+        if (err == 0) {
+            pFrm->FirmHeader.CamAdrs = camAdrs;
+            CAM_SetRSSI(camAdrs, pFrm->MacHeader.Rx.rsv_RSSI & 0xFF);
+            CAM_SetLastSeqCtrl(camAdrs, pFrm->Dot11Header.SeqCtrl.Data);
+            CAM_UpdateLifeTime(camAdrs);
+            pFrm->FirmHeader.Length = pFrm->MacHeader.Rx.MPDU - 24;
+            pInd->header.code = 384;
+            pInd->header.length = ((u32)pFrm->FirmHeader.Length + 45) / 2;
+            SendMessageToWmDirect(&pHeapMan->RxData, pInd);
+            
+        } else {
+            ReleaseHeapBuf(&pHeapMan->RxData, pInd);
+        }
+
+        if (pHeapMan->RxData.Count)
+            AddTask(2, 6);
+    }
 }
-*/
 
 u32 RxMpFrame(RXFRM* pFrm) { // RxCtrl.c:324
     WORK_PARAM* pWork = &wlMan->Work; // r5 - :326
