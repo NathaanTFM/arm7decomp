@@ -5,7 +5,7 @@
 #include "Structures.h"
 #include "Prototypes.h"
 
-#define GetTxBufAddr(macFrm) (((u32)(macFrm) & 0x3FFF) / 2)
+#define GET_TX_BUF_ADDR(macFrm) (((u32)(macFrm) & 0x3FFF) / 2)
 
 // tick
 #define HW_SYSTEM_CLOCK 33514000
@@ -29,8 +29,8 @@
 #define OS_TicksToSeconds32(tick) ( ((u32)(tick) * 64) / HW_SYSTEM_CLOCK )
 
 // 0x10 is sizeof(WlCmdHeader) + sizeof(HEAPBUF_HEADER)
-#define GetCfm(req) ((void*)((u32)(req) + ((req)->header.length * 2) + 0x10))
-#define SubtractAddr(ptr, value) (void*)((u32)(ptr) - (value))
+#define GET_CFM(req) ((void*)((u8*)(req) + ((req)->header.length * 2) + 0x10))
+#define GET_HEADER(ptr) (void*)((u8*)(ptr) - (0x10))
 
 // TODO: Decided to make some static functions not static for now so they compile
 #ifndef STATIC

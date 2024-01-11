@@ -162,7 +162,7 @@ u32 RxMpFrame(RXFRM* pFrm) { // RxCtrl.c:324
         pRxCtrl->TxKeyReg |= 0x4000;
     
     CAM_UpdateLifeTime(pWork->APCamAdrs);
-    pInd = SubtractAddr(pFrm, 0x10);
+    pInd = GET_HEADER(pFrm);
     pFrm->FirmHeader.Length = pFrm->MacHeader.Rx.MPDU - 28;
     
     pInd->header.code = 0x182; // ?
@@ -256,7 +256,7 @@ u32 RxMpAckFrame(RXFRM* pFrm) { // RxCtrl.c:645
     if (!MatchMacAdrs(pFrm->Dot11Header.Adrs2, pWork->BSSID) || !MatchMacAdrs(pFrm->Dot11Header.Adrs3, pWork->LinkAdrs))
         return 1;
     
-    pInd = SubtractAddr(pFrm, 0x10);
+    pInd = GET_HEADER(pFrm);
     pFrm->FirmHeader.Length = pFrm->MacHeader.Rx.MPDU - 28;
     
     pInd->header.code = 0x185; // ?
@@ -1561,7 +1561,7 @@ static void MoreDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl) {
         pFrm = &pList[i].pPacket->frame;
         length = pFrm->MacHeader.Rx.MPDU + WSize;
         if (length > 0x5E4) {
-            ReleaseHeapBuf(&pHeapMan->TmpBuf, SubtractAddr(pFrm, 0x10));
+            ReleaseHeapBuf(&pHeapMan->TmpBuf, GET_HEADER(pFrm));
             pList[i].RestTime = 0;
             
         } else {
@@ -1584,17 +1584,17 @@ static void MoreDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl) {
                 
                 switch ((pFrm->MacHeader.Rx.Status & 0xF)) {
                     case 8:
-                        MoveHeapBuf(&pHeapMan->TmpBuf, &pHeapMan->RxData, SubtractAddr(pFrm, 0x10));
+                        MoveHeapBuf(&pHeapMan->TmpBuf, &pHeapMan->RxData, GET_HEADER(pFrm));
                         AddTask(2, 6);
                         break;
                     
                     case 0:
-                        MoveHeapBuf(&pHeapMan->TmpBuf, &pHeapMan->RxManCtrl, SubtractAddr(pFrm, 0x10));
+                        MoveHeapBuf(&pHeapMan->TmpBuf, &pHeapMan->RxManCtrl, GET_HEADER(pFrm));
                         AddTask(1, 7);
                         break;
                     
                     default:
-                        ReleaseHeapBuf(&pHeapMan->TmpBuf, SubtractAddr(pFrm, 0x10));
+                        ReleaseHeapBuf(&pHeapMan->TmpBuf, GET_HEADER(pFrm));
                 }
             }
         }

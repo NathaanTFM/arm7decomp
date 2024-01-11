@@ -197,7 +197,7 @@ u16 MLME_DeAuthReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:403
     
     if (pReq->peerMacAdrs[0] & 1) {
         pFrm->FirmHeader.FrameTime = wlMan->Work.IntervalCount;
-        CAM_AddBcFrame(&wlMan->HeapMan.TmpBuf, SubtractAddr(pFrm, 0x10));
+        CAM_AddBcFrame(&wlMan->HeapMan.TmpBuf, GET_HEADER(pFrm));
         if ((wlMan->CamMan.PowerMgtMode & ~wlMan->CamMan.NotClass3) == 0)
             TxqPri(2);
         
@@ -297,7 +297,7 @@ u16 MLME_DisAssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:632
     
     if (pReq->peerMacAdrs[0] & 1) {
         pFrm->FirmHeader.FrameTime = wlMan->Work.IntervalCount;
-        CAM_AddBcFrame(&wlMan->HeapMan.TmpBuf, SubtractAddr(pFrm, 0x10));
+        CAM_AddBcFrame(&wlMan->HeapMan.TmpBuf, GET_HEADER(pFrm));
         if ((wlMan->CamMan.PowerMgtMode & ~wlMan->CamMan.NotClass3) == 0)
             TxqPri(2);
         

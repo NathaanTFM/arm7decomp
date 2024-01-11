@@ -92,7 +92,7 @@ void TxqPri(u32 pri) { // TxCtrl.c:64
                     
                 if (CAM_GetStaState(cam_adrs) != 0x40) { // :146
                     pTxFrm->MacHeader.Tx.Status = 2; // :150
-                    IssueMaDataConfirm(pBufMan, SubtractAddr(pTxFrm, 0x10)); // :151
+                    IssueMaDataConfirm(pBufMan, GET_HEADER(pTxFrm)); // :151
                     CAM_DecFrameCount(pTxFrm); // :152
                     continue; // :154
                 }; 
@@ -116,7 +116,7 @@ void TxqPri(u32 pri) { // TxCtrl.c:64
         
         fc = pTxFrm->Dot11Header.FrameCtrl.Data;
         pMREG = &W_TXBUF_LOC1 + 2 * pri;
-        adrs = ((u32)pMacTxFrm & 0x3FFF) >> 1;
+        adrs = GET_TX_BUF_ADDR(pMacTxFrm);
         
         if ((fc & 0xC) == 4) {
             *pMREG = (adrs & 0xFFFF) | 0xA000;
@@ -189,7 +189,7 @@ void TxqEndData(TXFRM* pFrm, u32 flag) { // TxCtrl.c:442
     HEAPBUF_MAN* pBufMan = &wlMan->HeapMan.TxPri[0]; // r5 - :444
     WORK_PARAM* pWork = &wlMan->Work; // r6 - :445
     WlCounter* pCounter = &wlMan->Counter; // r0 - :446
-    void* pReq = SubtractAddr(pFrm, 0x10); // r7 - :447
+    void* pReq = GET_HEADER(pFrm); // r7 - :447
     
     CAM_DecFrameCount(pFrm);
     
@@ -410,7 +410,7 @@ void TxqEndManCtrl(TXFRM* pFrm, u32 flag) { // TxCtrl.c:541
     }
 
     CAM_DecFrameCount(pFrm);
-    ReleaseHeapBuf(pBufMan, SubtractAddr(pFrm, 0x10));
+    ReleaseHeapBuf(pBufMan, GET_HEADER(pFrm));
     wlMan->TxCtrl.Txq[1].Busy = 0;
 
     if (flag) {
@@ -447,11 +447,11 @@ void TxqEndBroadCast(TXFRM* pFrm, u32 flag) { // TxCtrl.c:936
     
     if (pFrm->Dot11Header.FrameCtrl.Bit.Type == 0) { // :954
         CAM_IncFrameCount(pFrm); // :957
-        MoveHeapBuf(pBufMan, &pHeapMan->TxPri[1], SubtractAddr(pFrm, 0x10)); // :958
+        MoveHeapBuf(pBufMan, &pHeapMan->TxPri[1], GET_HEADER(pFrm)); // :958
         TxqEndManCtrl(pFrm, 0); // :959
         
     } else {
-        IssueMaDataConfirm(pBufMan, SubtractAddr(pFrm, 0x10)); // :965
+        IssueMaDataConfirm(pBufMan, GET_HEADER(pFrm)); // :965
     }
     
     wlMan->TxCtrl.Txq[2].Busy = 0; // :969
@@ -712,7 +712,7 @@ void SetManCtrlFrame(TXFRM* pFrm) { // TxCtrl.c:1545
         pFrm->MacHeader.Tx.MPDU += 8;
     
     CAM_IncFrameCount(pFrm);
-    MoveHeapBuf(&wlMan->HeapMan.TmpBuf, &wlMan->HeapMan.TxPri[1], SubtractAddr(pFrm, 0x10)); // get heap buf
+    MoveHeapBuf(&wlMan->HeapMan.TmpBuf, &wlMan->HeapMan.TxPri[1], GET_HEADER(pFrm)); // get heap buf
 }
 
 void TxPsPollFrame() { // TxCtrl.c:1579
@@ -729,7 +729,7 @@ void TxPsPollFrame() { // TxCtrl.c:1579
         pTxq->pMacFrm->MacHeader.Tx.rsv_RetryCount = 0;
         pTxq->pMacFrm->MacHeader.Tx.Service_Rate = WCalcManRate();
         
-        W_TXBUF_LOC3 = (u16)GetTxBufAddr(pTxq->pMacFrm) | 0x8000;
+        W_TXBUF_LOC3 = (u16)GET_TX_BUF_ADDR(pTxq->pMacFrm) | 0x8000;
     }
 }
 
@@ -737,7 +737,7 @@ void StartBeaconFrame() { // TxCtrl.c:1621
     TXQ* pTxq = &wlMan->TxCtrl.Beacon; // r0 - :1623
     
     pTxq->Busy = 1;
-    W_TXBUF_BEACON = GetTxBufAddr(pTxq->pMacFrm) | 0x8000;
+    W_TXBUF_BEACON = GET_TX_BUF_ADDR(pTxq->pMacFrm) | 0x8000;
 }
 
 void StopBeaconFrame() { // TxCtrl.c:1652

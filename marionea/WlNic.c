@@ -1433,7 +1433,7 @@ static void RestoreTxFrame(TXQ* pTxq) { // WlNic.c:4787
     if (pTxq->Busy) {
         WaitMacStop();
         // TODO: figure out the types and logic behind this
-        CopyTxFrmToMacBuf(pTxq->pMacFrm, (WlMaDataReq*)SubtractAddr(pTxq->pFrm, 0x10)); // TODO: figure out what should go here
+        CopyTxFrmToMacBuf(pTxq->pMacFrm, (WlMaDataReq*)GET_HEADER(pTxq->pFrm)); // TODO: figure out what should go here
         wlMan->Work.TxBufResCount++;
     }
 }

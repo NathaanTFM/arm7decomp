@@ -622,7 +622,7 @@ static u32 CheckKeyTxEndMain(TXQ* pTxq) { // WlIntr.c:2109
     u32 retVal = 0; // r4 - :2111
     
     if (pTxq->Busy == 2) {
-        if ((GetTxBufAddr(pTxq->pMacFrm) | 0x8000) != W_TXBUF_REPLY1) {
+        if ((GET_TX_BUF_ADDR(pTxq->pMacFrm) | 0x8000) != W_TXBUF_REPLY1) {
             pTxq->Busy = 1;
             retVal |= 1;
         }

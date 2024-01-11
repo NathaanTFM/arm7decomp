@@ -135,7 +135,7 @@ u16 MA_KeyDataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:223
     
     pTxCtrl->Key[pos].Busy = 2;
     pTxCtrl->Key[pos].InCount++;
-    W_TXBUF_REPLY1 = (((u32)pFrm & 0x3FFF) >> 1) | 0x8000;
+    W_TXBUF_REPLY1 = GET_TX_BUF_ADDR(pFrm) | 0x8000;
     
     if (pConfig->NullKeyRes == 0) {
         WSetKSID();
@@ -314,7 +314,7 @@ u16 MA_MpReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:363
 
         x = OS_DisableInterrupts();
         W_CMD_COUNT = mp_time;
-        W_TXBUF_CMD = (((u32)pFrm & 0x3FFF) >> 1) | 0x8000 | resume;
+        W_TXBUF_CMD = GET_TX_BUF_ADDR(pFrm) | 0x8000 | resume;
         OS_RestoreInterrupts(x);
         
     } else {
@@ -323,7 +323,7 @@ u16 MA_MpReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:363
 
         if (mp_time + 3 < pReq->tmptt) {
             W_CMD_COUNT = pReq->tmptt - mp_time - 1;
-            W_TXBUF_CMD = (((u32)pFrm & 0x3FFF) >> 1) | 0x8000 | resume;
+            W_TXBUF_CMD = GET_TX_BUF_ADDR(pFrm) | 0x8000 | resume;
             OS_RestoreInterrupts(x);
             
         } else {
@@ -373,7 +373,7 @@ u16 MA_ClrDataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:850
 
 void IssueMaDataConfirm(HEAPBUF_MAN* pBufMan, void* pBuf) { // MA.c:905
     WlMaDataReq* pReq = (WlMaDataReq*)pBuf; // r0 - :907
-    WlMaDataCfm* pCfm = (WlMaDataCfm*)GetCfm(pReq); // r0 - :908
+    WlMaDataCfm* pCfm = (WlMaDataCfm*)GET_CFM(pReq); // r0 - :908
     
     pReq->header.code = pCfm->header.code;
     pCfm->header.length = 2;

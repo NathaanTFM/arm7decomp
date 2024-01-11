@@ -125,7 +125,7 @@ void RequestCmdTask() { // WlCmdIf.c:267
     if (pReq == (WlCmdReq*)-1)
         return;
 
-    pCfm = (WlCmdCfm*)GetCfm(pReq);
+    pCfm = (WlCmdCfm*)GET_CFM(pReq);
     
     if (wlMan->Config.DiagResult) {
         pCfm->header.length = 1;
