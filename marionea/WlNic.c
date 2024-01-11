@@ -969,17 +969,141 @@ u32 WCalcManRate() { // WlNic.c:2658
     return 20; // :2672
 }
 
-/*void WStart() { // WlNic.c:2700
-    WORK_PARAM* pWork; // r9 - :2702
-    CONFIG_PARAM* pConfig; // r4 - :2703
+void WStart() { // WlNic.c:2700
+    WORK_PARAM* pWork = &wlMan->Work; // r9 - :2702
+    CONFIG_PARAM* pConfig = &wlMan->Config; // r4 - :2703
     u16* ptsf; // r0 - :2705
     u64 lltsf; // None - :2706
-}
 
-This is the story of an IPA named WlNic.
-WlNic worked for a driver in a big console where he was
-employee number WiFi.
-*/
+    WStop();
+    RND_init(W_RANDOM + (W_RANDOM << 8), W_RANDOM);
+
+    pWork->CapaInfo = 1;
+    if (pConfig->PreambleType == 1) {
+        pWork->CapaInfo |= 0x20;
+    }
+    if (pConfig->WepMode) {
+        pWork->CapaInfo |= 0x10;
+    }
+    pWork->bSynchro = 0;
+
+    W_WEP_CNT = 0x8000;
+    W_POST_BEACON = 0xFFFF;
+    W_AID_FULL = 0;
+    W_AID_LOW = 0;
+    W_POWER_TX = 15;
+
+    InitCAM();
+    InitApList();
+    InitTxCtrl();
+    InitRxCtrl();
+
+    W_RXCNT = 0x8000;
+    W_IF = 0xFFFF;
+    W_RXSTAT_OVF_IE = 0x1FFF;
+
+    if ((wlMan->WlOperation & 8) != 0) {
+        W_RXSTAT_INC_IE = 0x400;
+    } else {
+        W_RXSTAT_INC_IE = 0;
+    }
+
+    W_TXSTATCNT = 0;
+    W_X_00Ah = 0;
+
+    switch (pWork->Mode) {
+        case 0:
+            W_IE = 0x3F;
+            W_RXFILTER = 0xFFFF;
+            W_RXFILTER2 = 8;
+            W_TXSTATCNT = 0;
+            W_X_00Ah = 0;
+            W_US_COUNTCNT = 0;
+            W_MODE_RST = 1;
+            break;
+
+        case 1:
+            W_IE = 0x703F;
+            W_RXSTAT_OVF_IE = 0x1FFF;
+            W_RXFILTER = 0x301;
+            W_RXFILTER2 = 0xD;
+            W_TXSTATCNT = 0xE000;
+            W_MODE_RST = 1;
+
+            ptsf = (u16*)&lltsf;
+            ptsf[0] = W_US_COUNT0;
+            ptsf[1] = W_US_COUNT1;
+            ptsf[2] = W_US_COUNT2;
+            ptsf[3] = W_US_COUNT3;
+
+            u32 n = (pWork->BeaconPeriod << 10);
+            lltsf /= n;
+            lltsf += 1;
+            lltsf *= n;
+
+            W_US_COMPARE3 = ptsf[3];
+            W_US_COMPARE2 = ptsf[2];
+            W_US_COMPARE1 = ptsf[1];
+            W_US_COMPARE0 = ptsf[0] | 1;
+            W_US_COUNTCNT = 1;
+            W_US_COMPARECNT = 1;
+            WSetStaState(0x40);
+            StartBeaconFrame();
+            W_TXREQ_SET = 2;
+            break;
+
+        case 2:
+            W_IE = 0xE0BF;
+            if (wlMan->WlOperation & 0x20) {
+                W_IE |= 0x40;
+                W_RXSTAT_INC_IE |= 0x68;
+            }
+
+            if ((pWork->BSSID[0] & 1) != 0) {
+                W_RXFILTER = 0x581;
+            } else {
+                W_RXFILTER = 0x181;
+            }
+            W_RXFILTER2 = 0xB;
+            W_MODE_RST = 1;
+            W_US_COUNTCNT = 1;
+            W_US_COMPARECNT = 1;
+            WSetStaState(0x20);
+            break;
+
+        case 3:
+            W_IF = 0xFFFF;
+            W_IE = 0xC03F;
+            if ((pWork->BSSID[0] & 1) != 0) {
+                W_RXFILTER = 0x401;
+            } else {
+                W_RXFILTER = 1;
+            }
+
+            W_RXFILTER2 = 11;
+            W_MODE_RST = 1;
+            W_US_COUNTCNT = 1;
+            W_US_COMPARECNT = 1;
+            W_POWER_unk = 0;
+            WSetStaState(0x20);
+            break;
+
+        case 4:
+            W_IE = 0;
+            W_RXSTAT_OVF_IE = 0;
+            W_MODE_RST = 1;
+            WSetStaState(0x20);
+            break;
+    }
+
+    W_POWER_unk = 0;
+    WDisableTmpttPowerSave();
+    W_TXREQ_SET = 2;
+    if (pWork->PowerMgtMode == 1)
+        WSetPowerState(2);
+
+    WaitLoop_Rxpe();
+}
 
 void WStop() { // WlNic.c:2919
     WORK_PARAM* pWork = &wlMan->Work; // r5 - :2921
