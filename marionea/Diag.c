@@ -1,15 +1,87 @@
 #include "Mongoose.h"
 
-static u16 test_pattern[3]; // :63
-static TEST_REGS test_reg[27]; // :65
+static const u16 test_pattern[3] = {0xFFFF, 0x5A5A, 0xA5A5}; // :63
+
+static const TEST_REGS test_reg[27] = {
+    {0x006, 0x003F},
+    {0x018, 0xFFFF},
+    {0x01A, 0xFFFF},
+    {0x01C, 0xFFFF},
+    {0x020, 0xFFFF},
+    {0x022, 0xFFFF},
+    {0x024, 0xFFFF},
+    {0x02A, 0x07FF},
+    {0x050, 0xFFFF},
+    {0x052, 0xFFFF},
+    {0x056, 0x0FFE},
+    {0x058, 0x1FFE},
+    {0x05A, 0x0FFE},
+    {0x05C, 0x0FFF},
+    {0x062, 0x1FFE},
+    {0x064, 0x0FFF},
+    {0x068, 0x1FFE},
+    {0x06C, 0x0FFF},
+    {0x074, 0x1FFE},
+    {0x122, 0xFFFF},
+    {0x124, 0xFFFF},
+    {0x128, 0xFFFF},
+    {0x130, 0x0FFF},
+    {0x132, 0x8FFF},
+    {0x134, 0xFFFF},
+    {0x140, 0xFFFF},
+    {0x142, 0xFFFF}
+}; // :65
 
 void DiagMacRegister() { // Diag.c:101
-    u16* pReg; // r0 - :103
-    u16 rd; // r0 - :104
-    u16 wd; // r6 - :104
+    volatile u16* pReg; // r0 - :103
+    u16 wd, rd; // r6, r0 - :104
     u32 err; // None - :105
     u32 j; // r2 - :105
     u32 i; // r3 - :107
+
+    err = 0;
+
+    for (i = 0; i < 3; i++) {
+        for (j = 0; j < 0x1B; j++) {
+            pReg = (u16*)(0x4808000 + test_reg[j].adrs);
+            *pReg = (test_pattern[i] & test_reg[j].mask);
+            if (*pReg != (test_pattern[i] & test_reg[j].mask)) {
+                if (err++ > 0x20)
+                    goto exit;
+            }
+        }
+    }
+
+    wd = 0x1234;
+    for (i = 0; i < 0x1B; i++) {
+        pReg = (u16*)(0x4808000 + test_reg[i].adrs);
+        *pReg = (wd & test_reg[i].mask);
+        wd += 0x1234;
+    }
+
+    rd = 0x1234;
+    for (i = 0; i < 0x1B; i++) {
+        pReg = (u16*)(0x4808000 + test_reg[i].adrs);
+        if (*pReg != (rd & test_reg[i].mask)) {
+            if (err++ > 0x20)
+                goto exit;
+        }
+
+        rd += 0x1234;
+    }
+
+    for (i = 0; i < 0x1B; i++) {
+        pReg = (u16*)(0x4808000 + test_reg[i].adrs);
+        *pReg = 0;
+        if (*pReg != 0) {
+            if (err++ > 0x20)
+                goto exit;
+        }
+    }
+
+exit:
+    if (err)
+        wlMan->Config.DiagResult |= 1;
 }
 
 void DiagMacMemory() { // Diag.c:229
@@ -79,8 +151,8 @@ exit:
     }
 }
 
-static u16 BBPDiagSkipAdrsES1[25]; // :832
-static u16 BBPDiagSkipAdrsRelease[28]; // :838
+static const u16 BBPDiagSkipAdrsES1[25]; // :832
+static const u16 BBPDiagSkipAdrsRelease[28]; // :838
 
 void DiagBaseBand() { // Diag.c:843
     u16* BBPDiagSkipAdrs; // r0 - :845
