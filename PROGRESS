@@ -1,6 +1,6 @@
 Progress:
-    Functions: 351/358 (98.0%)
-    Bytecode: 57656/62188 (92.7%)
+    Functions: 352/358 (98.3%)
+    Bytecode: 57780/62188 (92.9%)
 
 File progress:
     marionea\ApList.c
@@ -68,8 +68,8 @@ File progress:
         Bytecode: 1028/1808 (56.9%)
 
     marionea\WlNic.c
-        Functions: 92/93 (98.9%)
-        Bytecode: 10292/10416 (98.8%)
+        Functions: 93/93 (100.0%)
+        Bytecode: 10416/10416 (100.0%)
 
     marionea\WlSys.c
         Functions: 3/3 (100.0%)

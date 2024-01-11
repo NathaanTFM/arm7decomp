@@ -1270,14 +1270,20 @@ void WWaitus(u32 us) { // WlNic.c:3729
     WaitLoop_Waitus(us, TimeoutDummy);
 }
 
-/*
 void SetupPeriodicTimeOut(u32 ms, void (*pFunc)(void*)) { // WlNic.c:3748
     OSTick startTime; // None - :3750
     
-    // This one just won't. I give up. I hate uint64s
-    // Commenting it away to prevent IPA
+    OS_CancelAlarm(&wlMan->PeriodicAlarm);
+    startTime = OS_GetTick() + (u32)((33514ULL * ms) >> 6);
+    
+    OS_SetPeriodicAlarm(
+        &wlMan->PeriodicAlarm,
+        startTime,
+        (u32)((33514ULL * ms) >> 6),
+        pFunc,
+        0
+    );
 }
-*/
 
 void ClearPeriodicTimeOut() { // WlNic.c:3776
     OS_CancelAlarm(&wlMan->PeriodicAlarm);
