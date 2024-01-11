@@ -1453,40 +1453,205 @@ static u32 CheckChallengeText(AUTH_FRAME* pFrm) {
     return 1;
 }
 
-/* Removed to prevent IPA (inter-procedure   analysis?)
+#define DEFRAG_MATCHES(tbl1, tbl2) \
+    (MatchMacAdrs((tbl1)->DA, (tbl2)->DA) \
+    && MatchMacAdrs((tbl1)->SA, (tbl2)->SA) \
+    && (tbl1)->SeqCtrl.Bit.SeqNum == (tbl2)->SeqCtrl.Bit.SeqNum)
+
+static void NewDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl) { 
+    // TODO: check the variables (names might be incorrect)
+    
+    DEFRAG_LIST* pList = wlMan->RxCtrl.DefragList; // r8 - :3187
+    RXPACKET* pPacket; // r0 - :3187
+    RXFRM* pFrm; // r7 - :3187
+    u32 i; // r7 - :3187
+    u32 pos; // r6 - :3187
+    u32 fragCnt; // r0 - :3187
+    u32 SrcOfst; // r0 - :3187
+    u32 WSize; // r5 - :3187
+    u32 OvrCnt; // r0 - :3187
+
+    pos = 0xFFFFFFFF;
+
+    for (i = 0; i < 3; i++) {
+        if (pList[i].RestTime != 0) {
+            if (DEFRAG_MATCHES(&pList[i].DefragTbl, pDefragTbl)) {
+                fragCnt = (pMFrm->MacHeader.Rx.Status & 0xF0) / 16;
+                OvrCnt = fragCnt - (pList[i].DefragTbl.SeqCtrl.Bit.FragNum); 
+                if (OvrCnt != 0 && (OvrCnt & 0x80000000) == 0) {
+                    pPacket = pList[i].pPacket;
+                    pFrm = (RXFRM*)&pPacket->frame;
+                    WSize = pMFrm->MacHeader.Rx.MPDU - pFrm->MacHeader.Rx.MPDU - 0x18;
+                    if (WSize != 0 && (WSize & 0x80000000) == 0) {
+                        MIi_CpuCopy16(
+                            pMFrm->Body + pFrm->MacHeader.Rx.MPDU,
+                            pFrm->Body + pFrm->MacHeader.Rx.MPDU,
+                            WSize
+                        );
+                        pFrm->MacHeader.Rx.MPDU += WSize;
+                        pList[i].DefragTbl.SeqCtrl.Bit.FragNum = fragCnt;
+                        wlMan->Counter.rx.fragment += fragCnt;
+                    }
+                }
+                return;
+            }
+            
+        } else {
+            pos = i;
+        }
+    }
+
+    if (pos != 0xFFFFFFFF) {
+        pPacket = (RXPACKET*)AllocateHeapBuf(&wlMan->HeapMan.TmpBuf, 0x622);
+        
+        if (pPacket) {
+            MIi_CpuCopy16(pDefragTbl, &pList[pos].DefragTbl, sizeof(DEFRAG_TBL));
+            pList[pos].RestTime = 5;
+            pList[pos].pPacket = pPacket;
+
+            pFrm = (RXFRM*)&pPacket->frame;
+            MIi_CpuCopy16(pMFrm, &pFrm->MacHeader, pMFrm->MacHeader.Rx.MPDU + 0xC);
+            MI_WaitDma(wlMan->DmaChannel);
+
+            fragCnt = (pFrm->MacHeader.Rx.Status & 0xF0) / 16;
+            pList[pos].DefragTbl.SeqCtrl.Bit.FragNum = fragCnt;
+            wlMan->Counter.rx.fragment += fragCnt;
+            
+            pFrm->MacHeader.Rx.MPDU = pMFrm->MacHeader.Rx.MPDU - 0x18;
+            pList[pos].UnitLength = pFrm->MacHeader.Rx.MPDU / fragCnt;
+            
+        } else {
+            SetFatalErr(4);
+        }
+    }
+}
+
+static void MoreDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl) {
+    // TODO: check the variables (names might be incorrect)
+    
+    HEAP_MAN* pHeapMan = &wlMan->HeapMan; // r8 - :3313
+    DEFRAG_LIST* pList = wlMan->RxCtrl.DefragList; // r7 - :3313
+    RXFRM* pFrm; // r6 - :3313
+    u32 i; // r6 - :3313
+    u32 fragCnt; // r0 - :3313
+    u32 length; // r9 - :3313
+    u32 OvrCnt; // r11 - :3313
+    u32 SrcOfst; // None - :3313
+    u32 WSize; // r5 - :3313
+
+    pMFrm->MacHeader.Rx.MPDU -= 0x18;
+
+    for (i = 0; i < 3; i++) {
+        if (pList[i].RestTime != 0 && DEFRAG_MATCHES(&pList[i].DefragTbl, pDefragTbl)) {
+            OvrCnt = pList[i].DefragTbl.SeqCtrl.Data - pDefragTbl->SeqCtrl.Data;
+            if ((OvrCnt & 0x80000000) == 0) {
+                SrcOfst = OvrCnt * pList[i].UnitLength;
+                WSize = pMFrm->MacHeader.Rx.MPDU - SrcOfst;
+            
+                if (WSize != 0 && (WSize & 0x80000000) == 0) {
+                    break;
+                }
+            }
+
+            return;
+        }
+    }
+
+    if (i != 3) {
+        pFrm = &pList[i].pPacket->frame;
+        length = pFrm->MacHeader.Rx.MPDU + WSize;
+        if (length > 0x5E4) {
+            ReleaseHeapBuf(&pHeapMan->TmpBuf, SubtractAddr(pFrm, 0x10));
+            pList[i].RestTime = 0;
+            
+        } else {
+            MIi_CpuCopy16(
+                pMFrm->Body + SrcOfst,
+                pFrm->Body + pFrm->MacHeader.Rx.MPDU,
+                WSize + 1
+            );
+            pFrm->MacHeader.Rx.MPDU = length;
+
+            fragCnt = (pMFrm->MacHeader.Rx.Status & 0xF0) / 16;
+            pList[i].DefragTbl.SeqCtrl.Bit.FragNum += (fragCnt - OvrCnt);
+            wlMan->Counter.rx.fragment += fragCnt;
+            
+            if ((pMFrm->MacHeader.Rx.Status & 0x100) == 0) {
+                pList[i].RestTime = 0;
+                
+                pFrm->MacHeader.Rx.Status = (pFrm->MacHeader.Rx.Status & ~0xF0) + 0x10;
+                pFrm->MacHeader.Rx.MPDU += 24;
+                
+                switch ((pFrm->MacHeader.Rx.Status & 0xF)) {
+                    case 8:
+                        MoveHeapBuf(&pHeapMan->TmpBuf, &pHeapMan->RxData, SubtractAddr(pFrm, 0x10));
+                        AddTask(2, 6);
+                        break;
+                    
+                    case 0:
+                        MoveHeapBuf(&pHeapMan->TmpBuf, &pHeapMan->RxManCtrl, SubtractAddr(pFrm, 0x10));
+                        AddTask(1, 7);
+                        break;
+                    
+                    default:
+                        ReleaseHeapBuf(&pHeapMan->TmpBuf, SubtractAddr(pFrm, 0x10));
+                }
+            }
+        }
+    }
+}
+
 void DefragTask() { // RxCtrl.c:3011
-    HEAP_MAN* pHeapMan; // None - :3013
+    HEAP_MAN* pHeapMan = &wlMan->HeapMan; // None - :3013
     RXPACKET* pPacket; // r8 - :3014
     RXFRM* pFrm; // r0 - :3015
     DEFRAG_TBL defragTbl; // None - :3016
     u32 fc; // r4 - :3017
-}
-*/
 
-// THIS ONE MUST BE INLINED
-static void NewDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl) {
-    DEFRAG_LIST* pList;
-    RXPACKET* pPacket;
-    RXFRM* pFrm; 
-    u32 i; 
-    u32 pos; 
-    u32 fragCnt; 
-    u32 SrcOfst;
-    u32 WSize; 
-    u32 OvrCnt;
-}
+    pPacket = (RXPACKET *)pHeapMan->Defrag.Head;
+    
+    if (pPacket == (RXPACKET*)-1) {
+        return;
+    }
+    
+    pFrm = (RXFRM*)&pPacket->frame;
+    
+    if (wlMan->Work.STA == 0x40 && pFrm->MacHeader.Rx.MPDU <= 1532) {
+        fc = pFrm->Dot11Header.FrameCtrl.Data;
+        
+        if ((fc & 0x100) != 0) {
+            WSetMacAdrs1(defragTbl.DA, pFrm->Dot11Header.Adrs3);
+            
+            if ((fc & 0x200) != 0) {
+                goto exit;
+            } else {
+                WSetMacAdrs1(defragTbl.SA, pFrm->Dot11Header.Adrs2);
+            }
+            
+        } else {
+            WSetMacAdrs1(defragTbl.DA, pFrm->Dot11Header.Adrs1);
+        
+            if ((fc & 0x200) != 0) {
+                WSetMacAdrs1(defragTbl.SA, pFrm->Dot11Header.Adrs3);
+                // then we defrag
+            } else {
+                WSetMacAdrs1(defragTbl.SA, pFrm->Dot11Header.Adrs2);
+                // then we defrag
+            }
+        }
 
-// THIS ONE MUST BE INLINED
-static void MoreDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl) {
-    HEAP_MAN* pHeapMan;
-    DEFRAG_LIST* pList;
-    RXFRM* pFrm;
-    u32 i; 
-    u32 fragCnt;
-    u32 length;
-    u32 OvrCnt; 
-    u32 SrcOfst; 
-    u32 WSize;
+        defragTbl.SeqCtrl.Data = pFrm->Dot11Header.SeqCtrl.Data;
+        if ((fc & 0x400) != 0 && pFrm->Dot11Header.SeqCtrl.Bit.FragNum == 0) {
+            NewDefragment((RXFRM_MAC*)&pFrm->MacHeader, &defragTbl);
+        } else {
+            MoreDefragment((RXFRM_MAC*)&pFrm->MacHeader, &defragTbl);
+        }
+    }
+
+exit:
+    ReleaseHeapBuf(&pHeapMan->Defrag, pPacket);
+    if (pHeapMan->Defrag.Count)
+        AddTask(2, 9);
 }
 
 void DefragTimerTask() { // RxCtrl.c:3348
