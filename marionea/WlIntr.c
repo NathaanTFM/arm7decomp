@@ -457,7 +457,7 @@ static void WlIntrStartTx() { // WlIntr.c:1548
     }
 }
 
-void WlIntrStartRx() { // WlIntr.c:1631
+static void WlIntrStartRx() { // WlIntr.c:1631
     WORK_PARAM* pWork = &wlMan->Work; // r4 - :1633
     TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r5 - :1634
     
