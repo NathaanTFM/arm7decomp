@@ -137,7 +137,7 @@ void RequestCmdTask() { // WlCmdIf.c:267
     } else {
         switch (pReq->header.code & 0xFF00) {
             case 0:
-                currBusy = 1;
+                currBusy = 0x1;
                 pCmdTbl = WlibCmdTbl_MLME;
                 vCode = pReq->header.code & 0xFF;
                 vCodeMax = 11;
@@ -150,7 +150,7 @@ void RequestCmdTask() { // WlCmdIf.c:267
                 break;
 
             case 0x100:
-                currBusy = 2;
+                currBusy = 0x2;
                 pCmdTbl = WlibCmdTbl_MA;
                 vCode = pReq->header.code & 0xFF;
                 vCodeMax = 5;
@@ -175,7 +175,7 @@ void RequestCmdTask() { // WlCmdIf.c:267
                     if (wlMan->Work.STA != 0x40) {
                         err = 1;
                     }
-                    currBusy = 0x10;
+                    currBusy = 0x8;
                     pCmdTbl = WlibCmdTbl_PARAMSET2;
                     vCode -= 0x40;
                     vCodeMax = 6;
@@ -245,6 +245,7 @@ void RequestCmdTask() { // WlCmdIf.c:267
 skip:
     if (wlMan->HeapMan.RequestCmd.Count)
         AddTask(2, 0xB);
+
 }
 
 u16 CMD_ReservedReqCmd() { // WlCmdIf.c:548
