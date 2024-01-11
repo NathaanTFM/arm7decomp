@@ -124,8 +124,127 @@ void RequestCmdTask() { // WlCmdIf.c:267
         
     if (pReq == (WlCmdReq*)-1)
         return;
+
+    pCfm = (WlCmdCfm*)GetCfm(pReq);
     
+    if (wlMan->Config.DiagResult) {
+        pCfm->header.length = 1;
+        pCfm->resultCode = 6;
+        
+    } else if (pReq->header.code != pCfm->header.code) {
+        pCfm->resultCode = 13;
+        
+    } else {
+        switch (pReq->header.code & 0xFF00) {
+            case 0:
+                currBusy = 1;
+                pCmdTbl = WlibCmdTbl_MLME;
+                vCode = pReq->header.code & 0xFF;
+                vCodeMax = 11;
+
+                if ((pCmdIf->Busy & 1) != 0) {
+                    err = 2;
+                } else if (wlMan->Work.STA < 0x20) {
+                    err = 1;
+                }
+                break;
+
+            case 0x100:
+                currBusy = 2;
+                pCmdTbl = WlibCmdTbl_MA;
+                vCode = pReq->header.code & 0xFF;
+                vCodeMax = 5;
+                
+                if (wlMan->Work.STA != 0x40) {
+                    err = 1;
+                }
+                break;
+            
+            case 0x200:
+                vCode = pReq->header.code & 0xFF;
+                
+                if (vCode < 0x40) {
+                    if (wlMan->Work.STA < 0x10) {
+                        err = 1;
+                    }
+                    currBusy = 0x4;
+                    pCmdTbl = WlibCmdTbl_PARAMSET;
+                    vCodeMax = 24;
+                    
+                } else if (vCode < 0x80) {
+                    if (wlMan->Work.STA != 0x40) {
+                        err = 1;
+                    }
+                    currBusy = 0x10;
+                    pCmdTbl = WlibCmdTbl_PARAMSET2;
+                    vCode -= 0x40;
+                    vCodeMax = 6;
+                    
+                } else if (vCode < 0xC0) {
+                    if (wlMan->Work.STA < 0x10) {
+                        err = 1;
+                    }
+                    currBusy = 0x10;
+                    pCmdTbl = WlibCmdTbl_PARAMGET;
+                    vCode -= 0x80;
+                    vCodeMax = 24;
+                    
+                } else {
+                    if (wlMan->Work.STA < 0x10) {
+                        err = 1;
+                    }
+                    currBusy = 0x20;
+                    pCmdTbl = WlibCmdTbl_PARAMGET2;
+                    vCode -= 0xC0;
+                    vCodeMax = 6;
+                }
+                break;
+
+            case 0x300:
+                currBusy = 0x40;
+                pCmdTbl = WlibCmdTbl_DEV;
+                vCode = pReq->header.code & 0xFF;
+                vCodeMax = 11;
+                break;
+
+            default:
+                vCode = 1;
+                vCodeMax = 0;
+                break;
+        }
+
+        if (vCode > vCodeMax) {
+            err = 3;
+            
+        } else if ((pReq->header.length < pCmdTbl[vCode].RequestMinLength) || (pCfm->header.length < pCmdTbl[vCode].ConfirmMinLength)) {
+            err = 4;
+        }
+
+        if (err != 0) {
+            pCfm->header.length = 1;
+            pCfm->resultCode = err;
+            
+        } else {
+            pCmdIf->Busy |= currBusy;
+            pCfm->resultCode = pCmdTbl[vCode].pCmdFunc(pReq, pCfm);
+
+            switch (pCfm->resultCode) {
+                case 128:
+                    return;
+                
+                case 129:
+                    pCmdIf->Busy &= ~currBusy;
+                    goto skip;
+            }
+        }
+    }
     
+    pCmdIf->Busy &= ~currBusy;
+    SendMessageToWmDirect(&wlMan->HeapMan.RequestCmd, pCmdIf->pCmd);
+
+skip:
+    if (wlMan->HeapMan.RequestCmd.Count)
+        AddTask(2, 0xB);
 }
 
 u16 CMD_ReservedReqCmd() { // WlCmdIf.c:548
