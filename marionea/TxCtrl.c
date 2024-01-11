@@ -238,19 +238,186 @@ void TxqEndData(TXFRM* pFrm, u32 flag) { // TxCtrl.c:442
     
 }
 
-/*void TxqEndManCtrl(TXFRM* pFrm, u32 flag) { // TxCtrl.c:541
-    WORK_PARAM* pWork; // r8 - :543
-    MLME_MAN* pMLME; // r9 - :544
-    WlCounter* pCounter; // r0 - :545
-    HEAPBUF_MAN* pBufMan; // r10 - :546
+void TxqEndManCtrl(TXFRM* pFrm, u32 flag) { // TxCtrl.c:541
+    WORK_PARAM* pWork = &wlMan->Work; // r8 - :543
+    MLME_MAN* pMLME = &wlMan->MLME; // r9 - :544
+    WlCounter* pCounter = &wlMan->Counter; // r0 - :545
+    HEAPBUF_MAN* pBufMan = &wlMan->HeapMan.TxPri[1]; // r10 - :546
     AUTH_FRAME* pAuth; // r0 - :547
     ASSRES_FRAME* pAssRes; // r0 - :548
     DEAUTH_FRAME* pDeAuth; // r0 - :550
-    u32 cam_adrs; // r4 - :552
-    u32 type; // r7 - :552
-    u32 i; // r4 - :552
+    u32 i, type, cam_adrs; // r4, r7, r4 - :552
+
+    cam_adrs = pFrm->FirmHeader.CamAdrs;
+    if ((pFrm->MacHeader.Tx.Status & 2) == 0) {
+        pCounter->tx.success++;
+        if ((pFrm->Dot11Header.Adrs1[0] & 1) != 0) {
+            pCounter->tx.multicast++;
+        } else {
+            pCounter->tx.unicast++;
+        }
+
+        if (CAM_GetPowerMgtMode(cam_adrs) != 0 && (pFrm->Dot11Header.FrameCtrl.Data & 0x2000) == 0) {
+            CAM_SetDoze(cam_adrs);
+        }
+        
+    } else {
+        pCounter->tx.failed++;
+    }
+
+    if ((pFrm->Dot11Header.FrameCtrl.Bit.WEP) != 0) {
+        pCounter->tx.wep++;
+    }
+
+    pCounter->tx.retry += pFrm->MacHeader.Tx.rsv_RetryCount & 0xFF;
+
+    type = pFrm->Dot11Header.FrameCtrl.Data & 0xFC;
+    switch (type) {
+        case 0xB0:
+            pAuth = (AUTH_FRAME*)pFrm;
+            if (cam_adrs != 0) {
+                if ((pAuth->MacHeader.Tx.Status & 2) == 0) {
+                    if (pAuth->Body.AlgoType == 0 && pAuth->Body.SeqNum == 2 && pAuth->Body.StatusCode == 0) {
+                        CAM_SetStaState(cam_adrs, 0x30);
+                        MLME_IssueAuthIndication(pAuth->Dot11Header.DA, pAuth->Body.AlgoType);
+                        
+                    } else if (pAuth->Body.AlgoType == 1 && pAuth->Body.SeqNum == 4 && pAuth->Body.StatusCode == 0) {
+                        CAM_SetStaState(cam_adrs, 0x30);
+                        MLME_IssueAuthIndication(pAuth->Dot11Header.DA, pAuth->Body.AlgoType);
+                    }
+                }
+            }
+            break;
+        
+        case 0x10: // Assocation response?
+        case 0x30: // Re-association response?
+            pAssRes = (ASSRES_FRAME*)pFrm;
+            
+            if (cam_adrs != 0) {
+                if ((pFrm->MacHeader.Tx.Status & 2) == 0) {
+                    // TODO: find matching struct
+                    if (pAssRes->Body.StatusCode == 0 && CAM_GetStaState(cam_adrs) == 0x30) {
+                        CAM_SetStaState(cam_adrs, 0x40);
+                        
+                        if (type == 0x10) {
+                            MLME_IssueAssIndication(
+                                pAssRes->Dot11Header.DA,
+                                pAssRes->Body.AID,
+                                (SSID_ELEMENT*)((u32)pAssRes + 0x14 + pAssRes->MacHeader.Tx.MPDU)
+                            );
+                        } else {
+                            MLME_IssueReAssIndication(
+                                pAssRes->Dot11Header.DA,
+                                pAssRes->Body.AID,
+                                (SSID_ELEMENT*)((u32)pAssRes + 0x14 + pAssRes->MacHeader.Tx.MPDU)
+                            );
+                        }
+                    }
+                } else {
+                    CAM_ReleaseAID(cam_adrs);
+                    pDeAuth = MakeDeAuthFrame(pAssRes->Dot11Header.DA, 1, 0);
+                    if (pDeAuth) {
+                        pDeAuth->FirmHeader.FrameId = 2;
+                        if (flag) {
+                            TxManCtrlFrame((TXFRM*)pDeAuth);
+                        } else {
+                            SetManCtrlFrame((TXFRM*)pDeAuth);
+                        }
+                    }
+                }
+            }
+            break;
+
+        case 0xA0: // Disassocation
+            if (pWork->Mode == 1) {
+                if (cam_adrs != 0) {
+                    if (CAM_GetStaState(cam_adrs) > 0x30) {
+                        CAM_SetStaState(cam_adrs, 0x30);
+                    }
+                } else {
+                    if ((pFrm->Dot11Header.Adrs1[0] & 1) != 0) {
+                        for (i = 1; i < wlMan->Config.MaxStaNum; i++) {
+                            if (CAM_GetStaState(i) > 0x30) {
+                                CAM_SetStaState(i, 0x30);
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (pWork->STA > 0x30) {
+                    WSetStaState(0x30);
+                    WClearAids();
+                }
+            }
+
+            if (pMLME->State == 0x71 && pFrm == pMLME->Work.DeAuth.pTxFrm) {
+                if ((pFrm->MacHeader.Tx.Status & 2) == 0) {
+                    pMLME->pCfm.Cfm->resultCode = 0;
+                } else {
+                    pMLME->pCfm.Cfm->resultCode = 12;
+                }
+                pMLME->State = 0;
+                IssueMlmeConfirm();
+            }
+            break;
+        
+        case 0xC0: // Deauthentication
+            pDeAuth = (DEAUTH_FRAME*)pFrm;
+            
+            if (pWork->Mode == 1) {
+                if (cam_adrs != 0) {
+                    if (CAM_GetStaState(cam_adrs) > 0x20) {
+                        CAM_SetStaState(cam_adrs, 0x20);
+                    }
+                } else {
+                    if ((pDeAuth->Dot11Header.DA[0] & 1) != 0) {
+                        for (i = 1; i < wlMan->Config.MaxStaNum; i++) {
+                            if (CAM_GetStaState(i) > 0x20) {
+                                CAM_SetStaState(i, 0x20);
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (pWork->STA > 0x20) {
+                    WSetStaState(0x20);
+                    WClearAids();
+                }
+            }
+
+            if (pMLME->State == 0x41 && pFrm == pMLME->Work.DeAuth.pTxFrm) {
+                if ((pDeAuth->MacHeader.Tx.Status & 2) == 0) {
+                    pMLME->pCfm.Cfm->resultCode = 0;
+                } else {
+                    pMLME->pCfm.Cfm->resultCode = 12;
+                }
+                pMLME->State = 0;
+                IssueMlmeConfirm();
+            }
+
+            if (pDeAuth->FirmHeader.FrameId == 1) {
+                if (cam_adrs != 0) {
+                    wlMan->CamMan.NotSetTIM &= ~(1 << cam_adrs);
+                    CAM_Delete(cam_adrs);
+                }
+                MLME_IssueDeAuthIndication(pDeAuth->Dot11Header.DA, 1);
+                
+            } else if (pDeAuth->FirmHeader.FrameId == 2) {
+                MLME_IssueDeAuthIndication(pDeAuth->Dot11Header.DA, pDeAuth->Body.ReasonCode);
+                
+            }
+            break;
+    }
+
+    CAM_DecFrameCount(pFrm);
+    ReleaseHeapBuf(pBufMan, SubtractAddr(pFrm, 0x10));
+    wlMan->TxCtrl.Txq[1].Busy = 0;
+
+    if (flag) {
+        if (pBufMan->Count)
+            TxqPri(1);
+    }
 }
-(anti IPA gang)*/
 
 void TxqEndPsPoll(TXFRM* pFrm, u32 flag) { // TxCtrl.c:887
     WlCounter* pCounter = &wlMan->Counter; // r0 - :890
