@@ -1,7 +1,10 @@
-#include "Mongoose.h"
+#include "TxCtrl.h"
 
-static u32 SetSupRateSet(u8* pBuf);
+static u32 SetDSParamSet(u8 *pBuf);
+static u32 SetGameInfoElement(u8* pBuf);
+static u32 IsEnableManagement();
 static u32 SetSSIDElement(u8* pBuf);
+static u32 SetSupRateSet(u8* pBuf);
 
 // This function is inlined away
 static u32 SetDSParamSet(u8 *pBuf) {
@@ -747,8 +750,6 @@ void StopBeaconFrame() { // TxCtrl.c:1652
     pTxq->Busy = 0;
 }
 
-extern u16 BC_ADRS[3]; // from WlNic.c
-
 void MakeBeaconFrame() { // TxCtrl.c:1692
     TXFRM_MAC* pFrm = wlMan->TxCtrl.Beacon.pMacFrm; // r0 - :1694
     CONFIG_PARAM* pConfig = &wlMan->Config; // r5 - :1695
@@ -1285,8 +1286,6 @@ static u32 SetSSIDElement(u8* pBuf) { // TxCtrl.c:2576
     
     return len;
 }
-
-extern const u16 RateBit2Element[16];
 
 static u32 SetSupRateSet(u8* pBuf) { // TxCtrl.c:2614
     WORK_PARAM* pWork = &wlMan->Work; // r6 - :2616

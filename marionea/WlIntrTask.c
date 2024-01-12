@@ -1,6 +1,6 @@
-#include "Mongoose.h"
+#include "WlIntrTask.h"
 
-STATIC RXFRM* TakeoutRxFrame(RXFRM_MAC* pMFrm, u32 length);
+static RXFRM* TakeoutRxFrame(RXFRM_MAC* pMFrm, u32 length);
 
 void WlIntrTxBeaconTask() { // WlIntrTask.c:77
     if (wlMan->Work.bUpdateGameInfo)
@@ -241,7 +241,9 @@ void SetParentTbttTxqTask() { // WlIntrTask.c:770
     if (pHeapMan->TxPri[0].Count) TxqPri(0); // :804
 }
 
-STATIC RXFRM* TakeoutRxFrame(RXFRM_MAC* pMFrm, u32 length) { // WlIntrTask.c:832
+#pragma dont_inline on
+
+static RXFRM* TakeoutRxFrame(RXFRM_MAC* pMFrm, u32 length) { // WlIntrTask.c:832
     RXPACKET* pPacket; // r0 - :834
     RXFRM* pFrm; // r0 - :835
     
@@ -256,3 +258,5 @@ STATIC RXFRM* TakeoutRxFrame(RXFRM_MAC* pMFrm, u32 length) { // WlIntrTask.c:832
     pFrm->MacHeader.Rx.Service_Rate = (pFrm->MacHeader.Rx.Service_Rate & 0xFF) | ((u16)(pFrm->MacHeader.Rx.rsv_RSSI & 0xFF) << 8);
     return pFrm;
 }
+
+#pragma dont_inline off

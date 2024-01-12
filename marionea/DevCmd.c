@@ -1,4 +1,4 @@
-#include "Mongoose.h"
+#include "DevCmd.h"
 
 u16 DEV_ShutdownReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:49
     WlDevShutdownCfm* pCfm = (WlDevShutdownCfm*)pCfmt;
@@ -42,7 +42,7 @@ u16 DEV_Class1ReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:127
 }
 
 u16 DEV_RebootReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:166
-    WlDevClass1Cfm* pCfm = (WlDevClass1Cfm*)pCfmt;
+    WlDevRebootCfm* pCfm = (WlDevRebootCfm*)pCfmt;
     pCfm->header.length = 1;
     
     if (wlMan->Work.STA >= 0x20)

@@ -1,7 +1,4 @@
-#include "Mongoose.h"
-
-// TODO: put this in a header file 
-extern u16 BC_ADRS[3]; // from WlNic.c
+#include "CAM.h"
 
 static void CAM_InitElement(u32 camAdrs, u16* pMacAdrs);
 

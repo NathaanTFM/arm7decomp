@@ -87,7 +87,7 @@ def compile(path, target):
             
             "-O4",
             "-inline", "on,noauto",
-            "-opt", "speed",
+            "-opt", "space",
             "-g",
             "-proc", "arm7tdmi",
             "-msgstyle", "gcc", "-gccinc",

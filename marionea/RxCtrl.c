@@ -1,4 +1,4 @@
-#include "Mongoose.h"
+#include "Marionea.h"
 
 static void RxDisAssFrame(DISASS_FRAME* pFrm);
 static void RxAssReqFrame(ASSREQ_FRAME* pFrm);
@@ -16,8 +16,6 @@ static void SetChallengeText(u32 camAdrs, AUTH_FRAME* pFrm);
 static u32 CheckChallengeText(AUTH_FRAME* pFrm);
 static void NewDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl);
 static void MoreDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl);
-
-extern u16 NULL_ADRS[3];
 
 void RxDataFrameTask() { // RxCtrl.c:66
     DEAUTH_FRAME* pDeAuth; // r0 - :68

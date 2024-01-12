@@ -1,7 +1,8 @@
-#include "Mongoose.h"
+#include "WlIntr.h"
 
 #define EXC_IRQ_IF (*(volatile u32*)0x0380FFF8)
 
+static void MultiPollRevicedClearSeq();
 static void WlIntrPreTbtt();
 static void WlIntrTbtt();
 static void WlIntrActEnd();
@@ -11,11 +12,11 @@ static void WlIntrTxErr();
 static void WlIntrRxCntup();
 static void WlIntrTxEnd();
 static void WlIntrRxEnd();
-static void WlIntrMpEnd(u32 bMacBugPatch);
+static void WlIntrMpEnd(u32 bMacBugPatch); // :1531
 static void WlIntrStartTx();
 static void WlIntrStartRx();
-STATIC void SetParentTbttTxq();
-STATIC u32 CheckKeyTxEnd();
+static void SetParentTbttTxq();
+static u32 CheckKeyTxEnd();
 static u32 CheckKeyTxEndMain(TXQ* pTxq);
 
 // missing function from latest, but exists
@@ -372,20 +373,24 @@ static void WlIntrRxEnd() { // WlIntr.c:1101
     u32 bnry, curr, next_bnry, length, frameType; // r9, r10, r9, r1, r0 - :1108
     u16 keySts; // r0 - :1109
     
-    if (0) {
+    {
         RXFRM_MAC* pNextMFrm; // r0 - :1247
         u16 nextStatus, nextRate; // r2, r0 - :1248
     }
     
-    if (0) {
+    {
         u16 fc; // None - :1309
         u16 seqCtrl; // r10 - :1310
     }
     
-    if (0) {
+    {
         u16 bkcurr; // r0 - :1394
         u16 keySts; // r0 - :1395
     }
+    
+    // Temporarily including the function call here so it doesn't get lost
+    CheckKeyTxEnd();
+    CheckKeyTxEndMain(0);
 }
 
 static void WlIntrMpEnd(u32 bMacBugPatch) { // WlIntr.c:1449
@@ -542,7 +547,7 @@ static void WlIntrStartRx() { // WlIntr.c:1631
     
 }
 
-STATIC void SetParentTbttTxq() { // WlIntr.c:1857
+static void SetParentTbttTxq() { // WlIntr.c:1857
     TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r4 - :1859
     u32 bTask = 0; // r5 - :1860
     
@@ -604,7 +609,9 @@ void* AdjustRingPointer(void* p) { // WlIntr.c:1996
     return p;
 }
 
-STATIC u32 CheckKeyTxEnd() { // WlIntr.c:2063
+#pragma dont_inline on
+
+static u32 CheckKeyTxEnd() { // WlIntr.c:2063
     TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r5 - :2065
     RX_CTRL* pRxCtrl = &wlMan->RxCtrl; // r6 - :2066
     u32 retVal = CheckKeyTxEndMain(&pTxCtrl->Key[0]) | CheckKeyTxEndMain(&pTxCtrl->Key[1]); // r0 - :2067
@@ -637,6 +644,8 @@ static u32 CheckKeyTxEndMain(TXQ* pTxq) { // WlIntr.c:2109
     
     return retVal;
 }
+
+#pragma dont_inline off
 
 void InitializeIntr() { // WlIntr.c:2167
     OS_SetIrqFunction(0x1000000u, WlIntr);

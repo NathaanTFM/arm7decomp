@@ -1,4 +1,4 @@
-#include "Mongoose.h"
+#include "Diag.h"
 
 static const u16 test_pattern[3] = {0xFFFF, 0x5A5A, 0xA5A5}; // :63
 

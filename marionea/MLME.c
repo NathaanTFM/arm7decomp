@@ -1,8 +1,6 @@
-#include "Mongoose.h"
+#include "MLME.h"
 
-extern u16 BC_ADRS[3]; // WL_NIC.c
-
-STATIC void MLME_ScanTimeOut(void *unused);
+static void MLME_ScanTimeOut(void *unused);
 static void MLME_JoinTimeOut(void *unused);
 static void MLME_AuthTimeOut(void *unused);
 static void MLME_AssTimeOut(void *unused);
@@ -464,7 +462,7 @@ void MLME_ScanTask() { // MLME.c:886
         AddTask(PRIORITY_LOW, TASK_SCAN);
 }
 
-STATIC void MLME_ScanTimeOut(void *unused) { // MLME.c:1114
+static void MLME_ScanTimeOut(void *unused) { // MLME.c:1114
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1117
     
     pMLME->Work.Scan.ElapseTime += pMLME->Work.Scan.TxPeriod;

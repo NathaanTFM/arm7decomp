@@ -1,4 +1,9 @@
-#include "Mongoose.h"
+#include "WlNic.h"
+
+static void TimeoutDummy(void* arg);
+static u32 WCheckTxBufIdBeforeFrame(TXQ* pTxq);
+static void WaitMacStop();
+static void RestoreTxFrame(TXQ* pTxq);
 
 #define MAC_U16(a, b, c, d, e, f) {((b) << 8) | (a), ((d) << 8) | (c), ((f) << 8) | (e)}
 
@@ -131,7 +136,7 @@ u16 WSetMode(u16 mode) { // WlNic.c:454
     wlMan->Config.Mode = mode;
     wlMan->Work.Mode = mode;
     
-    W_MODE_WEP = W_MODE_WEP & 0xFFF8 | mode;
+    W_MODE_WEP = (W_MODE_WEP & 0xFFF8) | mode;
     WSetPowerMgtMode(wlMan->Work.PowerMgtMode);
     
     wlMan->Config.ParamFlag |= 8;
@@ -1271,7 +1276,7 @@ void WWaitus(u32 us) { // WlNic.c:3729
 }
 
 void SetupPeriodicTimeOut(u32 ms, void (*pFunc)(void*)) { // WlNic.c:3748
-    OSTick startTime; // None - :3750
+    u64 startTime; // None - :3750
     
     OS_CancelAlarm(&wlMan->PeriodicAlarm);
     startTime = OS_GetTick() + (u32)((33514ULL * ms) >> 6);
@@ -1302,12 +1307,12 @@ void WIntervalTimer() { // WlNic.c:3797
 
 void SetupTimeOut(u32 ms, void (*pFunc)(void*)) { // WlNic.c:3876
     OS_CancelAlarm(&wlMan->Alarm);
-    OS_SetAlarm(&wlMan->Alarm, OS_MilliSecondsToTicks(ms), pFunc, 0);
+    OS_SetAlarm(&wlMan->Alarm, (u64)((33514 * (u64)ms) >> 6), pFunc, 0);
 }
 
 void SetupUsTimeOut(u32 us, void (*pFunc)(void*)) { // WlNic.c:3898
     OS_CancelAlarm(&wlMan->Alarm);
-    OS_SetAlarm(&wlMan->Alarm, OS_MicroSecondsToTicks(us), pFunc, 0);
+    OS_SetAlarm(&wlMan->Alarm, (u64)(((33514 * (u64)us) >> 6) / 1000), pFunc, 0);
 }
 
 void ClearTimeOut() { // WlNic.c:3921
@@ -1383,7 +1388,7 @@ u16 RND_rand() { // WlNic.c:4553
 }
 
 u16 calc_NextCRC(u8 data, u16 total) { // WlNic.c:4609
-    static u16 crc16_table[16] = {
+    static const u16 crc16_table[16] = {
         0x0000, 0xCC01, 0xD801, 0x1400, 0xF001, 0x3C00, 0x2800, 0xE401,
         0xA001, 0x6C00, 0x7800, 0xB401, 0x5000, 0x9C01, 0x8801, 0x4400
     }; // :4580

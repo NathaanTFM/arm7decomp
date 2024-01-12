@@ -1,4 +1,4 @@
-#include "Mongoose.h"
+#include "WlSys.h"
 
 void WlessLibReboot() { // WlSys.c:70
     ClearTimeOut();
@@ -75,6 +75,6 @@ u32 WL_InitDriver(WlInit* pInit) { // WlSys.c:120
     return wlMan->Config.DiagResult;
 }
 
-OSThread* WL_GetThreadStruct() { // WlSys.c:310
+struct _OSThread* WL_GetThreadStruct() { // WlSys.c:310
     return &wlMan->TaskMan.Thread;
 }

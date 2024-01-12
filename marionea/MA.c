@@ -1,7 +1,4 @@
-#include "Mongoose.h"
-
-extern u16 MP_ADRS[3];
-extern u16 MPKEY_ADRS[3];
+#include "MA.h"
 
 u16 MA_DataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:48
     WlMaDataReq* pReq = (WlMaDataReq*)pReqt; // r0 - :51

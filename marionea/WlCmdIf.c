@@ -1,6 +1,6 @@
-#include "Mongoose.h"
+#include "WlCmdIf.h"
 
-static WLLIB_CMD_TBL WlibCmdTbl_MLME[11] = { // :39
+static const WLLIB_CMD_TBL WlibCmdTbl_MLME[11] = { // :39
     {0x01, 0x01, MLME_ResetReqCmd},
     {0x03, 0x01, MLME_PwrMgtReqCmd},
     {0x1F, 0x23, MLME_ScanReqCmd},
@@ -14,7 +14,7 @@ static WLLIB_CMD_TBL WlibCmdTbl_MLME[11] = { // :39
     {0x0C, 0x12, MLME_MeasChanReqCmd}
 };
 
-static WLLIB_CMD_TBL WlibCmdTbl_MA[5] = { // :70
+static const WLLIB_CMD_TBL WlibCmdTbl_MA[5] = { // :70
     {0x18, 0x02, MA_DataReqCmd},
     {0x04, 0x01, MA_KeyDataReqCmd},
     {0x0A, 0x01, MA_MpReqCmd},
@@ -22,7 +22,7 @@ static WLLIB_CMD_TBL WlibCmdTbl_MA[5] = { // :70
     {0x01, 0x01, MA_ClrDataReqCmd}
 };
 
-static WLLIB_CMD_TBL WlibCmdTbl_PARAMSET[24] = { // :81
+static const WLLIB_CMD_TBL WlibCmdTbl_PARAMSET[24] = { // :81
     {0x48, 0x01, PARAMSET_AllReqCmd},
     {0x03, 0x01, PARAMSET_MacAdrsReqCmd},
     {0x01, 0x01, PARAMSET_RetryReqCmd},
@@ -49,7 +49,7 @@ static WLLIB_CMD_TBL WlibCmdTbl_PARAMSET[24] = { // :81
     {0x01, 0x01, PARAMSET_McPassModeReqCmd}
 };
 
-static WLLIB_CMD_TBL WlibCmdTbl_PARAMSET2[6] = { // :138
+static const WLLIB_CMD_TBL WlibCmdTbl_PARAMSET2[6] = { // :138
     {0x03, 0x01, PARAMSET_BSSIDReqCmd},
     {0x11, 0x01, PARAMSET_SSIDReqCmd},
     {0x01, 0x01, PARAMSET_BeaconPeriodReqCmd},
@@ -58,7 +58,7 @@ static WLLIB_CMD_TBL WlibCmdTbl_PARAMSET2[6] = { // :138
     {0x00, 0x01, PARAMSET_GameInfoReqCmd}
 };
 
-static WLLIB_CMD_TBL WlibCmdTbl_PARAMGET[24] = { // :159 
+static const WLLIB_CMD_TBL WlibCmdTbl_PARAMGET[24] = { // :159 
     {0x00, 0x21, PARAMGET_AllReqCmd},
     {0x00, 0x04, PARAMGET_MacAdrsReqCmd},
     {0x00, 0x02, PARAMGET_RetryReqCmd},
@@ -85,7 +85,7 @@ static WLLIB_CMD_TBL WlibCmdTbl_PARAMGET[24] = { // :159
     {0x00, 0x02, PARAMGET_McPassModeReqCmd}
 };
 
-static WLLIB_CMD_TBL WlibCmdTbl_PARAMGET2[6] = { // :216
+static const WLLIB_CMD_TBL WlibCmdTbl_PARAMGET2[6] = { // :216
     {0x00, 0x04, PARAMGET_BSSIDReqCmd},
     {0x00, 0x12, PARAMGET_SSIDReqCmd},
     {0x00, 0x02, PARAMGET_BeaconPeriodReqCmd},
@@ -94,7 +94,7 @@ static WLLIB_CMD_TBL WlibCmdTbl_PARAMGET2[6] = { // :216
     {0x00, 0x01, PARAMGET_GameInfoReqCmd}
 };
 
-static WLLIB_CMD_TBL WlibCmdTbl_DEV[11] = { // :237
+static const WLLIB_CMD_TBL WlibCmdTbl_DEV[11] = { // :237
     {0x00, 0x01, CMD_ReservedReqCmd},
     {0x00, 0x01, DEV_ShutdownReqCmd},
     {0x00, 0x01, DEV_IdleReqCmd},
@@ -112,7 +112,7 @@ void RequestCmdTask() { // WlCmdIf.c:267
     CMDIF_MAN* pCmdIf = &wlMan->CmdIf; // r7 - :269
     WlCmdReq* pReq; // r0 - :271
     WlCmdCfm* pCfm; // r0 - :272
-    WLLIB_CMD_TBL* pCmdTbl; // r3 - :273
+    const WLLIB_CMD_TBL* pCmdTbl; // r3 - :273
     u16 vCode, vCodeMax, err = 0; // r1, r9, r12 - :274
     u16 currBusy = 0; // r4 - :275
     

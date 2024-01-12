@@ -84,27 +84,6 @@
 
 #define GET_TX_BUF_ADDR(macFrm) (((u32)(macFrm) & 0x3FFF) / 2)
 
-// tick
-#define HW_SYSTEM_CLOCK 33514000
-
-#define OS_MicroSecondsToTicks(usec) ((u64)( ((HW_SYSTEM_CLOCK/1000) * (u64)(usec)) / 64 / 1000 ))
-#define OS_MicroSecondsToTicks32(usec) ((u64)( ((HW_SYSTEM_CLOCK/1000) * (u32)(usec)) / 64 / 1000 ))
-
-#define OS_MilliSecondsToTicks(msec) ((u64)( ((HW_SYSTEM_CLOCK/1000) * (u64)(msec)) / 64 ))
-#define OS_MilliSecondsToTicks32(msec) ((u64)( ((HW_SYSTEM_CLOCK/1000) * (u32)(msec)) / 64 ))
-
-#define OS_SecondsToTicks(sec) ((u64)( (HW_SYSTEM_CLOCK * (u64)(sec)) / 64 ))
-#define OS_SecondsToTicks32(sec) ((u64)( (HW_SYSTEM_CLOCK * (u32)(sec)) / 64 ))
-
-#define OS_TicksToMicroSeconds(tick) ( ((u64)(tick) * 64 * 1000) / (HW_SYSTEM_CLOCK/1000) )
-#define OS_TicksToMicroSeconds32(tick) ( ((u32)(tick) * 64 * 1000) / (HW_SYSTEM_CLOCK/1000) )
-
-#define OS_TicksToMilliSeconds(tick) ( ((u64)(tick) * 64) / (HW_SYSTEM_CLOCK/1000) )
-#define OS_TicksToMilliSeconds32(tick) ( ((u32)(tick) * 64) / (HW_SYSTEM_CLOCK/1000) )
-
-#define OS_TicksToSeconds(tick) ( ((u64)(tick) * 64) / HW_SYSTEM_CLOCK )
-#define OS_TicksToSeconds32(tick) ( ((u32)(tick) * 64) / HW_SYSTEM_CLOCK )
-
 // 0x10 is sizeof(WlCmdHeader) + sizeof(HEAPBUF_HEADER)
 #define GET_CFM(req) ((void*)((u8*)(req) + ((req)->header.length * 2) + 0x10))
 #define GET_HEADER(ptr) (void*)((u8*)(ptr) - (0x10))
