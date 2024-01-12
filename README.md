@@ -9,15 +9,28 @@ So far I'm only reversing the wifi driver (NitroWireless/Marionea). Current name
 
 - not meant to be compiled back, only meant to figure out the driver works. still trying to make a 1:1 replica of every function, tho
 
+## Contributing
+
+You need mongoose_sub.sbin and mongoose_sub.nef from TwlSDK 5.5 (TwlSDK/components/mongoose/ARM7-TS/Debug)
+
+Put those two files in the working directory and run FuncDumper.py: this will extract the compiled functions in the subprograms directory.
+
+Run `python3 Compiler.py -s` to see every inaccurate function ; run `python3 Compiler.py -e` to see every missing function. Passing no parameter will output all functions. You can also filter a specific C file by using `-p filename`.
+
+Assuming you have `arm-none-eabi-objdump` in your path, you can disassemble the functions and compare them by typing the name of the function you wanna disassemble as a parameter. For example, `python3 Compiler.py -p WlNic WCheckTxBuf` will disassemble WCheckTxBuf from the file WlNic.c.
+
 ## What's left?
 
 These functions have an inaccurate implementation
 - [RequestCmdTask](https://decomp.me/scratch/Xdhok) certainly behaves correctly, but does not compile the same.
-- [CheckFrameTimeout](https://decomp.me/scratch/9KvUP) wants my death. A normal compiler wouldn't output anything like this. A normal compiler wouldn't output a branch instruction to the next instruction. 
+- [WlIntrRxEndTask](https://decomp.me/scratch/UHoXL) has multiple register swapped, but should behave the same.
+- [CheckFrameTimeout](https://decomp.me/scratch/9KvUP) wants my death. I don't know how long they tortured the compiler to get this ; a normal compiler shouldn't output a branch instruction to the next instruction. 
 
 These functions don't have any implementation in the repository
 - [WlIntrRxEnd](https://decomp.me/scratch/3CheC) is a mess. If you manage to make it accurate, you're my hero. (Stack allocation is 100% wrong)
 - [DiagBaseBand](https://decomp.me/scratch/8cHjU) is not really important, but we need it if we ever want to get to the 100%.
 - [DEV_TestSignalReqCmd](https://decomp.me/scratch/w1lZs) is also not important?
+
+**All the remaining functions fully compile to the same bytecode.** Some of those have ugly branching and gotos ; if you manage to make these look better without breaking them, feel free to open a merge request!
 
 The WM API part is fully missing and contains the wireless play protocol. The Compiler.py script currently ignores it.
