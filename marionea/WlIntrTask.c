@@ -1,5 +1,7 @@
 #include "Mongoose.h"
 
+STATIC RXFRM* TakeoutRxFrame(RXFRM_MAC* pMFrm, u32 length);
+
 void WlIntrTxBeaconTask() { // WlIntrTask.c:77
     if (wlMan->Work.bUpdateGameInfo)
         UpdateGameInfoElement();
@@ -69,29 +71,127 @@ void WlIntrTxEndTask() { // WlIntrTask.c:106
 }
 
 void WlIntrRxEndTask() { // WlIntrTask.c:240
-    RX_CTRL* pRxCtrl; // r6 - :242
-    HEAP_MAN* pHeapMan; // r0 - :243
+    RX_CTRL* pRxCtrl = &wlMan->RxCtrl; // r6 - :242
+    HEAP_MAN* pHeapMan = &wlMan->HeapMan; // r0 - :243
     RXFRM_MAC* pMFrm; // r0 - :244
     RXFRM* pFrm; // r0 - :245
-    u32 next_bnry; // r7 - :246
-    u32 bRelease; // r7 - :246
-    u32 status; // r0 - :246
-    u32 length; // r0 - :246
-    u32 bnry; // r7 - :246
+    u32 bnry, length, status, bRelease, next_bnry; // r7, r0, r0, r7, r7 - :246
     u16* pClr; // r0 - :584
     u32 j; // r3 - :585
-    
-    pRxCtrl = &wlMan->RxCtrl;
-    
-    while (1) {
+
+    for (u32 i = 0;; i++) { // variable present in older versions, probably still exists
         bnry = W_RXBUF_READCSR;
         if (bnry == pRxCtrl->wlCurr)
             break;
-        
+
         if (bnry >= 0x8C6)
             WUpdateCounter();
+
+        pMFrm = (RXFRM_MAC*)&W_MACMEM(2 * bnry);
+        next_bnry = *(u16*)AdjustRingPointer(&pMFrm->MacHeader.Rx.NextBnry);
         
-        // too much stuff I can't understand
+        if (*(u16*)pMFrm == 0xFFFF) {
+            W_RXBUF_READCSR = next_bnry;
+            
+        } else {
+            length = *(u16*)AdjustRingPointer(&pMFrm->MacHeader.Rx.MPDU);
+            pFrm = TakeoutRxFrame(pMFrm, length);
+            W_RXBUF_READCSR = next_bnry;
+
+            if (!pFrm) {
+                if ((pMFrm->MacHeader.Rx.Status & 0xF) == 12) {
+                    SetFatalErr(0x10);
+                } else {
+                    SetFatalErr(8);
+                }
+                
+            } else {
+                if ((wlMan->WlOperation & 8) != 0 && (pFrm->Dot11Header.FrameCtrl.Data & 0x4000) != 0) {
+                    pRxCtrl->IcvOkCntFlag = 0;
+                }
+
+                status = pFrm->MacHeader.Rx.Status;
+                bRelease = 1;
+
+                if ((status & 0x200) != 0) {
+                    if (pFrm->Dot11Header.FrameCtrl.Bit.MoreFrag == 1 || pFrm->Dot11Header.SeqCtrl.Bit.FragNum != 0) {
+                        bRelease = 0;
+                        MoveHeapBuf(&pHeapMan->TmpBuf, &pHeapMan->Defrag, GET_HEADER(pFrm));
+                        AddTask(2, 9);
+                    }
+                    
+                } else {
+                    switch (status & 0xF) {
+                        case 8:
+                            if ((pFrm->Dot11Header.FrameCtrl.Data & 0xF) == 8) {
+                                bRelease = 0;
+                                MoveHeapBuf(&pHeapMan->TmpBuf, &pHeapMan->RxData, GET_HEADER(pFrm));
+                                AddTask(2, 6u);
+                            }
+                            break;
+                        
+                        case 1:
+                            if (pFrm->Dot11Header.FrameCtrl.Data == 0x80) {
+                                RxBeaconFrame((BEACON_FRAME*)pFrm);
+                            }
+                            break;
+                        
+                        case 0:
+                            if ((pFrm->Dot11Header.FrameCtrl.Data & 0xF) == 0) {
+                                bRelease = 0;
+                                MoveHeapBuf(&pHeapMan->TmpBuf, &pHeapMan->RxManCtrl, GET_HEADER(pFrm));
+                                AddTask(1, 7u);
+                            }
+                            break;
+                        
+                        case 5:
+                            if ((pFrm->Dot11Header.FrameCtrl.Data & 0xE7FF) == 0xA4) {
+                                bRelease = 0;
+                                MoveHeapBuf(&pHeapMan->TmpBuf, &pHeapMan->RxManCtrl, GET_HEADER(pFrm));
+                                AddTask(1, 7u);
+                            }
+                            break;
+                        
+                        case 14:
+                        case 15:
+                            if ((pFrm->Dot11Header.FrameCtrl.Data & 0xE7BF) == 0x118) {
+                                RxKeyDataFrame(pFrm);
+                            }
+                            break;
+                        
+                        case 12:
+                            if ((pFrm->Dot11Header.FrameCtrl.Data & 0xE7FF) == 0x228) {
+                                if (wlMan->Work.PowerState == 0) {
+                                    W_POWERSTATE = 1;
+                                }
+                                wlMan->Counter.multiPoll.rxMp++;
+                                bRelease = RxMpFrame(pFrm);
+                            }
+                            break;
+                        
+                        case 13:
+                            if ((pFrm->Dot11Header.FrameCtrl.Data & 0xE7FF) == 0x218) {
+                                wlMan->Counter.multiPoll.rxMpAck++;
+                                bRelease = RxMpAckFrame(pFrm);
+                            }
+                            break;
+                    }
+                }
+
+                if (bRelease)
+                    ReleaseHeapBuf(&pHeapMan->TmpBuf, GET_HEADER(pFrm));
+
+                if ((wlMan->WlOperation & 1) != 0) {
+                    pClr = (u16*)pMFrm;
+                    for (j = 0; j < 7; j++) {
+                        if ((u32)pClr >= 0x4805F60) {
+                            pClr = (u16*)((u8*)pClr - wlMan->Work.Ofst.RxBuf.Size);
+                        }
+                        *(pClr++) = 0xFFFF;
+                    }
+                }
+            }
+        }
     }
 }
 
