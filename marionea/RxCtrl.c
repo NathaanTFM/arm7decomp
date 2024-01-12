@@ -11,7 +11,7 @@ static void RxAuthFrame(AUTH_FRAME* pFrm);
 static void RxDeAuthFrame(DEAUTH_FRAME* pFrm);
 static void RxPsPollFrame(PSPOLL_FRAME* pFrm);
 static void RxCfEndFrame();
-STATIC void ElementChecker(ELEMENT_CHECKER* p);
+static void ElementChecker(ELEMENT_CHECKER* p);
 static void SetChallengeText(u32 camAdrs, AUTH_FRAME* pFrm);
 static u32 CheckChallengeText(AUTH_FRAME* pFrm);
 static void NewDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl);

@@ -1286,7 +1286,7 @@ static u32 SetSSIDElement(u8* pBuf) { // TxCtrl.c:2576
     return len;
 }
 
-extern const u16 RateBit2Element[16] = {0x2, 0x4, 0xB, 0xC, 0x12, 0x16, 0x18, 0x24, 0x30, 0x48, 0x60, 0x6C, 0, 0, 0, 0}; // WlNic.c
+extern const u16 RateBit2Element[16];
 
 static u32 SetSupRateSet(u8* pBuf) { // TxCtrl.c:2614
     WORK_PARAM* pWork = &wlMan->Work; // r6 - :2616
