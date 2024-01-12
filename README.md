@@ -19,6 +19,12 @@ Run `python3 Compiler.py -s` to see every inaccurate function ; run `python3 Com
 
 Assuming you have `arm-none-eabi-objdump` in your path, you can disassemble the functions and compare them by typing the name of the function you wanna disassemble as a parameter. For example, `python3 Compiler.py -p WlNic WCheckTxBuf` will disassemble WCheckTxBuf from the file WlNic.c.
 
+The following files are deprecated but kept in the repository for now:
+- `include/Mongoose.h` used to include common preprocessor definitions and included every other header file. It has been splitted into multiple files and replaced by `marionea/Marionea.h`.
+- `include/Prototypes.h` contains prototypes for every function in the binary, which includes functions we're not interested in.
+- `include/Structures.h` contains every structure in the binary, which includes structures we don't use.
+- `include/Registers.h` has been replaced by `marionea/Marionea.h`.
+
 ## What's left?
 
 These functions have an inaccurate implementation
