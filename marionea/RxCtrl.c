@@ -135,7 +135,7 @@ void RxDataFrameTask() { // RxCtrl.c:66
         }
 
         if (pHeapMan->RxData.Count)
-            AddTask(2, 6);
+            AddTask(PRIORITY_LOW, TASK_RX_DATA_FRAME);
     }
 }
 
@@ -363,7 +363,7 @@ void RxBeaconFrame(BEACON_FRAME* pFrm) { // RxCtrl.c:740
                         
                         WSetMacAdrs1(pMLME->pCfm.Auth->peerMacAdrs, pFrm->Dot11Header.SA); // :919
                         pMLME->State = 0x25; // :922
-                        AddTask(2, 1); // :925
+                        AddTask(PRIORITY_LOW, TASK_JOIN); // :925
                     }
                     
                     switch (pWork->Mode) { // :929, incl cases.
@@ -630,7 +630,7 @@ static void RxAssResFrame(ASSRES_FRAME* pFrm) {
     
     pMLME->pCfm.Ass->aid = pWork->AID;
     pMLME->State = 83;
-    AddTask(2, 3);
+    AddTask(PRIORITY_LOW, TASK_ASS);
 }
 
 // THIS ONE MUST BE INLINED
@@ -748,7 +748,7 @@ static void RxReAssResFrame(REASSRES_FRAME* pFrm) {
     
     pMLME->pCfm.ReAss->aid = pWork->AID;
     pMLME->State = 99;
-    AddTask(2, 4);
+    AddTask(PRIORITY_LOW, TASK_RE_ASS);
 }
 
 static void RxProbeReqFrame(PRBREQ_FRAME* pFrm) { // RxCtrl.c:1703
@@ -898,7 +898,7 @@ static void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCt
         if (pMLME->Work.Scan.MaxConfirmLength < 0x20) {
             ClearTimeOut();
             pMLME->State = 0x15;
-            AddTask(2, 0);
+            AddTask(PRIORITY_LOW, TASK_SCAN);
         }
         
     } else {
@@ -990,7 +990,7 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
                                 pMLME->pCfm.Auth->statusCode = pFrm->Body.StatusCode;
                             }
                             pMLME->State = 0x35;
-                            AddTask(2, 2);
+                            AddTask(PRIORITY_LOW, TASK_AUTH);
                         }
                     }
                 }
@@ -1042,7 +1042,7 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
                                     pMLME->State = 0x35;
                                     pMLME->pCfm.Auth->resultCode = 12;
                                     pMLME->pCfm.Auth->statusCode = pFrm->Body.StatusCode;
-                                    AddTask(2, 2);
+                                    AddTask(PRIORITY_LOW, TASK_AUTH);
                                     WSetStaState(0x20);
                                     
                                 } else {
@@ -1072,7 +1072,7 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
                                 pMLME->pCfm.Auth->statusCode = 0;
                             }
                             pMLME->State = 0x35;
-                            AddTask(2, 2);
+                            AddTask(PRIORITY_LOW, TASK_AUTH);
                         }
                     }
                 }
@@ -1406,7 +1406,7 @@ void RxManCtrlTask() { // RxCtrl.c:2717
 fast_exit:
     ReleaseHeapBuf(&pHeapMan->RxManCtrl, pPacket); // :2884
     if (pHeapMan->RxManCtrl.Count != 0)
-        AddTask(1, 7); // :2889
+        AddTask(PRIORITY_HIGH, TASK_RX_MAN_CTRL); // :2889
 }
 
 static void SetChallengeText(unsigned long camAdrs, AUTH_FRAME* pFrm) {
@@ -1585,12 +1585,12 @@ static void MoreDefragment(RXFRM_MAC* pMFrm, DEFRAG_TBL* pDefragTbl) {
                 switch ((pFrm->MacHeader.Rx.Status & 0xF)) {
                     case 8:
                         MoveHeapBuf(&pHeapMan->TmpBuf, &pHeapMan->RxData, GET_HEADER(pFrm));
-                        AddTask(2, 6);
+                        AddTask(PRIORITY_LOW, TASK_RX_DATA_FRAME);
                         break;
                     
                     case 0:
                         MoveHeapBuf(&pHeapMan->TmpBuf, &pHeapMan->RxManCtrl, GET_HEADER(pFrm));
-                        AddTask(1, 7);
+                        AddTask(PRIORITY_HIGH, TASK_RX_MAN_CTRL);
                         break;
                     
                     default:
@@ -1651,7 +1651,7 @@ void DefragTask() { // RxCtrl.c:3011
 exit:
     ReleaseHeapBuf(&pHeapMan->Defrag, pPacket);
     if (pHeapMan->Defrag.Count)
-        AddTask(2, 9);
+        AddTask(PRIORITY_LOW, TASK_DEFRAG);
 }
 
 void DefragTimerTask() { // RxCtrl.c:3348

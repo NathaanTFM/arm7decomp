@@ -244,7 +244,7 @@ void RequestCmdTask() { // WlCmdIf.c:267
 
 skip:
     if (wlMan->HeapMan.RequestCmd.Count)
-        AddTask(2, 0xB);
+        AddTask(PRIORITY_LOW, TASK_REQUEST_CMD);
 
 }
 
@@ -255,7 +255,7 @@ u16 CMD_ReservedReqCmd() { // WlCmdIf.c:548
 void SendMessageToWmDirect(HEAPBUF_MAN* pBufMan, void* pMsg) { // WlCmdIf.c:568
     if (wlMan->HeapMan.ToWM.Count) {
         MoveHeapBuf(pBufMan, &wlMan->HeapMan.ToWM, pMsg);
-        AddTask(2, 19);
+        AddTask(PRIORITY_LOW, TASK_SEND_MESSAGE_TO_WM);
         
     } else if (OS_SendMessage(wlMan->pSendMsgQueue, pMsg, 0)) {
         DeleteHeapBuf(pBufMan, pMsg);

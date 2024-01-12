@@ -1293,11 +1293,11 @@ void WIntervalTimer() { // WlNic.c:3797
     WL_MAN* pWl = wlMan; // r6 - :3800
     pWl->Work.IntervalCount++;
     
-    AddTask(1, 10);
-    AddTask(2, 18);
-    AddTask(1, 17);
-    if (pWl->HeapMan.ToWM.Count) AddTask(2, 19);
-    if (pWl->Work.FatalErr) AddTask(2, 21);
+    AddTask(PRIORITY_HIGH, TASK_TIMER);
+    AddTask(PRIORITY_LOW, TASK_UPDATE_AP_LIST);
+    AddTask(PRIORITY_HIGH, TASK_DEFRAG_TIMER);
+    if (pWl->HeapMan.ToWM.Count) AddTask(PRIORITY_LOW, TASK_SEND_MESSAGE_TO_WM);
+    if (pWl->Work.FatalErr) AddTask(PRIORITY_LOW, TASK_SEND_FATAL_ERR_MSG);
 }
 
 void SetupTimeOut(u32 ms, void (*pFunc)(void*)) { // WlNic.c:3876
@@ -1489,7 +1489,7 @@ void SetFatalErr(u32 errCode) { // WlNic.c:4992
     x = OS_DisableIrqMask(0x1000000);
     wlMan->Work.FatalErr |= errCode;
     OS_EnableIrqMask(x);
-    AddTask(2, 21);
+    AddTask(PRIORITY_LOW, TASK_SEND_FATAL_ERR_MSG);
 }
 
 void SendFatalErrMsgTask() { // WlNic.c:5026
@@ -1526,10 +1526,10 @@ void TerminateWlTask() { // WlNic.c:5209
         WShutdown();
     }
     
-    while (DeleteTask(3) != 0xFFFF)
+    while (DeleteTask(PRIORITY_LOWEST) != 0xFFFF)
         ;
     
-    AddTask(3, 23);
+    AddTask(PRIORITY_LOWEST, TASK_RELEASE);
 }
 
 void ReleaseWlTask() { // WlNic.c:5253

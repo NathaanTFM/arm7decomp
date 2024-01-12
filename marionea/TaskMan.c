@@ -3,13 +3,11 @@
 void InitializeTask() { // TaskMan.c:91
     static void (*pTaskFunc[24])() = {
         MLME_ScanTask, MLME_JoinTask, MLME_AuthTask, MLME_AssTask,
-        MLME_ReAssTask, MLME_MeasChannelTask, RxDataFrameTask,
-        RxManCtrlTask, WlIntrTxBeaconTask, DefragTask, CAM_TimerTask,
-        RequestCmdTask, LowestIdleTask, MLME_BeaconLostTask,
-        WlIntrTxEndTask, WlIntrRxEndTask, WlIntrMpEndTask,
-        DefragTimerTask, UpdateApListTask, SendMessageToWmTask,
-        SetParentTbttTxqTask, SendFatalErrMsgTask, TerminateWlTask,
-        ReleaseWlTask
+        MLME_ReAssTask, MLME_MeasChannelTask, RxDataFrameTask, RxManCtrlTask,
+        WlIntrTxBeaconTask, DefragTask, CAM_TimerTask, RequestCmdTask,
+        LowestIdleTask, MLME_BeaconLostTask, WlIntrTxEndTask, WlIntrRxEndTask,
+        WlIntrMpEndTask, DefragTimerTask, UpdateApListTask, SendMessageToWmTask,
+        SetParentTbttTxqTask, SendFatalErrMsgTask, TerminateWlTask, ReleaseWlTask
     };
 
     TASK_MAN* pTaskMan = &wlMan->TaskMan; // r14 - :93
@@ -27,7 +25,7 @@ void InitializeTask() { // TaskMan.c:91
         pTaskMan->TaskTbl[i].pTaskFunc = pTaskFunc[i];
     }
     
-    AddTask(3, 12);
+    AddTask(PRIORITY_LOWEST, TASK_LOWEST_IDLE);
 }
 
 void MainTaskRoutine() { // TaskMan.c:136
@@ -119,12 +117,12 @@ void LowestIdleTask() { // TaskMan.c:416
     
     OS_ReceiveMessage(wlMan->pRecvMsgQueue, &msg, 1);
     ExecuteMessage(&msg);
-    AddTask(3, 12);
+    AddTask(PRIORITY_LOWEST, TASK_LOWEST_IDLE);
 }
 
 void ExecuteMessage(void** pMsg) { // TaskMan.c:501
     if (*pMsg) {
         NewHeapBuf(&wlMan->HeapMan.RequestCmd, *pMsg);
-        AddTask(2, 11);
+        AddTask(PRIORITY_LOW, TASK_REQUEST_CMD);
     }
 }

@@ -89,7 +89,7 @@ u16 MLME_ScanReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:166
     pMLME->pCfm.Scan = pCfm; // :220
     
     pMLME->State = 16; // :223
-    AddTask(2, 0); // :226
+    AddTask(PRIORITY_LOW, TASK_SCAN); // :226
     
     return 128; // :228
 }
@@ -133,7 +133,7 @@ u16 MLME_JoinReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:245
     pMLME->pReq.Join = pReq;
     pMLME->pCfm.Join = pCfm;
     pMLME->State = 32;
-    AddTask(2, 1);
+    AddTask(PRIORITY_LOW, TASK_JOIN);
     return 128;
 }
 
@@ -461,7 +461,7 @@ void MLME_ScanTask() { // MLME.c:886
     }
     
     if (bTask)
-        AddTask(2, 0);
+        AddTask(PRIORITY_LOW, TASK_SCAN);
 }
 
 STATIC void MLME_ScanTimeOut(void *unused) { // MLME.c:1114
@@ -476,7 +476,7 @@ STATIC void MLME_ScanTimeOut(void *unused) { // MLME.c:1114
             pMLME->State = 21;
         }
     }
-    AddTask(2, 0);
+    AddTask(PRIORITY_LOW, TASK_SCAN);
 }
 
 void MLME_JoinTask() { // MLME.c:1173
@@ -508,7 +508,7 @@ static void MLME_JoinTimeOut(void *unused) { // MLME.c:1249
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1252
     pMLME->Work.Join.Result = 7;
     pMLME->State = 37;
-    AddTask(2, 1);
+    AddTask(PRIORITY_LOW, TASK_JOIN);
 }
 
 void MLME_AuthTask() { // MLME.c:1296
@@ -521,7 +521,7 @@ void MLME_AuthTask() { // MLME.c:1296
             if (!pFrm) {
                 pMLME->pCfm.Auth->resultCode = 8;
                 pMLME->State = 53;
-                AddTask(2, 2);
+                AddTask(PRIORITY_LOW, TASK_AUTH);
                 break;
             }
             
@@ -549,7 +549,7 @@ static void MLME_AuthTimeOut(void *unused) { // MLME.c:1388
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1391
     pMLME->pCfm.Auth->resultCode = 7;
     pMLME->State = 53;
-    AddTask(2, 2);
+    AddTask(PRIORITY_LOW, TASK_AUTH);
 }
 
 void MLME_AssTask() { // MLME.c:1436
@@ -562,7 +562,7 @@ void MLME_AssTask() { // MLME.c:1436
             if (!pFrm) {
                 pMLME->pCfm.Ass->resultCode = 8;
                 pMLME->State = 83;
-                AddTask(2, 3);
+                AddTask(PRIORITY_LOW, TASK_ASS);
                 break;
             }
             
@@ -585,7 +585,7 @@ static void MLME_AssTimeOut(void *unused) { // MLME.c:1523
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1526
     pMLME->pCfm.Ass->resultCode = 7;
     pMLME->State = 83;
-    AddTask(2, 3);
+    AddTask(PRIORITY_LOW, TASK_ASS);
 }
 
 void MLME_ReAssTask() { // MLME.c:1570
@@ -598,7 +598,7 @@ void MLME_ReAssTask() { // MLME.c:1570
             if (!pFrm) {
                 pMLME->pCfm.ReAss->resultCode = 8;
                 pMLME->State = 99;
-                AddTask(2, 4);
+                AddTask(PRIORITY_LOW, TASK_RE_ASS);
                 break;
             }
             
@@ -620,7 +620,7 @@ static void MLME_ReAssTimeOut(void *unused) { // MLME.c:1651
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1654
     pMLME->pCfm.ReAss->resultCode = 7;
     pMLME->State = 99;
-    AddTask(2, 4);
+    AddTask(PRIORITY_LOW, TASK_RE_ASS);
 }
 
 void MLME_MeasChannelTask() { // MLME.c:1695
@@ -709,12 +709,12 @@ void MLME_MeasChannelTask() { // MLME.c:1695
     }
     
     if (pMLME->State)
-        AddTask(2, 5);
+        AddTask(PRIORITY_LOW, TASK_MEAS_CHANNEL);
 }
 
 static void MLME_MeasChanTimeOut(void *unused) { // MLME.c:1871
     wlMan->MLME.State = 131;
-    AddTask(2, 5);
+    AddTask(PRIORITY_LOW, TASK_MEAS_CHANNEL);
 }
 
 void MLME_BeaconLostTask() { // MLME.c:1903
@@ -729,7 +729,7 @@ void IssueMlmeConfirm() { // MLME.c:1934
     SendMessageToWmDirect(&pHeapMan->RequestCmd, pCmdIf->pCmd);
     
     if (pHeapMan->RequestCmd.Count)
-        AddTask(2, 11);
+        AddTask(PRIORITY_LOW, TASK_REQUEST_CMD);
 }
 
 u32 MLME_IssueAuthIndication(u16* pMacAdrs, u16 algorithm) { // MLME.c:1981

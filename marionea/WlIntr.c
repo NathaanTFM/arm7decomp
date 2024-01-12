@@ -68,7 +68,7 @@ static void WlIntrPreTbtt() { // WlIntr.c:175
             pWork->BeaconLostCnt++;
             if (pWork->BeaconLostCnt > pWork->BeaconLostTh) {
                 pWork->BeaconLostCnt = 0;
-                AddTask(1, 13);
+                AddTask(PRIORITY_HIGH, TASK_BEACON_LOST);
             }
         }
     }
@@ -156,7 +156,7 @@ static void WlIntrTbtt() { // WlIntr.c:240
                 if (pTxq->Busy && pTxq->pFrm->MacHeader.Tx.Status == 0 && CheckFrameTimeout(pTxq->pFrm)) {
                     ResetTxqPri(i);
                     pTxq->pMacFrm->MacHeader.Tx.Status = 2;
-                    AddTask(0, 0xE);
+                    AddTask(PRIORITY_HIGHEST, TASK_WL_INTR_TX_END);
                     pTxCtrl->TimeOutFrm++;
                 }
             }
@@ -289,7 +289,7 @@ static void WlIntrTxEnd() { // WlIntr.c:857
                     SetParentTbttTxq();
                 
                 wlMan->Counter.tx.beacon++;
-                AddTask(0, 8);
+                AddTask(PRIORITY_HIGHEST, TASK_WL_INTR_TX_BEACON);
                 break;
                 
             case 0x800:
@@ -359,7 +359,7 @@ static void WlIntrTxEnd() { // WlIntr.c:857
             W_TXREQ_SET = 2;
         }
         
-        AddTask(0, 0xE);
+        AddTask(PRIORITY_HIGHEST, TASK_WL_INTR_TX_END);
     }
 }
 
@@ -419,7 +419,7 @@ static void WlIntrMpEnd(u32 bMacBugPatch) { // WlIntr.c:1449
             }
         }
         
-        AddTask(0, 16); // :1528
+        AddTask(PRIORITY_HIGHEST, TASK_WL_INTR_MP_END); // :1528
     }
 } // :1531
 
@@ -572,9 +572,9 @@ STATIC void SetParentTbttTxq() { // WlIntr.c:1857
     }
     
     if (bTask)
-        AddTask(0, 0xE);
+        AddTask(PRIORITY_HIGHEST, TASK_WL_INTR_TX_END);
     
-    AddTask(0, 0x14);
+    AddTask(PRIORITY_HIGHEST, TASK_SET_PARENT_TBTT_TXQ);
 }
 
 void MacBugTxMp() { // WlIntr.c:1934

@@ -2,6 +2,38 @@
 
 #define NELEMS(a) (sizeof(a) / sizeof(*(a)))
 
+// priority
+#define PRIORITY_LOWEST 3
+#define PRIORITY_LOW 2
+#define PRIORITY_HIGH 1
+#define PRIORITY_HIGHEST 0
+
+// tasks
+#define TASK_SCAN   0
+#define TASK_JOIN   1
+#define TASK_AUTH   2
+#define TASK_ASS    3
+#define TASK_RE_ASS  4
+#define TASK_MEAS_CHANNEL 5
+#define TASK_RX_DATA_FRAME    6
+#define TASK_RX_MAN_CTRL      7
+#define TASK_WL_INTR_TX_BEACON  8
+#define TASK_DEFRAG 9
+#define TASK_TIMER  10
+#define TASK_REQUEST_CMD    11
+#define TASK_LOWEST_IDLE 12
+#define TASK_BEACON_LOST 13
+#define TASK_WL_INTR_TX_END 14
+#define TASK_WL_INTR_RX_END 15
+#define TASK_WL_INTR_MP_END 16
+#define TASK_DEFRAG_TIMER   17
+#define TASK_UPDATE_AP_LIST 18
+#define TASK_SEND_MESSAGE_TO_WM 19
+#define TASK_SET_PARENT_TBTT_TXQ    20
+#define TASK_SEND_FATAL_ERR_MSG 21
+#define TASK_TERMINATE_WL   22
+#define TASK_RELEASE    23
+
 #include "Structures.h"
 #include "Prototypes.h"
 
