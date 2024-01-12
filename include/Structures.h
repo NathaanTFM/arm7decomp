@@ -2105,10 +2105,6 @@ typedef struct {
     u16 wakeUp; // offset 12
     u16 recieveDtims; // offset 14
 } WlMlmePowerMgtReq;
-union _element {
-    u8 gameInfo[4]; // offset 00
-    u8 otherElement[4]; // offset 00
-};
 typedef struct {
     u16 length; // offset 00
     u16 rssi; // offset 02
@@ -2127,7 +2123,10 @@ typedef struct {
     u16 cfpMaxDuration; // offset 3a
     u16 gameInfoLength; // offset 3c
     u16 otherElementCount; // offset 3e
-    union _element; // offset 40
+    union {
+        u8 gameInfo[4]; // offset 00
+        u8 otherElement[4]; // offset 00
+    }; // offset 40
 } WlBssDesc;
 typedef struct {
     WlCmdHeader header; // offset 00
