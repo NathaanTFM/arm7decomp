@@ -350,13 +350,13 @@ void TxqEndManCtrl(TXFRM* pFrm, u32 flag) { // TxCtrl.c:541
                 }
             }
 
-            if (pMLME->State == 0x71 && pFrm == pMLME->Work.DeAuth.pTxFrm) {
+            if (pMLME->State == STATE_DISASS_1 && pFrm == pMLME->Work.DeAuth.pTxFrm) {
                 if ((pFrm->MacHeader.Tx.Status & 2) == 0) {
                     pMLME->pCfm.Cfm->resultCode = 0;
                 } else {
                     pMLME->pCfm.Cfm->resultCode = 12;
                 }
-                pMLME->State = 0;
+                pMLME->State = STATE_NONE;
                 IssueMlmeConfirm();
             }
             break;
@@ -385,13 +385,13 @@ void TxqEndManCtrl(TXFRM* pFrm, u32 flag) { // TxCtrl.c:541
                 }
             }
 
-            if (pMLME->State == 0x41 && pFrm == pMLME->Work.DeAuth.pTxFrm) {
+            if (pMLME->State == STATE_DEAUTH_1 && pFrm == pMLME->Work.DeAuth.pTxFrm) {
                 if ((pDeAuth->MacHeader.Tx.Status & 2) == 0) {
                     pMLME->pCfm.Cfm->resultCode = 0;
                 } else {
                     pMLME->pCfm.Cfm->resultCode = 12;
                 }
-                pMLME->State = 0;
+                pMLME->State = STATE_NONE;
                 IssueMlmeConfirm();
             }
 

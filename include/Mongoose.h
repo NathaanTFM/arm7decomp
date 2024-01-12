@@ -2,6 +2,51 @@
 
 #define NELEMS(a) (sizeof(a) / sizeof(*(a)))
 
+// state
+#define STATE_NONE 0
+
+#define STATE_SCAN 0x10
+#define STATE_SCAN_0 (STATE_SCAN + 0)
+#define STATE_SCAN_1 (STATE_SCAN + 1)
+#define STATE_SCAN_2 (STATE_SCAN + 2)
+#define STATE_SCAN_3 (STATE_SCAN + 3)
+#define STATE_SCAN_5 (STATE_SCAN + 5)
+
+#define STATE_JOIN 0x20
+#define STATE_JOIN_0 (STATE_JOIN + 0)
+#define STATE_JOIN_1 (STATE_JOIN + 1)
+#define STATE_JOIN_5 (STATE_JOIN + 5)
+
+#define STATE_AUTH 0x30
+#define STATE_AUTH_0 (STATE_AUTH + 0)
+#define STATE_AUTH_1 (STATE_AUTH + 1)
+#define STATE_AUTH_3 (STATE_AUTH + 3)
+#define STATE_AUTH_5 (STATE_AUTH + 5)
+
+#define STATE_DEAUTH 0x40
+#define STATE_DEAUTH_1 (STATE_DEAUTH + 1)
+
+#define STATE_ASS 0x50
+#define STATE_ASS_0 (STATE_ASS + 0)
+#define STATE_ASS_1 (STATE_ASS + 1)
+#define STATE_ASS_3 (STATE_ASS + 3)
+
+#define STATE_REASS 0x60
+#define STATE_REASS_0 (STATE_REASS + 0)
+#define STATE_REASS_1 (STATE_REASS + 1)
+#define STATE_REASS_3 (STATE_REASS + 3)
+
+#define STATE_DISASS 0x70
+#define STATE_DISASS_1 (STATE_DISASS + 1)
+
+#define STATE_MEASCHAN 0x80
+#define STATE_MEASCHAN_0 (STATE_MEASCHAN + 0)
+#define STATE_MEASCHAN_1 (STATE_MEASCHAN + 1)
+#define STATE_MEASCHAN_2 (STATE_MEASCHAN + 2)
+#define STATE_MEASCHAN_3 (STATE_MEASCHAN + 3)
+#define STATE_MEASCHAN_4 (STATE_MEASCHAN + 4)
+
+
 // priority
 #define PRIORITY_LOWEST 3
 #define PRIORITY_LOW 2

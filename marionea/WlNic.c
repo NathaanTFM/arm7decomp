@@ -890,7 +890,7 @@ u32 WCheckSSID(u16 len, u8* pSSID) { // WlNic.c:2494
     if (pWork->SSIDLength == 0)
         return 1;
     
-    if (wlMan->MLME.State == 0x13) {
+    if (wlMan->MLME.State == STATE_SCAN_3) {
         if (len < pWork->SSIDLength)
             return 0;
         
@@ -1518,8 +1518,8 @@ void TerminateWlTask() { // WlNic.c:5209
     
     if (wlMan->Work.STA) {
         WStop();
-        if (wlMan->MLME.State != 0) {
-            wlMan->MLME.State = 0;
+        if (wlMan->MLME.State != STATE_NONE) {
+            wlMan->MLME.State = STATE_NONE;
             wlMan->MLME.pCfm.Cfm->resultCode = 6; // TODO check that union!
             IssueMlmeConfirm();
         }

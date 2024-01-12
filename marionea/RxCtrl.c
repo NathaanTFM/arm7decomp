@@ -45,7 +45,7 @@ void RxDataFrameTask() { // RxCtrl.c:66
             multiCast = 1;
     }
 
-    if (pWork->STA != 0x40 && (pConfig->MulticastPass == 0 || multiCast == 0 || pWork->STA != 0x20 || pWork->bSynchro != 1 || (pMLME->State & 0xF0) == 0x30)) {
+    if (pWork->STA != 0x40 && (pConfig->MulticastPass == 0 || multiCast == 0 || pWork->STA != 0x20 || pWork->bSynchro != 1 || (pMLME->State & 0xF0) == STATE_AUTH)) {
         ReleaseHeapBuf(&pHeapMan->RxData, pInd);
         
     } else {
@@ -307,7 +307,7 @@ void RxBeaconFrame(BEACON_FRAME* pFrm) { // RxCtrl.c:740
                 ); // :804
             }
             
-            if (pMLME->State == 0x13 && pMLME->pReq.Scan->scanType == 1) { // :808
+            if (pMLME->State == STATE_SCAN_3 && pMLME->pReq.Scan->scanType == 1) { // :808
                 if ((elementCheck.matchFlag & 9) == 9) { // :812
                     RxProbeResFrame((PRBRES_FRAME*)pFrm, &elementCheck); // :816
                 }
@@ -317,7 +317,7 @@ void RxBeaconFrame(BEACON_FRAME* pFrm) { // RxCtrl.c:740
                 
             } else {
                 if ((elementCheck.matchFlag & 8) != 0) { // :821
-                    if (pMLME->State == 0x21) { // :830
+                    if (pMLME->State == STATE_JOIN_1) { // :830
                         ClearTimeOut(); // :833
                         if ((elementCheck.matchFlag & 0x30) != 0x30) { // :839
                             pMLME->Work.Scan.MaxConfirmLength = 12; // :841
@@ -362,7 +362,7 @@ void RxBeaconFrame(BEACON_FRAME* pFrm) { // RxCtrl.c:740
                         }
                         
                         WSetMacAdrs1(pMLME->pCfm.Auth->peerMacAdrs, pFrm->Dot11Header.SA); // :919
-                        pMLME->State = 0x25; // :922
+                        pMLME->State = STATE_JOIN_5; // :922
                         AddTask(PRIORITY_LOW, TASK_JOIN); // :925
                     }
                     
@@ -603,7 +603,7 @@ static void RxAssResFrame(ASSRES_FRAME* pFrm) {
     if (pWork->Mode != 2 && pWork->Mode != 3)
         return;
     
-    if (pMLME->State != 81)
+    if (pMLME->State != STATE_ASS_1)
         return;
     
     if (!MatchMacAdrs(pMLME->pReq.Ass->peerMacAdrs, pFrm->Dot11Header.SA))
@@ -629,7 +629,7 @@ static void RxAssResFrame(ASSRES_FRAME* pFrm) {
     }
     
     pMLME->pCfm.Ass->aid = pWork->AID;
-    pMLME->State = 83;
+    pMLME->State = STATE_ASS_3;
     AddTask(PRIORITY_LOW, TASK_ASS);
 }
 
@@ -720,7 +720,7 @@ static void RxReAssResFrame(REASSRES_FRAME* pFrm) {
     if (pWork->Mode != 2 && pWork->Mode != 3)
         return;
     
-    if (pMLME->State != 97)
+    if (pMLME->State != STATE_REASS_1)
         return;
     
     if (!MatchMacAdrs(pMLME->pReq.ReAss->newApMacAdrs, pFrm->Dot11Header.SA))
@@ -747,7 +747,7 @@ static void RxReAssResFrame(REASSRES_FRAME* pFrm) {
     }
     
     pMLME->pCfm.ReAss->aid = pWork->AID;
-    pMLME->State = 99;
+    pMLME->State = STATE_REASS_3;
     AddTask(PRIORITY_LOW, TASK_RE_ASS);
 }
 
@@ -786,7 +786,7 @@ static void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCt
     u16* pBssidMask; // r9 - :1766
     u8 *pSrc, *pDst; // r9, r11 - :1767
 
-    if (pMLME->State != 0x13)
+    if (pMLME->State != STATE_SCAN_3)
         return;
     
     pCfm = pMLME->pCfm.Scan;
@@ -897,7 +897,7 @@ static void RxProbeResFrame(PRBRES_FRAME* pFrm, ELEMENT_CHECKER* pChk) { // RxCt
 
         if (pMLME->Work.Scan.MaxConfirmLength < 0x20) {
             ClearTimeOut();
-            pMLME->State = 0x15;
+            pMLME->State = STATE_SCAN_5;
             AddTask(PRIORITY_LOW, TASK_SCAN);
         }
         
@@ -978,7 +978,7 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
 
                 else if (pWork->Mode != 1) { // "else" does not match
                     if (pFrm->Body.SeqNum == 2) {
-                        if (pMLME->pReq.Auth->algorithm == 0 && MatchMacAdrs(pMLME->pReq.Auth->peerMacAdrs, pFrm->Dot11Header.SA) && pMLME->State == 0x31) {
+                        if (pMLME->pReq.Auth->algorithm == 0 && MatchMacAdrs(pMLME->pReq.Auth->peerMacAdrs, pFrm->Dot11Header.SA) && pMLME->State == STATE_AUTH_1) {
                             ClearTimeOut();
                             if (pFrm->Body.StatusCode == 0) {
                                 WSetStaState(0x30);
@@ -989,7 +989,7 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
                                 pMLME->pCfm.Auth->resultCode = 12;
                                 pMLME->pCfm.Auth->statusCode = pFrm->Body.StatusCode;
                             }
-                            pMLME->State = 0x35;
+                            pMLME->State = STATE_AUTH_5;
                             AddTask(PRIORITY_LOW, TASK_AUTH);
                         }
                     }
@@ -1036,17 +1036,17 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
                 } else {
                     if (pMLME->pReq.Auth->algorithm == 1 && MatchMacAdrs(pMLME->pReq.Auth->peerMacAdrs, pFrm->Dot11Header.SA)) {
                         if (pFrm->Body.SeqNum == 2) {
-                            if (pMLME->State == 0x31) {
+                            if (pMLME->State == STATE_AUTH_1) {
                                 if (pFrm->Body.StatusCode != 0) {
                                     ClearTimeOut();
-                                    pMLME->State = 0x35;
+                                    pMLME->State = STATE_AUTH_5;
                                     pMLME->pCfm.Auth->resultCode = 12;
                                     pMLME->pCfm.Auth->statusCode = pFrm->Body.StatusCode;
                                     AddTask(PRIORITY_LOW, TASK_AUTH);
                                     WSetStaState(0x20);
                                     
                                 } else {
-                                    pMLME->State = 0x33;
+                                    pMLME->State = STATE_AUTH_3;
                                     if (WL_ReadByte(&pFrm->Body.ChallengeText.ID) == 16) {
                                         pTxFrm = MakeAuthFrame(pFrm->Dot11Header.SA, WL_ReadByte(&pFrm->Body.ChallengeText.Length), 1);
                                         if (pTxFrm) {
@@ -1061,7 +1061,7 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
                                 }
                             }
                             
-                        } else if (pFrm->Body.SeqNum == 4 && pMLME->State == 0x33) {
+                        } else if (pFrm->Body.SeqNum == 4 && pMLME->State == STATE_AUTH_3) {
                             ClearTimeOut();
                             if (pFrm->Body.StatusCode != 0) {
                                 pMLME->pCfm.Auth->resultCode = 12;
@@ -1071,7 +1071,7 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
                                 pMLME->pCfm.Auth->resultCode = 0;
                                 pMLME->pCfm.Auth->statusCode = 0;
                             }
-                            pMLME->State = 0x35;
+                            pMLME->State = STATE_AUTH_5;
                             AddTask(PRIORITY_LOW, TASK_AUTH);
                         }
                     }

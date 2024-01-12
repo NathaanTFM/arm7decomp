@@ -88,7 +88,7 @@ u16 MLME_ScanReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:166
     pMLME->pReq.Scan = pReq; // :219
     pMLME->pCfm.Scan = pCfm; // :220
     
-    pMLME->State = 16; // :223
+    pMLME->State = STATE_SCAN_0; // :223
     AddTask(PRIORITY_LOW, TASK_SCAN); // :226
     
     return 128; // :228
@@ -132,7 +132,7 @@ u16 MLME_JoinReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:245
     WSetRateSet((RATE_SET*)&pReq->bssDesc.rateSet); // ugly
     pMLME->pReq.Join = pReq;
     pMLME->pCfm.Join = pCfm;
-    pMLME->State = 32;
+    pMLME->State = STATE_JOIN_0;
     AddTask(PRIORITY_LOW, TASK_JOIN);
     return 128;
 }
@@ -159,7 +159,7 @@ u16 MLME_AuthReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:336
     
     pMLME->pReq.Auth = pReq;
     pMLME->pCfm.Auth = pCfm;
-    pMLME->State = 48;
+    pMLME->State = STATE_AUTH_0;
     
     pCfm->algorithm = pReq->algorithm;
     WSetMacAdrs1(pCfm->peerMacAdrs, pMLME->pReq.Auth->peerMacAdrs);
@@ -193,7 +193,7 @@ u16 MLME_DeAuthReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:403
     pMLME->pReq.DeAuth = pReq;
     pMLME->pCfm.DeAuth = pCfm;
     pMLME->Work.DeAuth.pTxFrm = pFrm;
-    pMLME->State = 65;
+    pMLME->State = STATE_DEAUTH_1;
     
     if (pReq->peerMacAdrs[0] & 1) {
         pFrm->FirmHeader.FrameTime = wlMan->Work.IntervalCount;
@@ -235,7 +235,7 @@ u16 MLME_AssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:497
     
     pMLME->pReq.Ass = pReq;
     pMLME->pCfm.Ass = pCfm;
-    pMLME->State = 80;
+    pMLME->State = STATE_ASS_0;
     
     MLME_AssTask();
     return 128;
@@ -264,7 +264,7 @@ u16 MLME_ReAssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:566
     
     pMLME->pReq.ReAss = pReq;
     pMLME->pCfm.ReAss = pCfm;
-    pMLME->State = 96;
+    pMLME->State = STATE_REASS_0;
     
     MLME_ReAssTask();
     return 128;
@@ -293,7 +293,7 @@ u16 MLME_DisAssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:632
     pMLME->pReq.DisAss = pReq;
     pMLME->pCfm.DisAss = pCfm;
     pMLME->Work.DisAss.pTxFrm = pFrm;
-    pMLME->State = 113;
+    pMLME->State = STATE_DISASS_1;
     
     if (pReq->peerMacAdrs[0] & 1) {
         pFrm->FirmHeader.FrameTime = wlMan->Work.IntervalCount;
@@ -374,7 +374,7 @@ u16 MLME_MeasChanReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:803
     
     pMLME->pReq.MeasChannel = pReq;
     pMLME->pCfm.MeasChannel = pCfm;
-    pMLME->State = 128;
+    pMLME->State = STATE_MEASCHAN_0;
     
     pCfm->resultCode = 128;
     
@@ -390,7 +390,7 @@ void MLME_ScanTask() { // MLME.c:886
     u16 ch; // r0 - :892
     
     switch (pMLME->State) {
-        case 16:
+        case STATE_SCAN_0:
             WSetStaState(0x20);
             pWork->Mode = 2;
             pMLME->pCfm.Scan->bssDescCount = 0;
@@ -410,10 +410,10 @@ void MLME_ScanTask() { // MLME.c:886
             pMLME->pCfm.Scan->resultCode = 0;
             // falls to next case
             
-        case 17:
+        case STATE_SCAN_1:
             ch = WL_ReadByte(&pMLME->pReq.Scan->channelList[pMLME->Work.Scan.ChannelCount]);
             if (ch == 0) {
-                pMLME->State = 21;
+                pMLME->State = STATE_SCAN_5;
                 bTask = 1;
                 break;
             }
@@ -422,27 +422,27 @@ void MLME_ScanTask() { // MLME.c:886
             pMLME->Work.Scan.ElapseTime = 0;
             if (FLASH_VerifyCheckSum(0)) {
                 pMLME->pCfm.Scan->resultCode = 14;
-                pMLME->State = 21;
+                pMLME->State = STATE_SCAN_5;
                 bTask = 1;
                 break;
             }
             
-            if (pMLME->State == 16) {
+            if (pMLME->State == STATE_SCAN_0) {
                 WSetChannel(ch, 0);
                 WStart();
             } else {
                 WSetChannel(ch, 0);
             }
-            pMLME->State = 18;
+            pMLME->State = STATE_SCAN_2;
             
-        case 18:
-        case 19:
-            pMLME->State = 19;
+        case STATE_SCAN_2:
+        case STATE_SCAN_3:
+            pMLME->State = STATE_SCAN_3;
             if (pMLME->pReq.Scan->scanType == 0) {
                 pFrm = MakeProbeReqFrame(pMLME->pReq.Scan->bssid);
                 if (!pFrm) {
                     pMLME->pCfm.Scan->resultCode = 8;
-                    pMLME->State = 21;
+                    pMLME->State = STATE_SCAN_5;
                     bTask = 1;
                     break;
                 }
@@ -452,8 +452,8 @@ void MLME_ScanTask() { // MLME.c:886
             SetupTimeOut(pMLME->Work.Scan.TxPeriod, MLME_ScanTimeOut);
             break;
         
-        case 21:
-            pMLME->State = 0;
+        case STATE_SCAN_5:
+            pMLME->State = STATE_NONE;
             WStop();
             pWork->Mode = wlMan->Config.Mode;
             IssueMlmeConfirm();
@@ -471,9 +471,9 @@ STATIC void MLME_ScanTimeOut(void *unused) { // MLME.c:1114
     
     if (pMLME->Work.Scan.ElapseTime >= pMLME->pReq.Scan->maxChannelTime) {
         if (pMLME->Work.Scan.ChannelCount < 0x10) {
-            pMLME->State = 17;
+            pMLME->State = STATE_SCAN_1;
         } else {
-            pMLME->State = 21;
+            pMLME->State = STATE_SCAN_5;
         }
     }
     AddTask(PRIORITY_LOW, TASK_SCAN);
@@ -483,22 +483,22 @@ void MLME_JoinTask() { // MLME.c:1173
     MLME_MAN* pMLME = &wlMan->MLME; // r4 - :1175
     
     switch (pMLME->State) {
-        case 32:
+        case STATE_JOIN_0:
             WStart();
             pMLME->Work.Join.Result = 0;
             pMLME->Work.Join.Status = 0;
-            pMLME->State = 33;
+            pMLME->State = STATE_JOIN_1;
             SetupTimeOut(pMLME->pReq.Join->timeOut, MLME_JoinTimeOut);
             break;
             
-        case 37:
+        case STATE_JOIN_5:
             pMLME->pCfm.Join->resultCode = pMLME->Work.Join.Result;
             pMLME->pCfm.Join->statusCode = pMLME->Work.Join.Status;
             
             if (pMLME->Work.Join.Result != 0)
                 WStop();
             
-            pMLME->State = 0;
+            pMLME->State = STATE_NONE;
             IssueMlmeConfirm();
             break;
     }
@@ -507,7 +507,7 @@ void MLME_JoinTask() { // MLME.c:1173
 static void MLME_JoinTimeOut(void *unused) { // MLME.c:1249
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1252
     pMLME->Work.Join.Result = 7;
-    pMLME->State = 37;
+    pMLME->State = STATE_JOIN_5;
     AddTask(PRIORITY_LOW, TASK_JOIN);
 }
 
@@ -516,11 +516,11 @@ void MLME_AuthTask() { // MLME.c:1296
     AUTH_FRAME* pFrm; // r0 - :1299
     
     switch (pMLME->State) {
-        case 48:
+        case STATE_AUTH_0:
             pFrm = MakeAuthFrame(pMLME->pReq.Auth->peerMacAdrs, 0, 0);
             if (!pFrm) {
                 pMLME->pCfm.Auth->resultCode = 8;
-                pMLME->State = 53;
+                pMLME->State = STATE_AUTH_5;
                 AddTask(PRIORITY_LOW, TASK_AUTH);
                 break;
             }
@@ -529,17 +529,17 @@ void MLME_AuthTask() { // MLME.c:1296
             pFrm->Body.SeqNum = 1;
             pFrm->Body.StatusCode = 0;
             
-            pMLME->State = 49;
+            pMLME->State = STATE_AUTH_1;
             
             TxManCtrlFrame((TXFRM*)pFrm);
             SetupTimeOut(pMLME->pReq.Auth->timeOut, MLME_AuthTimeOut);
             break;
             
-        case 53:
+        case STATE_AUTH_5:
             ResetTxqPri(1);
             ClearQueuedPri(1);
             MessageDeleteTx(1, 0);
-            pMLME->State = 0;
+            pMLME->State = STATE_NONE;
             IssueMlmeConfirm();
             break;
     }
@@ -548,7 +548,7 @@ void MLME_AuthTask() { // MLME.c:1296
 static void MLME_AuthTimeOut(void *unused) { // MLME.c:1388
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1391
     pMLME->pCfm.Auth->resultCode = 7;
-    pMLME->State = 53;
+    pMLME->State = STATE_AUTH_5;
     AddTask(PRIORITY_LOW, TASK_AUTH);
 }
 
@@ -557,25 +557,25 @@ void MLME_AssTask() { // MLME.c:1436
     void* pFrm; // r0 - :1439
     
     switch (pMLME->State) {
-        case 80:
+        case STATE_ASS_0:
             pFrm = MakeAssReqFrame(pMLME->pReq.Ass->peerMacAdrs);
             if (!pFrm) {
                 pMLME->pCfm.Ass->resultCode = 8;
-                pMLME->State = 83;
+                pMLME->State = STATE_ASS_3;
                 AddTask(PRIORITY_LOW, TASK_ASS);
                 break;
             }
             
-            pMLME->State = 81;
+            pMLME->State = STATE_ASS_1;
             TxManCtrlFrame(pFrm);
             SetupTimeOut(pMLME->pReq.Ass->timeOut, MLME_AssTimeOut);
             break;
             
-        case 83:
+        case STATE_ASS_3:
             ResetTxqPri(1);
             ClearQueuedPri(1);
             MessageDeleteTx(1, 0);
-            pMLME->State = 0;
+            pMLME->State = STATE_NONE;
             IssueMlmeConfirm();
             break;
     }
@@ -584,7 +584,7 @@ void MLME_AssTask() { // MLME.c:1436
 static void MLME_AssTimeOut(void *unused) { // MLME.c:1523
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1526
     pMLME->pCfm.Ass->resultCode = 7;
-    pMLME->State = 83;
+    pMLME->State = STATE_ASS_3;
     AddTask(PRIORITY_LOW, TASK_ASS);
 }
 
@@ -593,24 +593,24 @@ void MLME_ReAssTask() { // MLME.c:1570
     void* pFrm; // r0 - :1574
     
     switch (pMLME->State) {
-        case 96:
+        case STATE_REASS_0:
             pFrm = MakeReAssReqFrame(pMLME->pReq.ReAss->newApMacAdrs);
             if (!pFrm) {
                 pMLME->pCfm.ReAss->resultCode = 8;
-                pMLME->State = 99;
+                pMLME->State = STATE_REASS_3;
                 AddTask(PRIORITY_LOW, TASK_RE_ASS);
                 break;
             }
             
-            pMLME->State = 97;
+            pMLME->State = STATE_REASS_1;
             TxManCtrlFrame(pFrm);
             SetupTimeOut(pMLME->pReq.ReAss->timeOut, MLME_ReAssTimeOut);
             break;
             
-        case 99:
+        case STATE_REASS_3:
             ClearQueuedPri(1);
             MessageDeleteTx(1, 0);
-            pMLME->State = 0;
+            pMLME->State = STATE_NONE;
             IssueMlmeConfirm();
             break;
     }
@@ -619,7 +619,7 @@ void MLME_ReAssTask() { // MLME.c:1570
 static void MLME_ReAssTimeOut(void *unused) { // MLME.c:1651
     MLME_MAN* pMLME = &wlMan->MLME; // r0 - :1654
     pMLME->pCfm.ReAss->resultCode = 7;
-    pMLME->State = 99;
+    pMLME->State = STATE_REASS_3;
     AddTask(PRIORITY_LOW, TASK_RE_ASS);
 }
 
@@ -629,31 +629,32 @@ void MLME_MeasChannelTask() { // MLME.c:1695
     u32 ch, ratio; // r0, r2 - :1699
     
     switch (pMLME->State) {
-        case 128:
+        case STATE_MEASCHAN_0:
             pMLME->Work.Measure.Channel = 0;
             pMLME->Work.Measure.bkCCAMode = BBP_Read(0x13);
             pMLME->Work.Measure.bkEdTh = BBP_Read(0x35);
             WSetCCA_ED(pMLME->pReq.MeasChannel->ccaMode, pMLME->pReq.MeasChannel->edThreshold);
             pWork->Mode = 4;
             pMLME->Work.Measure.sts = 0;
-            // go to 129
             
-        case 129:
+            // fall to next case!
+            
+        case STATE_MEASCHAN_1:
             pMLME->Work.Measure.Counter = 0;
             pMLME->Work.Measure.CCA = 0;
             ch = WL_ReadByte(&pMLME->pReq.MeasChannel->channelList[pMLME->Work.Measure.Channel]);
             if (ch == 0 || pMLME->Work.Measure.Channel >= 16) {
-                pMLME->State = 132;
+                pMLME->State = STATE_MEASCHAN_4;
                 break;
             }
                 
             if (FLASH_VerifyCheckSum(0)) {
                 pMLME->Work.Measure.sts = 14;
-                pMLME->State = 132;
+                pMLME->State = STATE_MEASCHAN_4;
                 break;
             }
                 
-            if (pMLME->State == 128) {
+            if (pMLME->State == STATE_MEASCHAN_0) {
                 WSetChannel(ch, 0);
                 WStart();
                 pMLME->Work.Measure.bkPowerMode = W_POWERFORCE;
@@ -663,18 +664,18 @@ void MLME_MeasChannelTask() { // MLME.c:1695
                 WSetChannel(ch, 0);
             }
             
-            pMLME->State = 130;
+            pMLME->State = STATE_MEASCHAN_2;
             SetupTimeOut(pMLME->pReq.MeasChannel->measureTime, MLME_MeasChanTimeOut);
             // go to 130
             
-        case 130:
+        case STATE_MEASCHAN_2:
             pMLME->Work.Measure.Counter++;
             if (W_RF_PINS & 1)
                 pMLME->Work.Measure.CCA += 100;
             
             break;
             
-        case 131:
+        case STATE_MEASCHAN_3:
             ch = WL_ReadByte(&pMLME->pReq.MeasChannel->channelList[pMLME->Work.Measure.Channel]);
             ratio = 0;
             
@@ -685,17 +686,17 @@ void MLME_MeasChannelTask() { // MLME.c:1695
             
             pMLME->pCfm.MeasChannel->ccaBusyInfo[pMLME->Work.Measure.Channel] = ch | (ratio << 8);
             pMLME->Work.Measure.Channel++;
-            pMLME->State = 129;
+            pMLME->State = STATE_MEASCHAN_1;
             break;
             
-        case 132:
+        case STATE_MEASCHAN_4:
             WStop();
             pWork->Mode = wlMan->Config.Mode;
             BBP_Write(0x13, pMLME->Work.Measure.bkCCAMode);
             BBP_Write(0x35, pMLME->Work.Measure.bkEdTh);
             WSetForcePowerState(pMLME->Work.Measure.bkPowerMode);
             pMLME->pCfm.MeasChannel->resultCode = pMLME->Work.Measure.sts;
-            pMLME->State = 0;
+            pMLME->State = STATE_NONE;
             
             for (ch = pMLME->Work.Measure.Channel; ch < 16; ch++) {
                 pMLME->pCfm.MeasChannel->ccaBusyInfo[ch] = 0;
@@ -708,12 +709,12 @@ void MLME_MeasChannelTask() { // MLME.c:1695
             break;
     }
     
-    if (pMLME->State)
+    if (pMLME->State != STATE_NONE)
         AddTask(PRIORITY_LOW, TASK_MEAS_CHANNEL);
 }
 
 static void MLME_MeasChanTimeOut(void *unused) { // MLME.c:1871
-    wlMan->MLME.State = 131;
+    wlMan->MLME.State = STATE_MEASCHAN_3;
     AddTask(PRIORITY_LOW, TASK_MEAS_CHANNEL);
 }
 
