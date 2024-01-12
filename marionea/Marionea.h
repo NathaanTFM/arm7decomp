@@ -1,5 +1,3 @@
-#pragma pack(1)
-
 #ifndef MARIONEA_H
 #define MARIONEA_H
 
@@ -211,7 +209,12 @@ typedef signed short s16;
 typedef signed long s32;
 typedef signed long long s64;
 
+// Don't pack this one
+#include "PublicSdk.h"
+
 // Misc structs I don't know where to put them
+#pragma pack(push, 1)
+
 typedef struct {
     u16 rssi; // offset 00
     u16 channel; // offset 02
@@ -337,7 +340,6 @@ typedef struct {
 } WlTxFrame;
 
 // Some other includes we need
-#include "PublicSdk.h"
 #include "Frames.h"
 #include "BufMan.h"
 #include "WlCmdIf.h"
@@ -359,4 +361,5 @@ typedef struct {
 #include "DevCmd.h"
 #include "WlSys.h"
 
+#pragma pack(pop)
 #endif
