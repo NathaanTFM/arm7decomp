@@ -314,7 +314,7 @@ u16 MLME_StartReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:719
     
     pCfm->header.length = 1;
     if (pConfig->Mode != 1 && pConfig->Mode != 0) return 11;
-    if (pWork->STA != 32) return 1;
+    if (pWork->STA != 0x20) return 1;
     if (pReq->ssidLength > 0x20) return 5;
     if (pReq->ssidLength == 0) return 5;
     if (pReq->beaconPeriod < 10) return 5;

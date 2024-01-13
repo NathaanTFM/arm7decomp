@@ -15,7 +15,7 @@ u16 DEV_IdleReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:84
     WlDevIdleCfm* pCfm = (WlDevIdleCfm*)pCfmt;
     pCfm->header.length = 1;
     
-    if (wlMan->Work.STA > 32)
+    if (wlMan->Work.STA > 0x20)
         return 1; // :94
     
     if (wlMan->Work.bSynchro) // :97
@@ -24,7 +24,7 @@ u16 DEV_IdleReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:84
     if (FLASH_VerifyCheckSum(0) != 0)
         return 14; // :104
     
-    WSetStaState(16); // :108
+    WSetStaState(0x10); // :108
     return 0; // :110
 }
 

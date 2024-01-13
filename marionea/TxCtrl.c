@@ -232,7 +232,7 @@ void TxqEndData(TXFRM* pFrm, u32 flag) { // TxCtrl.c:442
         if (pBufMan->Count) {
             TxqPri(0);
             
-        } else if ((u16)(0x10000 + pWork->Mode - 2) <= 1 && pWork->STA == 64 && pWork->PowerMgtMode) {
+        } else if ((u16)(0x10000 + pWork->Mode - 2) <= 1 && pWork->STA == 0x40 && pWork->PowerMgtMode) {
             if (CAM_GetFrameCount(pWork->APCamAdrs) == 0 && pWork->bExistTIM == 0) {
                 WSetPowerState(1);
             }

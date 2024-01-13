@@ -278,7 +278,7 @@ static void WlIntrTxEnd() { // WlIntr.c:857
     u32 txFrm; // r8 - :860
     
     W_IF = 2;
-    if (wlMan->Work.STA == 18) {
+    if (wlMan->Work.STA == 0x12) {
         IntrCarrierSuppresionSignal(); // :873
         
     } else {
