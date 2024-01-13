@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "WaitLoop.h"
 
 void WaitLoop_Rxpe() {

@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "WlNic.h"
 
 static void TimeoutDummy(void* arg);

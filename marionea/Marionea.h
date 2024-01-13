@@ -1,6 +1,8 @@
 #ifndef MARIONEA_H
 #define MARIONEA_H
 
+#ifdef MARIONEA_INTERNAL
+
 // Wifi I/O
 #define WIFI_MEM            (*(volatile u16**)0x4800000UL)
 
@@ -185,8 +187,6 @@
 
 // Useful macros
 #define GET_TX_BUF_ADDR(macFrm) (((u32)(macFrm) & 0x3FFF) / 2)
-
-#define GET_CFM(req) ((void*)((u8*)(req) + ((req)->header.length * 2) + 0x10))
 #define GET_HEADER(ptr) (void*)((u8*)(ptr) - (0x10))
 
 #define global_vtsf_var (*(u16*)0x0380FFF0)
@@ -196,6 +196,9 @@
 #define REG_POWERCNT (*(volatile u16*)0x4000304)
 
 #define RING_END_PTR ((void*)0x04805F60)
+#endif /* MARIONEA_INTERNAL */
+
+#define GET_CFM(req) ((void*)((u8*)(req) + ((req)->header.length * 2) + 0x10))
 
 // Structures and typedefs
 typedef unsigned char u8;

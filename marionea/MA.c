@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "MA.h"
 
 u16 MA_DataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:48

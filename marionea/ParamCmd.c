@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "ParamCmd.h"
 
 u16 PARAMSET_AllReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:64

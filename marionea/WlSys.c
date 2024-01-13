@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "WlSys.h"
 
 void WlessLibReboot() { // WlSys.c:70

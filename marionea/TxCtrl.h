@@ -3,6 +3,7 @@
 #ifndef TX_CTRL_H
 #define TX_CTRL_H
 
+#ifdef MARIONEA_INTERNAL
 typedef struct {
     FIRM_HEADER FirmHeader; // offset 00
     MAC_HEADER MacHeader; // offset 08
@@ -97,5 +98,6 @@ void MakePsPollFrame(u16 aid);
 void InitManHeader(TXFRM* pFrm, u16* pDA);
 u32 IsExistManFrame(u16* pDA, u16 frameCtrl);
 void InitTxCtrl();
+#endif
 
 #endif

@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "WlIntrTask.h"
 
 static RXFRM* TakeoutRxFrame(RXFRM_MAC* pMFrm, u32 length);

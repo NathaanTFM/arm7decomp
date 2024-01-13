@@ -20,6 +20,7 @@ typedef struct {
     u16 buf[2]; // offset 06
 } WlCmdCfm;
 
+#ifdef MARIONEA_INTERNAL
 typedef struct {
     u8* pCmd; // offset 00
     u16 Busy; // offset 04
@@ -37,5 +38,6 @@ u16 CMD_ReservedReqCmd();
 void SendMessageToWmDirect(HEAPBUF_MAN* pBufMan, void* pMsg);
 void SendMessageToWmTask();
 void InitializeCmdIf();
+#endif
 
 #endif

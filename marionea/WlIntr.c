@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "WlIntr.h"
 
 #define EXC_IRQ_IF (*(volatile u32*)0x0380FFF8)

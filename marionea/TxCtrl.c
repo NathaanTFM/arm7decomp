@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "TxCtrl.h"
 
 static u32 SetDSParamSet(u8 *pBuf);

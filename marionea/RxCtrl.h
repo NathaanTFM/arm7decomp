@@ -3,6 +3,7 @@
 #ifndef RX_CTRL_H
 #define RX_CTRL_H
 
+#ifdef MARIONEA_INTERNAL
 typedef struct {
     FIRM_HEADER FirmHeader; // offset 00
     MAC_HEADER MacHeader; // offset 08
@@ -74,5 +75,6 @@ void RxManCtrlTask();
 void DefragTask();
 void DefragTimerTask();
 void InitRxCtrl();
+#endif
 
 #endif

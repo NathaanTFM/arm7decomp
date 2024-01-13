@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "Marionea.h"
 
 static void RxDisAssFrame(DISASS_FRAME* pFrm);

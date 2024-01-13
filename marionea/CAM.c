@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "CAM.h"
 
 static void CAM_InitElement(u32 camAdrs, u16* pMacAdrs);

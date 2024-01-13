@@ -3,6 +3,7 @@
 #ifndef CAM_H
 #define CAM_H
 
+#ifdef MARIONEA_INTERNAL
 typedef struct {
     u16 state; // offset 00
     u16 aid; // offset 02
@@ -61,5 +62,6 @@ void CAM_TimerTask();
 void CAM_Delete(u16 camAdrs);
 void InitializeCAM();
 void InitCAM();
+#endif
 
 #endif

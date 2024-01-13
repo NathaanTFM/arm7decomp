@@ -3,6 +3,7 @@
 #ifndef FRAMES_H
 #define FRAMES_H
 
+#ifdef MARIONEA_INTERNAL
 typedef struct {
     u16 Basic; // offset 00
     u16 Support; // offset 02
@@ -296,5 +297,6 @@ typedef struct {
     MAC_HEADER MacHeader; // offset 08
     PSPOLL_HEADER Dot11Header; // offset 14
 } PSPOLL_FRAME;
+#endif
 
 #endif

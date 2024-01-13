@@ -3,6 +3,7 @@
 #ifndef BUF_MAN_H
 #define BUF_MAN_H
 
+#ifdef MARIONEA_INTERNAL
 typedef struct {
     u32 heapType; // offset 00
     union {
@@ -56,5 +57,6 @@ void InitHeapBufMan(HEAPBUF_MAN* pBufMan, u16 Flag);
 void InitializeHeapBuf(HEAP_INFO* pHeapInfo);
 void ReleaseAllWlHeapBuf();
 void ReleaseAllHeapBuf(HEAPBUF_MAN* pHeapBufMan);
+#endif
 
 #endif

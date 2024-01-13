@@ -76,6 +76,7 @@ typedef struct {
     u16 resultCode; // offset 04
 } WlDevTestRxCfm;
 
+#ifdef MARIONEA_INTERNAL
 u16 DEV_ShutdownReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt);
 u16 DEV_IdleReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt);
 u16 DEV_Class1ReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt);
@@ -87,5 +88,6 @@ u16 DEV_GetStateReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt);
 u16 DEV_TestSignalReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt);
 void IntrCarrierSuppresionSignal();
 u16 DEV_TestRxReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt);
+#endif
 
 #endif

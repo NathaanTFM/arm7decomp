@@ -43,6 +43,7 @@ typedef struct {
     } multiPoll; // offset 64
 } WlCounter;
 
+#ifdef MARIONEA_INTERNAL
 typedef struct {
     u16 a; // offset 00
     u16 b; // offset 02
@@ -87,7 +88,6 @@ typedef struct {
     u16 DiagResult; // offset 22
     u32 ParamFlag; // offset 24
 } CONFIG_PARAM;
-
 
 typedef struct {
     u64 NextTbttTsf; // offset 00
@@ -258,5 +258,6 @@ void SetFatalErr(u32 errCode);
 void SendFatalErrMsgTask();
 void TerminateWlTask();
 void ReleaseWlTask();
+#endif
 
 #endif

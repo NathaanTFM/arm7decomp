@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "DevCmd.h"
 
 u16 DEV_ShutdownReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:49

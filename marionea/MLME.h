@@ -3,6 +3,8 @@
 #ifndef MLME_H
 #define MLME_H
 
+#ifdef MARIONEA_INTERNAL
+
 // MLME States
 #define STATE_NONE 0
 
@@ -46,6 +48,8 @@
 #define STATE_MEASCHAN_2 (STATE_MEASCHAN + 2)
 #define STATE_MEASCHAN_3 (STATE_MEASCHAN + 3)
 #define STATE_MEASCHAN_4 (STATE_MEASCHAN + 4)
+
+#endif
 
 typedef struct {
     u16 wlRsv[6]; // offset 00
@@ -279,6 +283,8 @@ typedef struct {
     u16 ccaBusyInfo[16]; // offset 08
 } WlMlmeMeasChanCfm;
 
+#ifdef MARIONEA_INTERNAL
+
 typedef struct {
     u16 State; // offset 00
     u16 pad; // offset 02
@@ -368,5 +374,7 @@ u32 MLME_IssueBeaconLostIndication(u16* pMacAdrs);
 u32 MLME_IssueBeaconSendIndication();
 u32 MLME_IssueBeaconRecvIndication(void* pRxFrm);
 void InitializeMLME();
+
+#endif
 
 #endif

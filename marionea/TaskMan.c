@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "TaskMan.h"
 
 void InitializeTask() { // TaskMan.c:91
@@ -25,7 +26,9 @@ void InitializeTask() { // TaskMan.c:91
         pTaskMan->TaskTbl[i].pTaskFunc = pTaskFunc[i];
     }
     
+#ifndef NO_IDLE_TASK
     AddTask(PRIORITY_LOWEST, TASK_LOWEST_IDLE);
+#endif
 }
 
 void MainTaskRoutine() { // TaskMan.c:136

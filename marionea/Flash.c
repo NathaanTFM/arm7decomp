@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "Flash.h"
 
 u32 FLASH_VerifyCheckSum(u32* pCrc) { // Flash.c:45

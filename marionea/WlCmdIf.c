@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "WlCmdIf.h"
 
 static const WLLIB_CMD_TBL WlibCmdTbl_MLME[11] = { // :39

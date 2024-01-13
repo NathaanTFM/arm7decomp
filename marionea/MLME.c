@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "MLME.h"
 
 static void MLME_ScanTimeOut(void *unused);

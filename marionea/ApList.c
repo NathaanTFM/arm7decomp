@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "ApList.h"
 
 void UpdateApList(u16 channel, BEACON_FRAME* pFrm, SSID_ELEMENT* pSSID) { // ApList.c:53

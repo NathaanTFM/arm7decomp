@@ -3,6 +3,7 @@
 #ifndef WL_SYS_H
 #define WL_SYS_H
 
+#ifdef MARIONEA_INTERNAL
 typedef struct {
     TASK_MAN TaskMan; // offset 00
     HEAP_MAN HeapMan; // offset 17c
@@ -30,6 +31,7 @@ typedef struct {
     u16 WlOperation; // offset 694
     u16 EnableChannel; // offset 696
 } WL_MAN;
+#endif
 
 typedef struct {
     u32 workingMemAdrs; // offset 00
@@ -55,7 +57,10 @@ typedef struct {
     u32 camSize; // offset 30
 } WlInit;
 
+#ifdef MARIONEA_INTERNAL
 void WlessLibReboot();
+#endif
+
 u32 WL_InitDriver(WlInit* pInit);
 struct _OSThread* WL_GetThreadStruct();
 

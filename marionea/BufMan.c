@@ -1,3 +1,4 @@
+#define MARIONEA_INTERNAL 1
 #include "BufMan.h"
 
 void* AllocateHeapBuf(HEAPBUF_MAN* pBufMan, u32 Length) { // BufMan.c:71

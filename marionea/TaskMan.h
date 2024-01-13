@@ -3,6 +3,8 @@
 #ifndef TASK_MAN_H
 #define TASK_MAN_H
 
+#ifdef MARIONEA_INTERNAL
+
 // Task priorities
 #define PRIORITY_LOWEST 3
 #define PRIORITY_LOW 2
@@ -58,5 +60,7 @@ void AddTask(long nPriority, u32 nTaskID);
 u32 DeleteTask(u32 nPriority);
 void LowestIdleTask();
 void ExecuteMessage(void** pMsg);
+
+#endif
 
 #endif

@@ -88,11 +88,13 @@ typedef struct {
     u16 resultCode; // offset 04
 } WlMaClrDataCfm;
 
+#ifdef MARIONEA_INTERNAL
 u16 MA_DataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt);
 u16 MA_KeyDataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt);
 u16 MA_MpReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt);
 u16 MA_TestDataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt);
 u16 MA_ClrDataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt);
 void IssueMaDataConfirm(HEAPBUF_MAN* pBufMan, void* pBuf);
+#endif
 
 #endif
