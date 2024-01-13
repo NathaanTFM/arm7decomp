@@ -364,33 +364,134 @@ static void WlIntrTxEnd() { // WlIntr.c:857
     }
 }
 
-static void WlIntrRxEnd() { // WlIntr.c:1101
-    WORK_PARAM* pWork; // r6 - :1103
-    RX_CTRL* pRxCtrl; // r7 - :1104
+void WlIntrRxEnd() { // WlIntr.c:1101
+    WORK_PARAM* pWork = &wlMan->Work; // r6 - :1103
+    RX_CTRL* pRxCtrl = &wlMan->RxCtrl; // r7 - :1104
     RXFRM_MAC* pMFrm; // r0 - :1105
-    u32 wlOperation; // r4 - :1106
+    u32 wlOperation = wlMan->WlOperation; // r4 - :1106
     u16 *pStatus, *pErrSts, *pTimeStamp, *pMPDU, *pDur; // r8, r0, r0, r0, None - :1107
     u32 bnry, curr, next_bnry, length, frameType; // r9, r10, r9, r1, r0 - :1108
     u16 keySts; // r0 - :1109
+    u32 tm[4]; // not in nef, but probably exists
+
+    W_IF = 1;
+    if (pWork->Mode == 0) {
+        W_RXBUF_READCSR = W_RXBUF_WRCSR;
+    }
+
+    for (;;) {
+        bnry = pRxCtrl->wlCurr;
+        curr = W_RXBUF_WRCSR;
+        if (bnry == curr)
+            break;
+
+        tm[0] = W_US_COUNT0;
+        tm[1] = W_US_COUNT1;
+        tm[2] = W_US_COUNT0;
+        tm[3] = W_US_COUNT1;
+
+        if (tm[0] > tm[2])
+            tm[0] = ((tm[2] >> 4) | (tm[3] << 12));
+        else
+            tm[0] = ((tm[0] >> 4) | (tm[1] << 12));
+
+        if (bnry >= 2246 && bnry <= 2287)
+            WUpdateCounter();
+        
+        pMFrm = (RXFRM_MAC*)&W_MACMEM(2 * bnry);
+        pStatus = (u16 *)pMFrm;
+        pErrSts = (u16 *)AdjustRingPointer(/*&pMFrm->MacHeader.Rx.NextBnry*/(u16*)((u32)pStatus+2));
+        pTimeStamp = (u16 *)AdjustRingPointer(/*&pMFrm->MacHeader.Rx.TimeStamp*/(u16*)((u32)pErrSts+2));
+        pMPDU = (u16 *)AdjustRingPointer(/*&pMFrm->MacHeader.Rx.MPDU*/(u16*)((u32)pTimeStamp+4));
+        pDur = (u16 *)AdjustRingPointer(&pMFrm->Dot11Header.DurationID);
+        *pStatus |= (2 * (*pErrSts)) & 0x400;
+        *pTimeStamp = tm[0];
+
+        length = *pMPDU;
+        next_bnry = 2 * ((length + 2 * bnry + 15) / 4);
+        if (next_bnry >= 0xFB0) {
+            next_bnry -= pWork->Ofst.RxBuf.Size / 2;
+        }
+        if (length > 0x92C) {
+            *pStatus = 0xFFFF;
+            next_bnry = curr;
+            pWork->CurrErrCount++;
+            
+        } else {
+            if ((wlOperation & 1) != 0 && next_bnry != curr) {
+                RXFRM_MAC* pNextMFrm = (RXFRM_MAC*)&W_MACMEM(2 * next_bnry); // r0 - :1247
+                u16 nextStatus, nextRate; // r2, r0 - :1248
+
+                nextStatus = pNextMFrm->MacHeader.Rx.Status;
+                
+                if ((u8*)pNextMFrm < (u8*)0x4805F5A)
+                    nextRate = *(u16*)&pNextMFrm->MacHeader.Rx.Service_Rate;
+                else
+                    nextRate = *(u16*)((u32)pNextMFrm - (u32)wlMan->Work.Ofst.RxBuf.Size + 6);
+                
+                if ((nextStatus & 0x7C00) != 0 || (nextRate != 10 && nextRate != 20) || length > 0xFFF) {
+                    pWork->CurrErrCount++;
+                    *pStatus = 0xFFFF;
+                    pRxCtrl->wlCurr = curr;
+                    *pErrSts = curr;
+                    break;
+                }
+            }
+        }
+
+        frameType = (*pStatus) & 0xF;
+        
+        if (frameType == 12) {
+            u16 fc = *(u16*)AdjustRingPointer(&pMFrm->Dot11Header.FrameCtrl.Data); // None - :1309
+            u16 seqCtrl = *(u16*)AdjustRingPointer(&pMFrm->Dot11Header.SeqCtrl.Data); // r10 - :1310
     
-    {
-        RXFRM_MAC* pNextMFrm; // r0 - :1247
-        u16 nextStatus, nextRate; // r2, r0 - :1248
+            if (pRxCtrl->LastMpSeq == seqCtrl && (fc & 0x800) != 0) {
+                wlMan->Counter.rx.mpDuplicateErr++;
+                *pStatus = 0xFFFF;
+                
+            } else if (wlMan->Config.NullKeyRes == 0 && pWork->STA == 0x40) {
+                if (W_AID_LOW != 0 && ((W_TXBUF_REPLY2 & 0x8000) != 0 || (W_TXBUF_REPLY1 & 0x8000) == 0)) {
+                    OS_CancelAlarm(&wlMan->KeyAlarm);
+                    OS_SetAlarm(&wlMan->KeyAlarm, ((33514 * (u64)(*pDur))  >> 6) / 1000, (void *)WClearKSID, 0);
+                    
+                } else {
+                    seqCtrl = 0xFFFF;
+                    W_RX_UNK = 0xFFFF;
+                    W_INTERNAL_11 = 0xFFFF;
+                    W_INTERNAL_12 = 0xFFFF;
+                    *pStatus = 0xFFFF;
+                }
+            }
+            pRxCtrl->LastMpSeq = seqCtrl;
+            keySts = CheckKeyTxEnd();
+            if ((keySts & 1) != 0)
+                wlMan->Counter.multiPoll.txNull++;
+            
+        } else if (frameType == 13) {
+            if (wlMan->Config.NullKeyRes == 0 && pWork->STA == 0x40) {
+                if (W_AID_LOW == 0 || (W_TXBUF_REPLY2 & 0x8000) == 0) {
+                    *pStatus = 0xFFFF;
+                }
+            }
+        }
+        pRxCtrl->wlCurr = next_bnry;
+        *pErrSts = next_bnry;
     }
     
-    {
-        u16 fc; // None - :1309
-        u16 seqCtrl; // r10 - :1310
+    if (wlOperation & 1) {
+        u16 bkcurr = W_RXBUF_WRCSR; // r0 - :1394
+        u16 keySts = CheckKeyTxEnd(); // r0 - :1395
+
+        if (keySts && bkcurr == W_RXBUF_WRCSR) {
+            if (keySts & 2)
+                SetFatalErr(0x80);
+            else if (keySts & 1)
+                SetFatalErr(0x100);
+        }
     }
-    
-    {
-        u16 bkcurr; // r0 - :1394
-        u16 keySts; // r0 - :1395
-    }
-    
-    // Temporarily including the function call here so it doesn't get lost
-    CheckKeyTxEnd();
-    CheckKeyTxEndMain(0);
+
+    if (W_RXBUF_READCSR != W_RXBUF_WRCSR)
+        AddTask(0, 0xF);
 }
 
 static void WlIntrMpEnd(u32 bMacBugPatch) { // WlIntr.c:1449
