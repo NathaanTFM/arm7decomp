@@ -131,6 +131,8 @@ extern void NVRAM_SoftwareReset();
 extern void MI_WaitDma(u32 dmaNo);
 
 // Home made inlined functions that probably exist somewhere (I think they were in the older version of the driver)
+#define REG_IME (*(volatile u16*)0x4000208)
+
 static inline int OS_RestoreIrq(int enable) {
     u16 prep = REG_IME;
     REG_IME = (u16)enable;

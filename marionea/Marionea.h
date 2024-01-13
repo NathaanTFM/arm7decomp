@@ -193,7 +193,6 @@
 #define wlMan (*(WL_MAN**)0x0380FFF4)
 
 #define REG_VCOUNT (*(volatile u16*)0x4000006)
-#define REG_IME (*(volatile u16*)0x4000208)
 #define REG_POWERCNT (*(volatile u16*)0x4000304)
 
 #define RING_END_PTR ((void*)0x04805F60)
@@ -338,6 +337,21 @@ typedef struct {
     u8 rsv5[8]; // offset 24
     u16* datap; // offset 2c
 } WlTxFrame;
+
+typedef struct {
+    u16 state; // offset 00
+    u16 aid; // offset 02
+    u16 macAdrs[3]; // offset 04
+    u16 rssi; // offset 0a
+    u16 capaInfo; // offset 0c
+    u16 authSeed; // offset 0e
+    u16 supRateSet; // offset 10
+    u16 rsv; // offset 12
+    u16 lastSeqCtrl; // offset 14
+    u16 frameCount; // offset 16
+    u16 lifeTime; // offset 18
+    u16 maxLifeTime; // offset 1a
+} WlStaElement;
 
 // Some other includes we need
 #include "Frames.h"
