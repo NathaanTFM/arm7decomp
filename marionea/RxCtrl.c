@@ -125,7 +125,7 @@ void RxDataFrameTask() { // RxCtrl.c:66
             CAM_SetLastSeqCtrl(camAdrs, pFrm->Dot11Header.SeqCtrl.Data);
             CAM_UpdateLifeTime(camAdrs);
             pFrm->FirmHeader.Length = pFrm->MacHeader.Rx.MPDU - 24;
-            pInd->header.code = 384;
+            pInd->header.code = 0x180;
             pInd->header.length = ((u32)pFrm->FirmHeader.Length + 45) / 2;
             SendMessageToWmDirect(&pHeapMan->RxData, pInd);
             
