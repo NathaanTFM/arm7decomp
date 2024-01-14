@@ -742,7 +742,7 @@ u32 MLME_IssueAuthIndication(u16* pMacAdrs, u16 algorithm) { // MLME.c:1981
         return 0;
     }
     
-    pInd->header.code = 132;
+    pInd->header.code = 0x84;
     pInd->header.length = 4;
     WSetMacAdrs1(pInd->peerMacAdrs, pMacAdrs);
     pInd->algorithm = algorithm;
@@ -761,7 +761,7 @@ u32 MLME_IssueDeAuthIndication(u16* pMacAdrs, u16 reason) { // MLME.c:2022
         return 0;
     }
     
-    pInd->header.code = 133;
+    pInd->header.code = 0x85;
     pInd->header.length = 4;
     WSetMacAdrs1(pInd->peerMacAdrs, pMacAdrs);
     pInd->reasonCode = reason;
@@ -781,7 +781,7 @@ u32 MLME_IssueAssIndication(u16* pMacAdrs, u16 aid, SSID_ELEMENT* pSSID) { // ML
         return 0;
     }
     
-    pInd->header.code = 134;
+    pInd->header.code = 0x86;
     pInd->header.length = 21;
     
     WSetMacAdrs1(pInd->peerMacAdrs, pMacAdrs);
@@ -816,7 +816,7 @@ u32 MLME_IssueReAssIndication(u16* pMacAdrs, u16 aid, SSID_ELEMENT* pSSID) { // 
         return 0;
     }
     
-    pInd->header.code = 135;
+    pInd->header.code = 0x87;
     pInd->header.length = 21;
     
     WSetMacAdrs1(pInd->peerMacAdrs, pMacAdrs);
@@ -851,7 +851,7 @@ u32 MLME_IssueDisAssIndication(u16* pMacAdrs, u16 reason) { // MLME.c:2185
         return 0;
     }
     
-    pInd->header.code = 136;
+    pInd->header.code = 0x88;
     pInd->header.length = 4;
     WSetMacAdrs1(pInd->peerMacAdrs, pMacAdrs);
     pInd->reasonCode = reason;
@@ -870,7 +870,7 @@ u32 MLME_IssueBeaconLostIndication(u16* pMacAdrs) { // MLME.c:2227
         return 0;
     }
     
-    pInd->header.code = 139;
+    pInd->header.code = 0x8B;
     pInd->header.length = 3;
     WSetMacAdrs1(pInd->apMacAdrs, pMacAdrs);
     
@@ -888,7 +888,7 @@ u32 MLME_IssueBeaconSendIndication() { // MLME.c:2267
         return 0;
     }
     
-    pInd->header.code = 140;
+    pInd->header.code = 0x8C;
     pInd->header.length = 0;
     SendMessageToWmDirect(&wlMan->HeapMan.TmpBuf, pInd);
     return 1;
@@ -907,7 +907,7 @@ u32 MLME_IssueBeaconRecvIndication(void* pRxFrm) { // MLME.c:2304
         return 0;
     }
     
-    pInd->header.code = 141;
+    pInd->header.code = 0x8D;
     pInd->header.length = (pWork->GameInfoLength + 1) / 2 + 22;
     WL_WriteByte(&pInd->rssi, pFrm->MacHeader.Rx.rsv_RSSI);
     WL_WriteByte(&pInd->rate, pFrm->MacHeader.Rx.Service_Rate);
