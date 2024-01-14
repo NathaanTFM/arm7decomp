@@ -124,7 +124,7 @@ u16 PARAMSET_ResBcSsidReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:3
 }
 
 u16 PARAMSET_BeaconLostThReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:388
-    WlParamSetBeaconLostThresholdReq* pReq = (WlParamSetBeaconLostThresholdReq*)pReqt;
+    WlParamSetBeaconLostThReq* pReq = (WlParamSetBeaconLostThReq*)pReqt;
     WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
     pCfm->header.length = 1;

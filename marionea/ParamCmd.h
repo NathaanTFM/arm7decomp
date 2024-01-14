@@ -93,11 +93,6 @@ typedef struct {
     u16 wlRsv[6]; // offset 00
     WlCmdHeader header; // offset 0c
     u16 beaconLostTh; // offset 10
-} WlParamSetBeaconLostThresholdReq;
-typedef struct {
-    u16 wlRsv[6]; // offset 00
-    WlCmdHeader header; // offset 0c
-    u16 beaconLostTh; // offset 10
 } WlParamSetBeaconLostThReq;
 typedef struct {
     u16 wlRsv[6]; // offset 00
@@ -134,13 +129,6 @@ typedef struct {
 typedef struct {
     u16 wlRsv[6]; // offset 00
     WlCmdHeader header; // offset 0c
-    u16 ccaMode; // offset 10
-    u16 edThreshold; // offset 12
-    u16 agcLimit; // offset 14
-} WlParamSetCCAModeEDThresholdReq;
-typedef struct {
-    u16 wlRsv[6]; // offset 00
-    WlCmdHeader header; // offset 0c
     u16 tableNumber; // offset 10
     u16 camLifeTime; // offset 12
     u16 frameLifeTime; // offset 14
@@ -150,11 +138,6 @@ typedef struct {
     WlCmdHeader header; // offset 0c
     u16 count; // offset 10
 } WlParamSetMaxConnReq;
-typedef struct {
-    u16 wlRsv[6]; // offset 00
-    WlCmdHeader header; // offset 0c
-    u16 count; // offset 10
-} WlParamSetMaxConnectableChildReq;
 typedef struct {
     u16 wlRsv[6]; // offset 00
     WlCmdHeader header; // offset 0c
