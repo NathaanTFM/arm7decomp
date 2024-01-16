@@ -212,7 +212,7 @@ typedef signed long s32;
 typedef signed long long s64;
 
 // Don't pack this one
-#include "PublicSdk.h"
+#include <PublicSdk.h>
 
 // Misc structs I don't know where to put them
 #pragma pack(push, 1)
