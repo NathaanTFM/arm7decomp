@@ -1,6 +1,8 @@
 #define MARIONEA_INTERNAL 1
 #include "WlCmdIf.h"
 
+// TODO: These values might not be right depending on the compiler (packing, etc)
+
 static const WLLIB_CMD_TBL WlibCmdTbl_MLME[11] = { // :39
     {0x01, 0x01, MLME_ResetReqCmd},
     {0x03, 0x01, MLME_PwrMgtReqCmd},

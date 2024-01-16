@@ -50,7 +50,7 @@ typedef struct {
     u16 TaskPri; // offset 12
     u16 CurrTaskID; // offset 14
     u16 pad; // offset 16
-    struct _OSThread Thread; // offset 18
+    OSThread Thread; // offset 18
     TASK_TBL TaskTbl[24]; // offset bc
 } TASK_MAN;
 

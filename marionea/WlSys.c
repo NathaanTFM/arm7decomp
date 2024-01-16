@@ -76,6 +76,6 @@ u32 WL_InitDriver(WlInit* pInit) { // WlSys.c:120
     return wlMan->Config.DiagResult;
 }
 
-struct _OSThread* WL_GetThreadStruct() { // WlSys.c:310
+OSThread* WL_GetThreadStruct() { // WlSys.c:310
     return &wlMan->TaskMan.Thread;
 }

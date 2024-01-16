@@ -8,7 +8,7 @@ typedef struct {
     u32 heapType; // offset 00
     union {
         struct {
-            enum OSArena id; // offset 00
+            OSArena id; // offset 00
             int heapHandle; // offset 04
         } os; // offset 00
         struct {

@@ -1,7 +1,7 @@
 #ifndef PUBLIC_SDK_H
 #define PUBLIC_SDK_H
 
-enum OSArena {
+typedef enum OSArena {
     OS_ARENA_MAIN = 0,
     OS_ARENA_MAIN_SUBPRIV = 1,
     OS_ARENA_MAINEX = 2,
@@ -12,7 +12,7 @@ enum OSArena {
     OS_ARENA_WRAM_SUB = 7,
     OS_ARENA_WRAM_SUBPRIV = 8,
     OS_ARENA_MAX = 9,
-};
+} OSArena;
 
 enum OSThreadState {
     OS_THREAD_STATE_WAITING = 0,
@@ -34,14 +34,14 @@ struct _OSThreadQueue {
     struct _OSThread* tail; // offset 04
 };
 
-struct OSMessageQueue {
+typedef struct OSMessageQueue {
     struct _OSThreadQueue queueSend; // offset 00
     struct _OSThreadQueue queueReceive; // offset 08
     void** msgArray; // offset 10
     long msgCount; // offset 14
     long firstIndex; // offset 18
     long usedCount; // offset 1c
-};
+} OSMessageQueue;
 
 struct _OSThreadLink {
     struct _OSThread* prev; // offset 00
@@ -65,7 +65,7 @@ struct _OSMutexQueue {
     struct OSMutex* tail; // offset 04
 };
 
-struct OSiAlarm {
+typedef struct OSiAlarm {
     void (*handler)(void*); // offset 00
     void* arg; // offset 04
     u32 tag; // offset 08
@@ -74,9 +74,9 @@ struct OSiAlarm {
     struct OSiAlarm* next; // offset 18
     u64 period; // offset 1c
     u64 start; // offset 24
-};
+} OSAlarm;
 
-struct _OSThread {
+typedef struct _OSThread {
     struct OSContext context; // offset 00
     enum OSThreadState state; // offset 48
     struct _OSThread* next; // offset 4c
@@ -96,7 +96,7 @@ struct _OSThread {
     void (*destructor)(void*); // offset 98
     void* userParameter; // offset 9c
     int systemErrno; // offset a0
-};
+} OSThread;
 
 // Bunch of functions from an unknown outside API we don't have any access to.
 extern void MIi_CpuClear16(u16 data, void* destp, u32 size);
@@ -104,8 +104,8 @@ extern void MIi_CpuClear32(u32 data, void* destp, u32 size);
 extern void MIi_CpuClearFast(u32 data, void* destp, u32 size);
 extern void MIi_CpuCopy16(const void* srcp, void* destp, u32 size);
 extern void MIi_CpuCopy32(const void* srcp, void* destp, u32 size);
-extern void* OS_AllocFromHeap(enum OSArena id, int heap, u32 size);
-extern void OS_FreeToHeap(enum OSArena id, int heap, void* ptr);
+extern void* OS_AllocFromHeap(OSArena id, int heap, u32 size);
+extern void OS_FreeToHeap(OSArena id, int heap, void* ptr);
 extern u32 OS_EnableIrqMask(u32 intr);
 extern u32 OS_DisableIrqMask(u32 intr);
 extern u32 OS_DisableInterrupts();
@@ -113,17 +113,17 @@ extern u32 OS_RestoreInterrupts(u32 state);
 extern void OS_SetIrqFunction(u32 intrBit, void (*function)());
 extern void SPI_Lock(u32 id);
 extern void SPI_Unlock(u32 id);
-extern int OS_SendMessage(struct OSMessageQueue* mq, void* msg, s32 flags);
-extern int OS_ReceiveMessage(struct OSMessageQueue* mq, void** msg, s32 flags);
+extern int OS_SendMessage(OSMessageQueue* mq, void* msg, s32 flags);
+extern int OS_ReceiveMessage(OSMessageQueue* mq, void** msg, s32 flags);
 extern int OS_IsAlarmAvailable(); 
-extern void OS_CreateAlarm(struct OSiAlarm* alarm); 
-extern void OS_SetAlarm(struct OSiAlarm* alarm, u64 tick, void (*handler)(void*), void* arg); 
-extern void OS_SetPeriodicAlarm(struct OSiAlarm* alarm, u64 start, u64 period, void (*handler)(void*), void* arg); 
-extern void OS_CancelAlarm(struct OSiAlarm* alarm); 
+extern void OS_CreateAlarm(OSAlarm* alarm); 
+extern void OS_SetAlarm(OSAlarm* alarm, u64 tick, void (*handler)(void*), void* arg); 
+extern void OS_SetPeriodicAlarm(OSAlarm* alarm, u64 start, u64 period, void (*handler)(void*), void* arg); 
+extern void OS_CancelAlarm(OSAlarm* alarm); 
 extern u64 OS_GetTick();
-extern void OS_CreateThread(struct _OSThread* thread, void (*func)(void*), void* arg, void* stack, u32 stackSize, u32 prio);
+extern void OS_CreateThread(OSThread* thread, void (*func)(void*), void* arg, void* stack, u32 stackSize, u32 prio);
 extern void OS_ExitThread();
-extern void OS_WakeupThreadDirect(struct _OSThread* thread);
+extern void OS_WakeupThreadDirect(OSThread* thread);
 extern s32 OS_GetLockID();
 extern void NVRAM_ReadStatusRegister(u8* buf);
 extern void NVRAM_ReadDataBytes(u32 address, u32 size, u8* buf);
