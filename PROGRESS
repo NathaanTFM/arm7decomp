@@ -1,6 +1,6 @@
 Progress:
-    Functions: 441/505 (87.3%)
-    Bytecode: 65624/97516 (67.3%)
+    Functions: 442/505 (87.5%)
+    Bytecode: 65792/97516 (67.5%)
 
 File progress:
     libraries\wm\ARM7\src\req_AutoDeAuth.c
@@ -28,8 +28,8 @@ File progress:
         Bytecode: 0/156 (0.0%)
 
     libraries\wm\ARM7\src\req_EndDCF.c
-        Functions: 0/1 (0.0%)
-        Bytecode: 0/168 (0.0%)
+        Functions: 1/1 (100.0%)
+        Bytecode: 168/168 (100.0%)
 
     libraries\wm\ARM7\src\req_EndMP.c
         Functions: 0/2 (0.0%)
