@@ -1,8 +1,188 @@
 Progress:
-    Functions: 352/358 (98.3%)
-    Bytecode: 57780/62188 (92.9%)
+    Functions: 368/505 (72.9%)
+    Bytecode: 59356/97516 (60.9%)
 
 File progress:
+    libraries\wm\ARM7\src\req_AutoDeAuth.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 172/172 (100.0%)
+
+    libraries\wm\ARM7\src\req_AutoDisconnect.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 20/20 (100.0%)
+
+    libraries\wm\ARM7\src\req_Disable.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 96/96 (100.0%)
+
+    libraries\wm\ARM7\src\req_Disconnect.c
+        Functions: 0/5 (0.0%)
+        Bytecode: 0/1832 (0.0%)
+
+    libraries\wm\ARM7\src\req_Enable.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/488 (0.0%)
+
+    libraries\wm\ARM7\src\req_End.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/156 (0.0%)
+
+    libraries\wm\ARM7\src\req_EndDCF.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/168 (0.0%)
+
+    libraries\wm\ARM7\src\req_EndMP.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/336 (0.0%)
+
+    libraries\wm\ARM7\src\req_EndParent.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/492 (0.0%)
+
+    libraries\wm\ARM7\src\req_EndScan.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/248 (0.0%)
+
+    libraries\wm\ARM7\src\req_GetWirelessCounter.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/128 (0.0%)
+
+    libraries\wm\ARM7\src\req_InitWirelessCounter.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/100 (0.0%)
+
+    libraries\wm\ARM7\src\req_Initialize.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/148 (0.0%)
+
+    libraries\wm\ARM7\src\req_MeasureChannel.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/460 (0.0%)
+
+    libraries\wm\ARM7\src\req_PowerOff.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/152 (0.0%)
+
+    libraries\wm\ARM7\src\req_PowerOn.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/632 (0.0%)
+
+    libraries\wm\ARM7\src\req_Reset.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/904 (0.0%)
+
+    libraries\wm\ARM7\src\req_SetBeaconPeriod.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/116 (0.0%)
+
+    libraries\wm\ARM7\src\req_SetBeaconTxRxInd.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/112 (0.0%)
+
+    libraries\wm\ARM7\src\req_SetDCFData.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/252 (0.0%)
+
+    libraries\wm\ARM7\src\req_SetEntry.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/144 (0.0%)
+
+    libraries\wm\ARM7\src\req_SetGameInfo.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/248 (0.0%)
+
+    libraries\wm\ARM7\src\req_SetLifeTime.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/292 (0.0%)
+
+    libraries\wm\ARM7\src\req_SetMPData.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/320 (0.0%)
+
+    libraries\wm\ARM7\src\req_SetMPParameter.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/888 (0.0%)
+
+    libraries\wm\ARM7\src\req_SetParentParam.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/168 (0.0%)
+
+    libraries\wm\ARM7\src\req_SetPowerSaveMode.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/348 (0.0%)
+
+    libraries\wm\ARM7\src\req_SetWEPKey.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/392 (0.0%)
+
+    libraries\wm\ARM7\src\req_StartConnect.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/1372 (0.0%)
+
+    libraries\wm\ARM7\src\req_StartDCF.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/136 (0.0%)
+
+    libraries\wm\ARM7\src\req_StartMP.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/928 (0.0%)
+
+    libraries\wm\ARM7\src\req_StartParent.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/656 (0.0%)
+
+    libraries\wm\ARM7\src\req_StartScan.c
+        Functions: 0/3 (0.0%)
+        Bytecode: 0/2072 (0.0%)
+
+    libraries\wm\ARM7\src\req_StartTestMode.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/36 (0.0%)
+
+    libraries\wm\ARM7\src\req_StartTestRxMode.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/36 (0.0%)
+
+    libraries\wm\ARM7\src\req_StopTestMode.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/36 (0.0%)
+
+    libraries\wm\ARM7\src\req_StopTestRxMode.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/36 (0.0%)
+
+    libraries\wm\ARM7\src\valarm_SetMPData.c
+        Functions: 0/4 (0.0%)
+        Bytecode: 0/528 (0.0%)
+
+    libraries\wm\ARM7\src\wmsp_indicate.c
+        Functions: 0/9 (0.0%)
+        Bytecode: 0/5176 (0.0%)
+
+    libraries\wm\ARM7\src\wmsp_port.c
+        Functions: 0/9 (0.0%)
+        Bytecode: 0/7032 (0.0%)
+
+    libraries\wm\ARM7\src\wmsp_request.c
+        Functions: 2/2 (100.0%)
+        Bytecode: 164/164 (100.0%)
+
+    libraries\wm\ARM7\src\wmsp_system.c
+        Functions: 1/21 (4.8%)
+        Bytecode: 44/2548 (1.7%)
+
+    libraries\wm\ARM7\src\wmsp_valarm.c
+        Functions: 4/9 (44.4%)
+        Bytecode: 392/1444 (27.1%)
+
+    libraries\wm\ARM7\src\wmsp_wl_control.c
+        Functions: 4/36 (11.1%)
+        Bytecode: 464/3028 (15.3%)
+
+    libraries\wvr\ARM7\src\wvr_sp.c
+        Functions: 2/3 (66.7%)
+        Bytecode: 224/288 (77.8%)
+
     marionea\ApList.c
         Functions: 3/3 (100.0%)
         Bytecode: 432/432 (100.0%)

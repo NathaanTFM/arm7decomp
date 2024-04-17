@@ -82,7 +82,7 @@ def compile(path, target):
         subprocess.call([
             COMPILER,
             "-o", target,
-            "-i", "include",
+            "-Iinclude",
             "-ipa", "file",
             
             "-O4",
@@ -190,7 +190,7 @@ if "-e" in sys.argv:
     
 progressPerFile = {}
 
-for directory in ("marionea",):#, "libraries"):
+for directory in ("marionea", "libraries"):
     for root, dirs, files in os.walk(directory):
         for file in files:
             if not file.endswith(".c"):

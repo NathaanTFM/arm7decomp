@@ -9,9 +9,6 @@
          (req)->wlRsv[5] = 0; \
     } while (0)
 
-#define GET_CFM(req) \
-    (void *)((u8*)req + ((req)->header.length * 2) + 0x10)
-
 WlMlmeResetCfm* WMSP_WL_MlmeReset(u16* buf, u16 mib) { // wmsp_wl_control.c:48
     WlMlmeResetReq* req; // r0 - :50
     WlMlmeResetCfm* cfm; // r0 - :51
