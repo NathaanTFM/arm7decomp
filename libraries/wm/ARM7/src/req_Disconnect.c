@@ -5,8 +5,19 @@ void WMSP_Disconnect(void* msg) { // req_Disconnect.c:189
     u16 tryBmp; // r5 - :192
     u16 resBmp; // None - :193
     struct WMDisconnectCallback* callback; // r0 - :200
+    
+    tryBmp = ((u32*)msg)[1];
+    if (WMSP_DisconnectCore((u32*)msg, 0, &resBmp) == 1) {
+        callback = (struct WMDisconnectCallback*)WMSP_GetBuffer4Callback2Wm9();
+        callback->apiid = 13;
+        callback->errcode = 0;
+        callback->tryBitmap = tryBmp;
+        callback->disconnectedBitmap = resBmp;
+        WMSP_ReturnResult2Wm9(callback);
+    }
 }
 
+#if 0 // Disabling for IPA
 int WMSP_DisconnectCore(u32* args, int indicateFlag, u16* disconnected) { // req_Disconnect.c:225
     u32 wlBuf[128]; // None - :228
     WlCmdCfm* pConfirm; // r0 - :230
@@ -32,6 +43,7 @@ int WMSP_DisconnectCore(u32* args, int indicateFlag, u16* disconnected) { // req
         struct WMStartParentCallback* cb; // r0 - :552
     }
 }
+#endif
 
 void WMSP_IndicateDisconnectionFromMyself(int parent, u16 aid, void* mac) { // req_Disconnect.c:605
     struct WMCallback* cb; // r4 - :608

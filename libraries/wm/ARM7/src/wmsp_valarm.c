@@ -2,12 +2,12 @@
 
 static struct OSiVAlarm wmspVAlarm; // :22
 
-static void WmspChildAdjustVSync1(void *unused);
-static void WmspChildAdjustVSync2(void *unused);
-static void WmspChildVAlarmMP(void *unused);
-static void WmspParentAdjustVSync(void *unused);
-static void WmspParentVAlarmMP(void *unused);
-static void WmspFromVAlarmToWmspThread(void *unused);
+static void WmspChildAdjustVSync1();
+static void WmspChildAdjustVSync2();
+static void WmspChildVAlarmMP();
+static void WmspParentAdjustVSync();
+static void WmspParentVAlarmMP();
+STATIC void WmspFromVAlarmToWmspThread();
 
 // The following functions are known to exist, but are missing
 // from the latest known version (inlined). They're not placed as they should be,
@@ -97,19 +97,19 @@ void WMSP_SetVAlarm() { // wmsp_valarm.c:113
         if (pVAlarm->handler)
             WMSP_CancelVAlarm();
         
-        WmspSetVAlarm(203, WmspParentAdjustVSync, (void *)3);
+        WmspSetVAlarm(203, (void*)WmspParentAdjustVSync, (void *)3);
         
     } else if (status->mode == 2) {
         status->VSyncFlag = 0;
         if (pVAlarm->handler)
             WMSP_CancelVAlarm();
         
-        WmspSetVAlarm(200, WmspChildAdjustVSync1, (void *)1);
+        WmspSetVAlarm(200, (void*)WmspChildAdjustVSync1, (void *)1);
         status->v_remain = 0;
     }
 }
 
-static void WmspChildAdjustVSync1(void *unused) { // wmsp_valarm.c:360
+static void WmspChildAdjustVSync1() { // wmsp_valarm.c:360
     struct WMStatus* status = wmspW.status;
     status->v_tsf = global_vtsf_var;
     
@@ -123,14 +123,14 @@ static void WmspChildAdjustVSync1(void *unused) { // wmsp_valarm.c:360
         
     } else {
         status->VSyncFlag = 1;
-        WmspSetVAlarm(status->mp_childVCount, WmspChildVAlarmMP, (void *)4);
+        WmspSetVAlarm(status->mp_childVCount, (void*)WmspChildVAlarmMP, (void *)4);
     }
 }
 
-static void WmspChildAdjustVSync2(void *unused) { // wmsp_valarm.c:406
+static void WmspChildAdjustVSync2() { // wmsp_valarm.c:406
 }
 
-static void WmspChildVAlarmMP(void *unused) { // wmsp_valarm.c:435
+static void WmspChildVAlarmMP() { // wmsp_valarm.c:435
     u64 now; // None - :449
     u64 last; // None - :450
     int result; // r5 - :451
@@ -138,7 +138,7 @@ static void WmspChildVAlarmMP(void *unused) { // wmsp_valarm.c:435
     struct WMIndCallback* cb; // r0 - :483
 }
 
-static void WmspParentAdjustVSync(void *unused) { // wmsp_valarm.c:509
+static void WmspParentAdjustVSync() { // wmsp_valarm.c:509
     struct WMStatus* status = wmspW.status;
     
     if (status->valarm_counter >= 0x3C) {
@@ -153,16 +153,53 @@ static void WmspParentAdjustVSync(void *unused) { // wmsp_valarm.c:509
     }
     
     WmspSetVTSF();
-    WmspSetVAlarm(status->mp_parentVCount, WmspParentVAlarmMP, (void *)5);
+    WmspSetVAlarm(status->mp_parentVCount, (void*)WmspParentVAlarmMP, (void *)5);
 }
 
-static void WmspParentVAlarmMP(void *unused) { // wmsp_valarm.c:551
+static void WmspParentVAlarmMP() { // wmsp_valarm.c:551
+    if (wmspW.status->mp_flag == 1) {
+        WmspSetVAlarm(203, (void*)WmspParentAdjustVSync, (void *)3);
+        WmspFromVAlarmToWmspThread();
+    }
 }
 
-static void WmspFromVAlarmToWmspThread(void *unused) { // wmsp_valarm.c:578
+STATIC void WmspFromVAlarmToWmspThread() { // wmsp_valarm.c:578
     int result; // r0 - :580
     u32* buf; // r0 - :581
-    struct WMSPWork* wmspW; // r5 - :582
+    struct WMSPWork* pWmspW = &wmspW; // r5 - :582
+    struct WMStatus* status = pWmspW->status;
     u32 enabled; // r0 - :584
-    struct WMIndCallback* cb; // r0 - :616
+    
+    enabled = OS_DisableInterrupts();
+    
+    if (status->valarm_queuedFlag == 1) {
+        OS_RestoreInterrupts(enabled);
+        return;
+    }
+    
+    status->valarm_queuedFlag = 1;
+    OS_RestoreInterrupts(enabled);
+    
+    buf = WMSP_GetInternalRequestBuf();
+    if (buf) {
+        buf[0] = 28;
+        result = OS_SendMessage(&pWmspW->requestQ, buf, 0);
+        
+    } else {
+        result = 0;
+    }
+    
+    if (result == 0) {
+        status->valarm_queuedFlag = 0;
+        
+        if (pWmspW->wm7buf) {
+            struct WMIndCallback* cb; // r0 - :616
+            cb = WMSP_GetBuffer4Callback2Wm9();
+            cb->apiid = 128;
+            cb->errcode = 8;
+            cb->state = 22;
+            cb->reason = 28;
+            WMSP_ReturnResult2Wm9(cb);
+        }
+    }
 }

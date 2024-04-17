@@ -12,6 +12,10 @@ void WMSP_IndicateThread() { // wmsp_indicate.c:99
 
 static void WmspFreeBufOfWL(WlCmdReq* buf) { // wmsp_indicate.c:227
     u32 enabled; // r0 - :229
+    
+    enabled = OS_DisableInterrupts();
+    OS_FreeToHeap(wmspW.arenaId, wmspW.heapHandle, buf);
+    OS_RestoreInterrupts(enabled);
 }
 
 void WMSP_RequestResumeMP() { // wmsp_indicate.c:673
@@ -49,4 +53,6 @@ static void WmspKickMPChild() { // wmsp_indicate.c:1407
 }
 
 void WMSP_InitAlarm() { // wmsp_indicate.c:1951
+    OS_CreateAlarm(&wmspMPIntervalAlarm);
+    OS_CreateAlarm(&wmspMPAckAlarm);
 }
