@@ -239,6 +239,28 @@ WlMaKeyDataCfm* WMSP_WL_MaKeyData(u16* buf, u16 length, u16 wmHeader, u16* keyDa
 WlMaMpCfm* WMSP_WL_MaMp(u16* buf, u16 resume, u16 retryLimit, u16 txop, u16 pollBitmap, u16 tmptt, u16 currTsf, u16 dataLength, u16 wmHeader, u16* datap) { // wmsp_wl_control.c:625
     WlMaMpReq* req; // r0 - :628
     WlMaMpCfm* cfm; // r0 - :629
+    
+    req = (WlMaMpReq*)buf;
+    CLEAR_WL_RSV(req);
+    
+    req->header.code = 0x102;
+    req->header.length = 10;
+    req->resume = resume;
+    req->retryLimit = retryLimit;
+    req->txop = txop;
+    req->pollBitmap = pollBitmap;
+    req->tmptt = tmptt;
+    req->currTsf = currTsf;
+    req->dataLength = dataLength;
+    req->wmHeader = wmHeader;
+    req->datap = datap;
+    
+    cfm = GET_CFM(req);
+    cfm->header.code = req->header.code;
+    cfm->header.length = 1;
+    
+    WMSP_WlRequest((u16 *)req);
+    return cfm;
 }
 
 WlMaClrDataCfm* WMSP_WL_MaClearData(u16* buf, u16 flag) { // wmsp_wl_control.c:712
@@ -452,6 +474,21 @@ WlParamSetCfm* WMSP_WL_ParamSetBeaconPeriod(u16* buf, u16 beaconPeriod) { // wms
 WlParamSetCfm* WMSP_WL_ParamSetGameInfo(u16* buf, u16 gameInfoLength, u16* gameInfo) { // wmsp_wl_control.c:1741
     WlParamSetGameInfoReq* req; // r0 - :1743
     WlParamSetCfm* cfm; // r0 - :1744
+    
+    req = (WlParamSetGameInfoReq*)buf;
+    CLEAR_WL_RSV(req);
+    
+    req->header.code = 0x245;
+    req->header.length = (gameInfoLength + 1) / 2 + 1;
+    req->gameInfoLength = gameInfoLength;
+    MIi_CpuCopy16(gameInfo, req->gameInfo, gameInfoLength);
+    
+    cfm = GET_CFM(req);
+    cfm->header.code = req->header.code;
+    cfm->header.length = 1;
+    
+    WMSP_WlRequest((u16 *)req);
+    return cfm;
 }
 
 WlParamGetMacAddressCfm* WMSP_WL_ParamGetMacAddress(u16* buf) { // wmsp_wl_control.c:1811
