@@ -1,6 +1,6 @@
 Progress:
-    Functions: 461/505 (91.3%)
-    Bytecode: 67564/97516 (69.3%)
+    Functions: 462/505 (91.5%)
+    Bytecode: 67760/97516 (69.5%)
 
 File progress:
     libraries\wm\ARM7\src\req_AutoDeAuth.c
@@ -40,8 +40,8 @@ File progress:
         Bytecode: 52/492 (10.6%)
 
     libraries\wm\ARM7\src\req_EndScan.c
-        Functions: 1/2 (50.0%)
-        Bytecode: 52/248 (21.0%)
+        Functions: 2/2 (100.0%)
+        Bytecode: 248/248 (100.0%)
 
     libraries\wm\ARM7\src\req_GetWirelessCounter.c
         Functions: 1/1 (100.0%)
