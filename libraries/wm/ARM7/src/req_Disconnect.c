@@ -47,8 +47,34 @@ int WMSP_DisconnectCore(u32* args, int indicateFlag, u16* disconnected) { // req
 
 void WMSP_IndicateDisconnectionFromMyself(int parent, u16 aid, void* mac) { // req_Disconnect.c:605
     struct WMCallback* cb; // r4 - :608
-    struct WMStartParentCallback* cb_Parent; // r0 - :614
-    struct WMStartConnectCallback* cb_Child; // r0 - :625
+    struct WMStatus* status = wmspW.status;
+    
+    cb = WMSP_GetBuffer4Callback2Wm9();
+    cb->errcode = 0;
+    
+    if (parent) {
+        struct WMStartParentCallback* cb_Parent = (struct WMStartParentCallback*)cb; // r0 - :614
+        cb_Parent->apiid = 8;
+        cb_Parent->state = 26;
+        cb_Parent->reason = 0xF001;
+        cb_Parent->aid = aid;
+        MI_CpuCopy8(mac, cb_Parent->macAddress, 6);
+        cb_Parent->parentSize = status->mp_parentSize;
+        cb_Parent->childSize = status->mp_childSize;
+        
+    } else {
+        struct WMStartConnectCallback* cb_Child = (struct WMStartConnectCallback*)cb; // r0 - :625
+        cb_Child->apiid = 12;
+        cb_Child->state = 26;
+        cb_Child->reason = 0xF001;
+        cb_Child->aid = status->aid;
+        MI_CpuCopy8(mac, cb_Child->macAddress, 6);
+        cb_Child->parentSize = status->mp_parentSize;
+        cb_Child->childSize = status->mp_childSize;
+    }
+    
+    WMSP_ReturnResult2Wm9(cb);
+    
 }
 
 STATIC void WmspError(u16 wlCommand, u16 wlResult, u16 tryBmp, u16 resBmp) { // req_Disconnect.c:650

@@ -1,6 +1,6 @@
 Progress:
-    Functions: 462/505 (91.5%)
-    Bytecode: 67760/97516 (69.5%)
+    Functions: 463/505 (91.7%)
+    Bytecode: 67956/97516 (69.7%)
 
 File progress:
     libraries\wm\ARM7\src\req_AutoDeAuth.c
@@ -16,8 +16,8 @@ File progress:
         Bytecode: 96/96 (100.0%)
 
     libraries\wm\ARM7\src\req_Disconnect.c
-        Functions: 3/5 (60.0%)
-        Bytecode: 216/1832 (11.8%)
+        Functions: 4/5 (80.0%)
+        Bytecode: 412/1832 (22.5%)
 
     libraries\wm\ARM7\src\req_Enable.c
         Functions: 1/2 (50.0%)
