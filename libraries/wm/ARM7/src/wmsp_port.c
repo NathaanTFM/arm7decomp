@@ -1,5 +1,7 @@
 #include "Mongoose.h"
 
+STATIC u16 WmspGetTmptt(u32 dataLength, u32 txop, u32 pollBitmap, u32 targetVCount);
+
 void WMSP_InitSendQueue() { // wmsp_port.c:38
     u16 i; // r4 - :43
     struct WMStatus* status = wmspW.status;
@@ -49,13 +51,39 @@ void WMSP_SendMaMP(u16 pollBitmap) { // wmsp_port.c:144
 }
 
 void WMSP_ResumeMaMP(u16 pollBitmap) { // wmsp_port.c:294
+    struct WMStatus* status = wmspW.status;
     u32 wlBuf[128]; // None - :299
     u16 tmptt; // r0 - :302
     u32 currPollBitmap; // r4 - :303
     u16 currTsf; // r5 - :304
     u32 wmHeader; // r6 - :305
     u16 recvSize; // r8 - :309
-    u32 e; // r0 - :312
+    
+    // ???
+    u32 e = OS_DisableInterrupts(); // r0 - :312
+    OS_RestoreInterrupts(e);
+    
+    currTsf = W_US_COUNT0; // :318
+    wmHeader = status->mp_prevWmHeader; // :320
+    currPollBitmap = (pollBitmap & status->child_bitmap); // :321
+    recvSize = status->mp_recvSize; // :324
+    
+    if (status->mp_recvBufSize < (((recvSize + 12) * MATH_CountPopulation(currPollBitmap) + 41) & ~0x1F)) {
+        OS_Sleep(2);
+        WMSP_RequestResumeMP();
+        
+    } else {
+        if (status->mp_count == 1 || status->mp_limitCount == 1) {
+            tmptt = WmspGetTmptt(status->mp_prevDataLength, status->mp_prevTxop, currPollBitmap, status->mp_parentVCount);
+            wmHeader |= 0x8000;
+            
+        } else {
+            tmptt = 0;
+            wmHeader &= ~0x8000;
+        }
+        
+        WMSP_WL_MaMp((u16*)wlBuf, 0x800C, 0, 0, currPollBitmap, tmptt, currTsf, 0, wmHeader, 0);
+    }
 }
 
 int WMSP_PutSendQueue(u32 childBitmap, u16 priority, u16 port, u32 destBitmap, u16* sendData, u16 sendDataSize, void (*callback)(void*), void* arg) { // wmsp_port.c:748
@@ -115,8 +143,10 @@ void WMSP_ParsePortPacket(u16 aid, u16 wmHeader, u16* data, u8 rssi, u16 length,
     u16 childSize; // r0 - :1468
 }
 
-static u16 WmspGetTmptt(u32 dataLength, u32 txop, u32 pollBitmap, u32 targetVCount) { // wmsp_port.c:1694
+#if 0
+STATIC u16 WmspGetTmptt(u32 dataLength, u32 txop, u32 pollBitmap, u32 targetVCount) { // wmsp_port.c:1694
     long tmptt; // r3 - :1708
     u32 pollCnt; // r0 - :1710
     u32 mp_time; // r4 - :1711
 }
+#endif
