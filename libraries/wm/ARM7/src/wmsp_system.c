@@ -107,7 +107,38 @@ u16 WMSP_GetAllowedChannel(u16 bitField) { // wmsp_system.c:576
     long max; // r12 - :579
     long min; // r0 - :580
     long center; // r14 - :581
+    
+    temp = (bitField & 0x1FFF);
+    if (temp == 0)
+        return 0;
+    
+    for (min = 0; min < 16; min++) {
+        if (temp & (1 << min))
+            break;
+    }
+    
+    for (max = 15; max != 0; --max) {
+        if (temp & (1 << max))
+            break;
+    }
+    
+    if (max - min < 5)
+        return (1 << min);
+    
+    center = (max + min) / 2;
+    
     long i; // r4 - :615
+    for (i = 0; i < max - min; i++) {
+        center += i * (2 * (i % 2) - 1);
+        if (temp & (1 << center))
+            break;
+    }
+    
+    if (max - center < 5 || center - min < 5) {
+        return (1 << min) | (1 << max);
+    } else {
+        return (1 << max) | (1 << center) | (1 << min);
+    }
 }
 
 void WMSP_AddRssiToList(u8 rssi8) { // wmsp_system.c:650

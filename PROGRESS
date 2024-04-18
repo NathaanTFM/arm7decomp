@@ -1,6 +1,6 @@
 Progress:
-    Functions: 463/505 (91.7%)
-    Bytecode: 67956/97516 (69.7%)
+    Functions: 464/505 (91.9%)
+    Bytecode: 68192/97516 (69.9%)
 
 File progress:
     libraries\wm\ARM7\src\req_AutoDeAuth.c
@@ -168,8 +168,8 @@ File progress:
         Bytecode: 164/164 (100.0%)
 
     libraries\wm\ARM7\src\wmsp_system.c
-        Functions: 18/21 (85.7%)
-        Bytecode: 1532/2548 (60.1%)
+        Functions: 19/21 (90.5%)
+        Bytecode: 1768/2548 (69.4%)
 
     libraries\wm\ARM7\src\wmsp_valarm.c
         Functions: 6/9 (66.7%)
