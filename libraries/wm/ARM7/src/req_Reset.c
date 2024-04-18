@@ -19,6 +19,12 @@ void WMSP_Reset() { // req_Reset.c:36
     }
 }
 
-static void WmspError(u16 wlCommand, u16 wlResult) { // req_Reset.c:337
+STATIC void WmspError(u16 wlCommand, u16 wlResult) { // req_Reset.c:337
     struct WMCallback* cb; // r0 - :339
+    cb = WMSP_GetBuffer4Callback2Wm9();
+    cb->apiid = 1;
+    cb->errcode = 1;
+    cb->wlCmdID = wlCommand;
+    cb->wlResult = wlResult;
+    WMSP_ReturnResult2Wm9(cb);
 }

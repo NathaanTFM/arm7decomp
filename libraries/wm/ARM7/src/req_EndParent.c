@@ -11,6 +11,12 @@ void WMSP_EndParent() { // req_EndParent.c:131
     long auth_retry; // r9 - :175
 }
 
-static void WmspError(u16 wlCommand, u16 wlResult) { // req_EndParent.c:269
+STATIC void WmspError(u16 wlCommand, u16 wlResult) { // req_EndParent.c:269
     struct WMCallback* cb; // r0 - :271
+    cb = WMSP_GetBuffer4Callback2Wm9();
+    cb->apiid = 9;
+    cb->errcode = 1;
+    cb->wlCmdID = wlCommand;
+    cb->wlResult = wlResult;
+    WMSP_ReturnResult2Wm9(cb);
 }

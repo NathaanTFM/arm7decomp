@@ -51,10 +51,26 @@ void WMSP_IndicateDisconnectionFromMyself(int parent, u16 aid, void* mac) { // r
     struct WMStartConnectCallback* cb_Child; // r0 - :625
 }
 
-static void WmspError(u16 wlCommand, u16 wlResult, u16 tryBmp, u16 resBmp) { // req_Disconnect.c:650
+STATIC void WmspError(u16 wlCommand, u16 wlResult, u16 tryBmp, u16 resBmp) { // req_Disconnect.c:650
     struct WMDisconnectCallback* callback; // r0 - :652
+    callback = WMSP_GetBuffer4Callback2Wm9();
+    callback->apiid = 13;
+    callback->errcode = 1;
+    callback->wlCmdID = wlCommand;
+    callback->wlResult = wlResult;
+    callback->tryBitmap = tryBmp;
+    callback->disconnectedBitmap = resBmp;
+    WMSP_ReturnResult2Wm9(callback);
 }
 
-static void WmspIndError(u16 wlCommand, u16 wlResult, u16 tryBmp, u16 resBmp) { // req_Disconnect.c:674
+STATIC void WmspIndError(u16 wlCommand, u16 wlResult, u16 tryBmp, u16 resBmp) { // req_Disconnect.c:674
     struct WMDisconnectCallback* callback; // r0 - :676
+    callback = WMSP_GetBuffer4Callback2Wm9();
+    callback->apiid = 37;
+    callback->errcode = 1;
+    callback->wlCmdID = wlCommand;
+    callback->wlResult = wlResult;
+    callback->tryBitmap = tryBmp;
+    callback->disconnectedBitmap = resBmp;
+    WMSP_ReturnResult2Wm9(callback);
 }

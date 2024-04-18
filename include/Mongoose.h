@@ -1,6 +1,7 @@
 #include "Registers.h"
 
 #define NELEMS(a) (sizeof(a) / sizeof(*(a)))
+#define RSSI_UNK (*(u16*)0x2FFFF98UL)
 
 // state
 #define STATE_NONE 0

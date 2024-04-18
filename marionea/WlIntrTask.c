@@ -49,7 +49,6 @@ void WlIntrTxEndTask() { // WlIntrTask.c:106
                         }
                         
                         continue;
-                        
                     }
                 }
                 
@@ -67,8 +66,6 @@ void WlIntrTxEndTask() { // WlIntrTask.c:106
             pTxq->pEndFunc((TXFRM *)pTxq->pMacFrm, 3);
         }
     }
-    
-    
 }
 
 void WlIntrRxEndTask() { // WlIntrTask.c:240

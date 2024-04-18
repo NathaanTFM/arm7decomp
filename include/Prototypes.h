@@ -495,9 +495,9 @@ int OS_TryLockMutex(struct OSMutex* mutex); // os_mutex.c:140
 void OSi_UnlockMutexCore(struct OSMutex* mutex, u32 type); // os_mutex.c:331
 void OSi_EnqueueTail(struct _OSThread* thread, struct OSMutex* mutex); // os_mutex.c:557
 void OSi_DequeueItem(struct _OSThread* thread, struct OSMutex* mutex); // os_mutex.c:607
-void OS_TPrintf(char* fmt); // os_printf.c:390
-void OSi_TWarning(char* file, int line, char* fmt); // os_printf.c:453
-void OSi_TPanic(char* file, int line, char* fmt); // os_printf.c:490
+void OS_TPrintf(char* fmt, ...); // os_printf.c:390
+void OSi_TWarning(char* file, int line, char* fmt, ...); // os_printf.c:453
+void OSi_TPanic(char* file, int line, char* fmt, ...); // os_printf.c:490
 int OS_IsResetOccurred(); // os_pxi.c:36
 void OSi_CommonCallback(u32 data); // os_pxi.c:85
 void OSi_SendToPxi(u16 data); // os_pxi.c:148

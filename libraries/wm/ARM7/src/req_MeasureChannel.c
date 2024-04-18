@@ -27,6 +27,12 @@ void WMSP_MeasureChannel(void* msg) { // req_MeasureChannel.c:36
     }
 }
 
-static void WmspError(u16 wlCommand, u16 wlResult) { // req_MeasureChannel.c:188
+STATIC void WmspError(u16 wlCommand, u16 wlResult) { // req_MeasureChannel.c:188
     struct WMCallback* cb; // r0 - :190
+    cb = WMSP_GetBuffer4Callback2Wm9();
+    cb->apiid = 30;
+    cb->errcode = 1;
+    cb->wlCmdID = wlCommand;
+    cb->wlResult = wlResult;
+    WMSP_ReturnResult2Wm9(cb);
 }

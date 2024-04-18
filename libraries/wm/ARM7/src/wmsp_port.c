@@ -2,6 +2,27 @@
 
 void WMSP_InitSendQueue() { // wmsp_port.c:38
     u16 i; // r4 - :43
+    struct WMStatus* status = wmspW.status;
+    
+    OS_LockMutex(&status->sendQueueMutex);
+    MIi_CpuClear16(0, status->sendQueueData, 0x400);
+    
+    for (i = 0; i < 31; i++) {
+        status->sendQueueData[i].next = i + 1;
+    }
+    status->sendQueueData[i].next = -1;
+    
+    status->sendQueueFreeList.head = 0;
+    status->sendQueueFreeList.tail = i;
+    
+    for (i = 0; i < 4; i++) {
+        status->readyQueue[i].head = -1;
+        status->readyQueue[i].tail = -1;
+        status->sendQueue[i].head = -1;
+        status->sendQueue[i].tail = -1;
+    }
+    
+    OS_UnlockMutex(&status->sendQueueMutex);
 }
 
 void WMSP_SendMaKeyData() { // wmsp_port.c:79

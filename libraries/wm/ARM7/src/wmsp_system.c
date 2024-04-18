@@ -1,7 +1,6 @@
 #include "Mongoose.h"
 
 #define FLAG_UNK (*(u16*)0x2FFFF96UL)
-#define RSSI_UNK (*(u16*)0x2FFFF98UL)
 
 struct WMSPWork wmspW; // :27
 static struct _OSThread wmspRequestThread; // :32
@@ -53,9 +52,19 @@ u16* WMSP_WlRequest(u16* request) { // wmsp_system.c:264
     return (u16*)msg;
 }
 
-static void WmspPxiCallback(u32 data, int err) { // wmsp_system.c:306
+STATIC void WmspPxiCallback(enum _enum_31522 unused, u32 data, int err) { // wmsp_system.c:306
     int result; // r0 - :310
-    struct WMCallback* cb; // r0 - :328
+    
+    if (err == 0 && OS_SendMessage(&wmspW.requestQ, (void*)data, 0) == 0) {
+        if (wmspW.wm7buf) {
+            struct WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :328
+            cb->apiid = *(u16*)data;
+            cb->errcode = 8;
+            cb->wlCmdID = 0;
+            cb->wlResult = 0;
+            WMSP_ReturnResult2Wm9(cb);
+        }
+    }
 }
 
 int WMSP_CheckMacAddress(u8* macAdr) { // wmsp_system.c:348
@@ -72,6 +81,20 @@ int WMSP_CheckMacAddress(u8* macAdr) { // wmsp_system.c:348
 }
 
 void WMSP_CopyParentParam(struct WMGameInfo* gameInfop, struct WMParentParam* pparamp) { // wmsp_system.c:422
+    gameInfop->ggid = pparamp->ggid;
+    gameInfop->tgid = pparamp->tgid;
+    
+    gameInfop->gameNameCount_attribute = (pparamp->entryFlag ? 1 : 0) | (pparamp->multiBootFlag ? 2 : 0) | (pparamp->KS_Flag ? 4 : 0);
+    gameInfop->userGameInfoLength = pparamp->userGameInfoLength;
+    gameInfop->magicNumber = 1;
+    gameInfop->ver = 1;
+    gameInfop->platform = 0;
+    gameInfop->parentMaxSize = pparamp->parentMaxSize;
+    
+    gameInfop->childMaxSize = (pparamp->multiBootFlag && pparamp->childMaxSize >= 8) ? 8 : pparamp->childMaxSize;
+    if (gameInfop->userGameInfoLength) {
+        MI_CpuCopy8(pparamp->userGameInfo, gameInfop->userGameInfo, (gameInfop->userGameInfoLength + 1) & ~1);
+    }
 }
 
 int WMSP_SetAllParams(u16 wmApiID, u16* buf) { // wmsp_system.c:461

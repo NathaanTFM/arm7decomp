@@ -16,6 +16,13 @@ void WMSP_StartParent(void* msg) { // req_StartParent.c:51
     struct WMGameInfo GameInfo; // None - :140
 }
 
-static void WmspError(u16 wlCommand, u16 wlResult) { // req_StartParent.c:227
+STATIC void WmspError(u16 wlCommand, u16 wlResult) { // req_StartParent.c:227
     struct WMStartParentCallback* cb; // r0 - :229
+    cb = WMSP_GetBuffer4Callback2Wm9();
+    cb->apiid = 8;
+    cb->errcode = 1;
+    cb->state = 0;
+    cb->wlCmdID = wlCommand;
+    cb->wlResult = wlResult;
+    WMSP_ReturnResult2Wm9(cb);
 }

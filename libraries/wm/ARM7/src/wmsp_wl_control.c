@@ -212,7 +212,35 @@ WlMlmeMeasureChannelCfm* WMSP_WL_MlmeMeasureChannel(u16* buf, u16 ccaMode, u16 e
 WlMaDataCfm* WMSP_WL_MaData(u16* buf, WlTxFrame* frame) { // wmsp_wl_control.c:526
     WlMaDataReq* req; // r0 - :528
     WlMaDataCfm* cfm; // r0 - :529
-    struct WMDcfRecvBuf* pFrame; // r0 - :541
+    
+    req = (WlMaDataReq*)buf;
+    CLEAR_WL_RSV(req);
+    
+    req->header.code = 0x100;
+    req->header.length = 24;
+    MIi_CpuCopy16(frame, &req->frame, 0x30);
+    
+    struct WMDcfRecvBuf* pFrame = (struct WMDcfRecvBuf*)frame; // r0 - :541
+    pFrame->rsv1[0] = 0;
+    pFrame->rsv1[1] = 0;
+    pFrame->rsv2[0] = 0;
+    pFrame->rsv2[1] = 0;
+    pFrame->rsv2[2] = 0;
+    pFrame->rsv3[0] = 0;
+    pFrame->rsv3[1] = 0;
+    pFrame->rsv3[2] = 0;
+    pFrame->rsv3[3] = 0;
+    pFrame->rsv4[0] = 0;
+    pFrame->rsv4[1] = 0;
+    pFrame->rsv4[2] = 0;
+    pFrame->rsv4[3] = 0;
+    
+    cfm = GET_CFM(req);
+    cfm->header.code = req->header.code;
+    cfm->header.length = 2;
+    
+    WMSP_WlRequest((u16 *)req);
+    return cfm;
 }
 
 WlMaKeyDataCfm* WMSP_WL_MaKeyData(u16* buf, u16 length, u16 wmHeader, u16* keyDatap) { // wmsp_wl_control.c:580

@@ -43,6 +43,13 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
     }
 }
 
-static void WmspError(u16 wlCommand, u16 wlResult, u16 wlStatus) { // req_StartConnect.c:473
+STATIC void WmspError(u16 wlCommand, u16 wlResult, u16 wlStatus) { // req_StartConnect.c:473
     struct WMStartConnectCallback* callback; // r0 - :475
+    callback = WMSP_GetBuffer4Callback2Wm9();
+    callback->apiid = 12;
+    callback->errcode = 1;
+    callback->wlCmdID = wlCommand;
+    callback->wlResult = wlResult;
+    callback->wlStatus = wlStatus;
+    WMSP_ReturnResult2Wm9(callback);
 }

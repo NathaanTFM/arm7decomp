@@ -76,6 +76,17 @@ void WMSP_StartScanEx(void* msg) { // req_StartScan.c:307
     }
 }
 
-static void WmspError(u16 wlCommand, u16 wlResult, int exFlag) { // req_StartScan.c:713
+STATIC void WmspError(u16 wlCommand, u16 wlResult, int exFlag) { // req_StartScan.c:713
     struct WMStartScanCallback* callback; // r0 - :715
+    callback = WMSP_GetBuffer4Callback2Wm9();
+    if (exFlag) {
+        callback->apiid = 38;
+    } else {
+        callback->apiid = 10;
+    }
+    callback->errcode = 1;
+    callback->state = 4;
+    callback->wlCmdID = wlCommand;
+    callback->wlResult = wlResult;
+    WMSP_ReturnResult2Wm9(callback);
 }

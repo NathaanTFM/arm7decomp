@@ -11,6 +11,12 @@ void WMSP_EndScan() { // req_EndScan.c:74
     }
 }
 
-static void WmspError(u16 wlCommand, u16 wlResult) { // req_EndScan.c:143
+STATIC void WmspError(u16 wlCommand, u16 wlResult) { // req_EndScan.c:143
     struct WMCallback* callback; // r0 - :145
+    callback = WMSP_GetBuffer4Callback2Wm9();
+    callback->apiid = 11;
+    callback->errcode = 1;
+    callback->wlCmdID = wlCommand;
+    callback->wlResult = wlResult;
+    WMSP_ReturnResult2Wm9(callback);
 }

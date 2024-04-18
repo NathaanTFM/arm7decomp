@@ -4034,3 +4034,26 @@ typedef struct {
     MAC_HEADER MacHeader; // offset 08
     PSPOLL_HEADER Dot11Header; // offset 14
 } PSPOLL_FRAME;
+typedef struct {
+    u16 wlRsv[6]; // offset 00
+    WlCmdHeader header; // offset 0c
+    u16 peerMacAdrs[3]; // offset 10
+    u16 reasonCode; // offset 16
+} WlMlmeDeAuthenticateInd;
+typedef struct {
+    u16 wlRsv[6]; // offset 00
+    WlCmdHeader header; // offset 0c
+    u16 peerMacAdrs[3]; // offset 10
+    u16 aid; // offset 16
+    u16 ssidLength; // offset 18
+    u8 ssid[32]; // offset 1a
+} WlMlmeAssociateInd;
+struct WMBeaconRecvIndCallback {
+    u16 apiid; // offset 00
+    u16 errcode; // offset 02
+    u16 state; // offset 04
+    u16 tgid; // offset 06
+    u16 wmstate; // offset 08
+    u16 gameInfoLength; // offset 0a
+    WMgameInfo gameInfo; // offset 0c
+};
