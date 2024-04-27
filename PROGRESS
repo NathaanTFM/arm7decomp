@@ -1,6 +1,6 @@
 Progress:
-    Functions: 465/505 (92.1%)
-    Bytecode: 68476/97516 (70.2%)
+    Functions: 466/505 (92.3%)
+    Bytecode: 68768/97516 (70.5%)
 
 File progress:
     libraries\wm\ARM7\src\req_AutoDeAuth.c
@@ -92,8 +92,8 @@ File progress:
         Bytecode: 0/248 (0.0%)
 
     libraries\wm\ARM7\src\req_SetLifeTime.c
-        Functions: 0/1 (0.0%)
-        Bytecode: 0/292 (0.0%)
+        Functions: 1/1 (100.0%)
+        Bytecode: 292/292 (100.0%)
 
     libraries\wm\ARM7\src\req_SetMPData.c
         Functions: 0/1 (0.0%)
