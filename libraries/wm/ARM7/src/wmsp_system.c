@@ -6,6 +6,8 @@ struct WMSPWork wmspW; // :27
 static struct _OSThread wmspRequestThread; // :32
 static struct _OSThread wmspIndicateThread; // :33
 
+static void WmspError(u16 wmApiID, u16 wlCommand, u16 wlResult);
+
 void WM_sp_init(WlInit* wlInit, struct WmInit* wmInit) { // wmsp_system.c:55
     long i; // r5 - :135
 }
@@ -98,8 +100,59 @@ void WMSP_CopyParentParam(struct WMGameInfo* gameInfop, struct WMParentParam* pp
 }
 
 int WMSP_SetAllParams(u16 wmApiID, u16* buf) { // wmsp_system.c:461
+    struct WMStatus* status = wmspW.status;
     WlParamSetCfm* pConfirm; // r0 - :468
-    WlParamSetAllReq* pReq; // r0 - :472
+    WlParamSetAllReq* pReq  = (WlParamSetAllReq*)buf; // r0 - :472
+    
+    MI_CpuCopy8(status->MacAddress, pReq->staMacAdrs, 6);
+    pReq->retryLimit = 7;
+    pReq->enableChannel = status->enableChannel;
+    pReq->rate = status->rate;
+    pReq->mode = status->mode;
+    
+    if (status->wep_flag == 0) {
+        pReq->wepMode = 0;
+        pReq->wepKeyId = 0;
+        MIi_CpuClear16(0, pReq->wepKey, 0x50);
+        pReq->authAlgo = 0;
+        
+    } else {
+        pReq->wepMode = status->wepMode;
+        pReq->wepKeyId = status->wepKeyId;
+        MI_CpuCopy8(status->wepKey, pReq->wepKey, 0x50);
+        pReq->authAlgo = 1;
+    }
+    
+    pReq->beaconType = 1;
+    pReq->probeRes = 1;
+    
+    if (status->mode == 1) {
+        pReq->beaconLostTh = 0;
+        
+    } else {
+        pReq->beaconLostTh = 16;
+    }
+    
+    pReq->activeZoneTime = 10;
+    
+    if (wmApiID == 38) {
+        MIi_CpuClear16(0, pReq->ssidMask, 32);
+        
+    } else {
+        MIi_CpuClear16(0, pReq->ssidMask, 8);
+        MIi_CpuClear16(-1, pReq->ssidMask+8, 24);
+        
+    }
+    
+    pReq->preambleType = status->preamble;
+    
+    pConfirm = WMSP_WL_ParamSetAll(pReq);
+    if (pConfirm->resultCode != 0) {
+        WmspError(wmApiID, 512, pConfirm->resultCode);
+        return 0;
+    }
+    
+    return 1;
 }
 
 u16 WMSP_GetAllowedChannel(u16 bitField) { // wmsp_system.c:576
@@ -207,6 +260,15 @@ void WMSP_SetThreadPriorityHigh() { // wmsp_system.c:792
     OS_SetThreadPriority(&wmspRequestThread, wmspW.reqPrio_high);
     OS_EnableScheduler();
     OS_RestoreInterrupts(e);
+}
+
+static void WmspError(u16 wmApiID, u16 wlCommand, u16 wlResult) {
+    struct WMStartConnectCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :1135
+    callback->apiid = wmApiID;
+    callback->errcode = 1;
+    callback->wlCmdID = wlCommand;
+    callback->wlResult = wlResult;
+    WMSP_ReturnResult2Wm9(callback);
 }
 
 u32* WMSP_GetInternalRequestBuf() { // wmsp_system.c:914
