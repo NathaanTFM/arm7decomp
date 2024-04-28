@@ -1,6 +1,6 @@
 Progress:
-    Functions: 468/505 (92.7%)
-    Bytecode: 69412/97516 (71.2%)
+    Functions: 469/505 (92.9%)
+    Bytecode: 69760/97516 (71.5%)
 
 File progress:
     libraries\wm\ARM7\src\req_AutoDeAuth.c
@@ -108,8 +108,8 @@ File progress:
         Bytecode: 168/168 (100.0%)
 
     libraries\wm\ARM7\src\req_SetPowerSaveMode.c
-        Functions: 0/1 (0.0%)
-        Bytecode: 0/348 (0.0%)
+        Functions: 1/1 (100.0%)
+        Bytecode: 348/348 (100.0%)
 
     libraries\wm\ARM7\src\req_SetWEPKey.c
         Functions: 2/2 (100.0%)
