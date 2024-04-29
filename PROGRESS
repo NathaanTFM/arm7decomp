@@ -1,6 +1,6 @@
 Progress:
-    Functions: 472/505 (93.5%)
-    Bytecode: 72048/97516 (73.9%)
+    Functions: 473/505 (93.7%)
+    Bytecode: 72840/97516 (74.7%)
 
 File progress:
     libraries\wm\ARM7\src\req_AutoDeAuth.c
@@ -100,8 +100,8 @@ File progress:
         Bytecode: 320/320 (100.0%)
 
     libraries\wm\ARM7\src\req_SetMPParameter.c
-        Functions: 1/2 (50.0%)
-        Bytecode: 96/888 (10.8%)
+        Functions: 2/2 (100.0%)
+        Bytecode: 888/888 (100.0%)
 
     libraries\wm\ARM7\src\req_SetParentParam.c
         Functions: 1/1 (100.0%)

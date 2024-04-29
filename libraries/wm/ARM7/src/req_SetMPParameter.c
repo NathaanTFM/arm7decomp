@@ -18,10 +18,10 @@ void WMSP_SetMPParameter(void* msg) { // req_SetMPParameter.c:28
 }
 
 enum WMErrCode WMSP_SetMPParameterCore(struct WMMPParam* param, struct WMMPParam* old_param) { // req_SetMPParameter.c:65
-    struct WMStatus* status = wmspW.status;
     u32 enabled; // r4 - :68
     enum WMErrCode result = WM_ERRCODE_SUCCESS; // r5 - :70
     u32 mask = param->mask; // r6 - :71
+    struct WMStatus* status = wmspW.status;
     
     if ((u16)(status->state + 0xFFF7) <= 1 && (mask & 0x2C00) != 0) {
         mask &= ~0x2C00;
@@ -72,8 +72,8 @@ enum WMErrCode WMSP_SetMPParameterCore(struct WMMPParam* param, struct WMMPParam
         if (freq == 0)
             freq = 16;
         
-        status->mp_minFreq = freq;
-        status->mp_current_minFreq = freq;
+        status->mp_maxFreq = freq;
+        status->mp_current_maxFreq = freq;
         if (status->mp_count > freq)
             status->mp_count = freq;
     }
