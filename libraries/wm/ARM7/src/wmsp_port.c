@@ -51,13 +51,13 @@ void WMSP_SendMaMP(u16 pollBitmap) { // wmsp_port.c:144
 }
 
 void WMSP_ResumeMaMP(u16 pollBitmap) { // wmsp_port.c:294
-    struct WMStatus* status = wmspW.status;
     u32 wlBuf[128]; // None - :299
     u16 tmptt; // r0 - :302
     u32 currPollBitmap; // r4 - :303
     u16 currTsf; // r5 - :304
     u32 wmHeader; // r6 - :305
     u16 recvSize; // r8 - :309
+    struct WMStatus* status = wmspW.status;
     
     // ???
     u32 e = OS_DisableInterrupts(); // r0 - :312
