@@ -13,6 +13,7 @@ STATIC void WmspError(u16 wlCommand, u16 wlResult, u16 wlStatus);
 
 void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
     u32 wlBuf[128]; // None - :51
+    u16* buf = (u16*)wlBuf;
     struct WMStatus* status = wmspW.status;
     struct WMArm7Buf* p = wmspW.wm7buf; // r8 - :54
     struct WMStartConnectReq* args = (struct WMStartConnectReq*)msg; // r0 - :58
@@ -37,7 +38,7 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
         return;
     }
     
-    u32 tmp = (1 << p->connectPInfo.channel); // not defined anywhere!
+    int tmp = (1 << p->connectPInfo.channel); // not defined anywhere!
     if ((tmp & status->enableChannel) == 0 || ((tmp >> 1) & 0x1FFF) == 0) {
         struct WMStartConnectCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :107
         cb->apiid = 12;
@@ -80,12 +81,12 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
         status->mode = 2;
     }
     
-    if (!WMSP_SetAllParams(0xC, (u16*)wlBuf)) {
+    if (!WMSP_SetAllParams(0xC, buf)) {
         return;
     }
     
     {
-        WlCmdCfm* p_confirm = (WlCmdCfm*)WMSP_WL_ParamSetNullKeyResponseMode((u16*)wlBuf, 0); // r0 - :166
+        WlCmdCfm* p_confirm = (WlCmdCfm*)WMSP_WL_ParamSetNullKeyResponseMode(buf, 0); // r0 - :166
         
         if (p_confirm->resultCode != 0) {
             WmspError(534, p_confirm->resultCode, 0);
@@ -102,7 +103,7 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
         if (beaconLostTh > 0xFF)
             beaconLostTh = 0xFF;
         
-        p_confirm = WMSP_WL_ParamSetBeaconLostThreshold((u16*)wlBuf, beaconLostTh & 0xFFFF);
+        p_confirm = WMSP_WL_ParamSetBeaconLostThreshold(buf, beaconLostTh & 0xFFFF);
         if (p_confirm->resultCode != 0) {
             WmspError(523, p_confirm->resultCode, 0);
             return;
@@ -110,7 +111,7 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
     }
     
     {
-        WlDevClass1Cfm* p_confirm = WMSP_WL_DevClass1((u16*)wlBuf); // r0 - :206
+        WlDevClass1Cfm* p_confirm = WMSP_WL_DevClass1(buf); // r0 - :206
         
         if (p_confirm->resultCode != 0) {
             WmspError(771, p_confirm->resultCode, 0);
@@ -126,7 +127,7 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
         
         // TODO: slight mismatch (movne/moveq in original, mov #1, moveq #0 in ours)
         pwrMgtMode = (args->powerSave != 0) ? 1 : 0;
-        p_confirm = WMSP_WL_MlmePowerManagement((u16*)wlBuf, pwrMgtMode, 0, 1);
+        p_confirm = WMSP_WL_MlmePowerManagement(buf, pwrMgtMode, 0, 1);
         
         if (p_confirm->resultCode != 0) {
             WmspError(1, p_confirm->resultCode, 0);
@@ -150,7 +151,7 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
             MI_CpuCopy8(args->ssid, &bss_desc.ssid[8], 0x18);
         }
         
-        p_confirm = WMSP_WL_MlmeJoin((u16*)wlBuf, 2000, &bss_desc);
+        p_confirm = WMSP_WL_MlmeJoin(buf, 2000, &bss_desc);
         
         if (p_confirm->resultCode != 0 || p_confirm->statusCode != 0) {
             WmspError(3, p_confirm->resultCode, p_confirm->statusCode);
@@ -167,7 +168,7 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
         MI_CpuCopy8(status->parentMacAddress, mac, 6);
         
         // TODO: 3 instructions are shuffled here for some reason - should behave the same anyway
-        p_confirm = WMSP_WL_MlmeAuthenticate((u16*)wlBuf, mac, args->authMode, 0x7D0);
+        p_confirm = WMSP_WL_MlmeAuthenticate(buf, mac, args->authMode, 0x7D0);
         
         if (p_confirm->resultCode == 12 && p_confirm->statusCode == 19) {
             struct WMStartConnectCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :324
@@ -187,7 +188,7 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
     u16 mac[3]; // None - :344
     
     MI_CpuCopy8(status->parentMacAddress, mac, 6);
-    assConfirm = WMSP_WL_MlmeAssociate((u16*)wlBuf, mac, 1, 0x7D0);
+    assConfirm = WMSP_WL_MlmeAssociate(buf, mac, 1, 0x7D0);
     
     u32 e = OS_DisableInterrupts(); // r11 - :359
     
