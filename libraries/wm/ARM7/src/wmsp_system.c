@@ -7,9 +7,53 @@ static struct _OSThread wmspRequestThread; // :32
 static struct _OSThread wmspIndicateThread; // :33
 
 static void WmspError(u16 wmApiID, u16 wlCommand, u16 wlResult);
+STATIC void WmspPxiCallback(enum _enum_31522 unused, u32 data, int err);
 
 void WM_sp_init(WlInit* wlInit, struct WmInit* wmInit) { // wmsp_system.c:55
+    wmspW.dmaNo = wmInit->dmaNo;
+    wmspW.arenaId = wlInit->heapFunc.os.id;
+    wmspW.heapHandle = wlInit->heapFunc.os.heapHandle;
+    wmspW.wm7buf = 0;
+    wmspW.status = 0;
+    
+    OS_InitMessageQueue(&wmspW.toWLmsgQ, wmspW.toWLmsg, 2);
+    OS_InitMessageQueue(&wmspW.fromWLmsgQ, wmspW.fromWLmsg, 4);
+    OS_InitMessageQueue(&wmspW.confirmQ, wmspW.confirm, 4);
+    OS_InitMessageQueue(&wmspW.requestQ, wmspW.request, 32);
+    wlInit->recvMsgQueuep = &wmspW.fromWLmsgQ;
+    wlInit->sendMsgQueuep = &wmspW.toWLmsgQ;
+    
+    wmspW.indPrio_high = wmInit->indPrio_high;
+    wmspW.wlPrio_high = wmInit->wlPrio_high;
+    wmspW.reqPrio_high = wmInit->reqPrio_high;
+    wmspW.indPrio_low = wmInit->indPrio_low;
+    wmspW.wlPrio_low = wmInit->wlPrio_low;
+    wmspW.reqPrio_low = wmInit->reqPrio_low;
+    
+    OS_InitMutex(&wmspW.fifoExclusive);
+    
+    OS_CreateThread(&wmspIndicateThread, WMSP_IndicateThread, 0, &wmspW.fifoExclusive, 0x400, wmInit->indPrio_low);
+    OS_WakeupThreadDirect(&wmspIndicateThread);
+    
+    OS_CreateThread(&wmspRequestThread, WMSP_RequestThread, 0, wmspW.indicateStack, 0x1000, wmInit->reqPrio_low);
+    OS_WakeupThreadDirect(&wmspRequestThread);
+    
     long i; // r5 - :135
+    for (i = 0; i < 32; i++) {
+        wmspW.rssiHistory[i] = 0;
+    }
+    
+    wmspW.rssiIndex = 0;
+    if (!OS_IsVAlarmAvailable()) {
+        OS_InitVAlarm();
+    }
+    
+    PXI_Init();
+    PXI_SetFifoRecvCallback(10, WmspPxiCallback);
+    
+    wlInit->dmaChannel = 2;
+    wlInit->priority = wmInit->wlPrio_low;
+    WL_InitDriver(wlInit);
 }
 
 void WMSP_ReturnResult2Wm9(void* ptr) { // wmsp_system.c:192
