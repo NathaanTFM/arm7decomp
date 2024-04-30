@@ -110,19 +110,80 @@ int WMSP_FlushSendQueue(int timeout, u16 pollBitmap) { // wmsp_port.c:869
 }
 
 void WMSP_CleanSendQueue(u16 aidBitmap) { // wmsp_port.c:1134
-    WMPortSendQueueData* queueData; // r5 - :1139
+    struct WMStatus* status = wmspW.status;
+    WMPortSendQueueData* queueData = wmspW.status->sendQueueData; // r5 - :1139
     int iQueue; // None - :1140
     int iPrio; // r6 - :1141
-    u32 aidBitmapMask; // None - :1142
-    WMPortSendQueue* baseQueue; // r11 - :1158
-    WMPortSendQueue* queue; // r7 - :1165
-    u32 index; // r0 - :1166
-    u16* prevPointer; // None - :1167
-    u32 prevIndex; // None - :1168
-    WMPortSendQueueData* data; // r8 - :1176
-    struct WMPortSendCallback* cb_PortSend; // r0 - :1193
-    u16 parentSize; // r1 - :1211
-    u16 childSize; // r0 - :1212
+    u32 aidBitmapMask = ~aidBitmap & wmspW.status->child_bitmap; // None - :1142
+    
+    OS_LockMutex(&wmspW.status->sendQueueMutex);
+    
+    for (iQueue = 0; iQueue < 2; iQueue++) {
+        WMPortSendQueue* baseQueue = status->readyQueue; // r11 - :1158
+    
+        for (iPrio = 0; iPrio < 4; iPrio++) {
+            WMPortSendQueue* queue = &baseQueue[iPrio]; // r7 - :1165
+            u32 index = queue->head; // r0 - :1166
+            u16* prevPointer = &queue->head; // None - :1167
+            u32 prevIndex = 0xFFFF; // None - :1168
+            
+            while (index != 0xFFFF) {
+                WMPortSendQueueData* data = &queueData[index]; // r8 - :1176
+                data->restBitmap &= aidBitmapMask;
+                data->sendingBitmap &= aidBitmapMask;
+                
+                if (data->restBitmap == 0) {
+                    struct WMPortSendCallback* cb_PortSend = WMSP_GetBuffer4Callback2Wm9(); // r0 - :1193
+                    cb_PortSend->apiid = 129;
+                    cb_PortSend->errcode = 0;
+                    cb_PortSend->state = 20;
+                    cb_PortSend->port = data->port;
+                    cb_PortSend->destBitmap = data->destBitmap;
+                    cb_PortSend->restBitmap = data->restBitmap;
+                    cb_PortSend->sentBitmap = data->sentBitmap;
+                    cb_PortSend->size = data->size;
+                    cb_PortSend->data = data->data;
+                    cb_PortSend->callback = data->callback;
+                    cb_PortSend->arg = data->arg;
+                    cb_PortSend->seqNo = data->seqNo;
+                    
+                    u16 parentSize = status->mp_parentSize; // r1 - :1211
+                    u16 childSize = status->mp_childSize; // r0 - :1212
+                    cb_PortSend->maxSendDataSize = status->aid == 0 ? parentSize : childSize;
+                    cb_PortSend->maxRecvDataSize = status->aid == 0 ? childSize : parentSize;
+                    
+                    WMSP_ReturnResult2Wm9(cb_PortSend);
+                    
+                    if (data->next == 0xFFFF) {
+                        queue->tail = prevIndex;
+                    }
+                    
+                    *prevPointer = data->next;
+                    data->next = 0xFFFF;
+                    
+                    if (status->sendQueueFreeList.tail == 0xFFFF) {
+                        status->sendQueueFreeList.head = index;
+                    } else {
+                        queueData[status->sendQueueFreeList.tail].next = index;
+                    }
+                    
+                    status->sendQueueFreeList.tail = index;
+                    index = prevIndex;
+                }
+                
+                prevIndex = index;
+                if (index != 0xFFFF) {
+                    prevPointer = &queueData[index].next;
+                } else {
+                    prevPointer = &queue->head;
+                }
+                
+                index = (index != 0xFFFF) ? queueData[index].next : queue->head;
+            }
+        }
+    }
+    
+    OS_UnlockMutex(&status->sendQueueMutex);
 }
 
 void WMSP_ParsePortPacket(u16 aid, u16 wmHeader, u16* data, u8 rssi, u16 length, struct WMMpRecvBuf* recvBuf) { // wmsp_port.c:1290
