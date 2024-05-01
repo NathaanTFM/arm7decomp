@@ -5,6 +5,7 @@ this script was never meant to be clean
 import os
 import sys
 import subprocess
+import re
 from elftools.elf.elffile import ELFFile
 
 from colorama import just_fix_windows_console, Fore, Back, Style
@@ -17,6 +18,31 @@ if not os.path.isfile(OBJDUMP):
     OBJDUMP = "arm-none-eabi-objdump"
     
 disasmQueue = []
+
+def parseOutput(output):
+    result = []
+    
+    lineRegex = re.compile(r"^\s*([0-9a-fA-F]+)\s*\:\s*([0-9a-fA-F]{8})\s*(.*)$")
+    
+    for n in range(len(output)):
+        match = lineRegex.match(output[n])
+        if match:
+            addr, value, instr = match.groups()
+            addr = int(addr, 16)
+            if addr & 3 != 0:
+                raise Exception("expected ARM and 4 bytes aligned address")
+            
+            addr //= 4
+            if addr < len(result):
+                print("oof")
+            elif addr > len(result):
+                for m in range(len(result), addr):
+                    result.append("---")
+                
+            result.append(output[n])
+            
+    return result
+    
     
 def disassemble(name, rawAsm, rawSrc):
     with open("rawAsm.bin", "wb") as f:
@@ -30,6 +56,9 @@ def disassemble(name, rawAsm, rawSrc):
     outputAsm = outputAsm.decode().replace("\r", "").replace("\t", " ").split("\n")
     outputSrc = outputSrc.decode().replace("\r", "").replace("\t", " ").split("\n")
     
+    outputAsm = parseOutput(outputAsm)
+    outputSrc = parseOutput(outputSrc)
+    
     LENGTH = 55
     print("  " + "-" * (LENGTH*2 + 3))
     print("  " + name.center(LENGTH*2 + 3))
@@ -37,7 +66,7 @@ def disassemble(name, rawAsm, rawSrc):
     print("  " + "ORIGINAL".center(LENGTH) + " | " + "SOURCE".center(LENGTH))
     
     mismatch = False
-    for n in range(7, max(len(outputAsm)-1, len(outputSrc)-1)):
+    for n in range(max(len(outputAsm), len(outputSrc))):
         lineAsm = "<none>"
         lineSrc = "<none>"
         if n < len(outputAsm):
