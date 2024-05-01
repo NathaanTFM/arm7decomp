@@ -20,23 +20,48 @@ Run `python3 Compiler.py -s` to see every inaccurate function ; run `python3 Com
 Assuming you have `arm-none-eabi-objdump` in your path, you can disassemble the functions and compare them by typing the name of the function you wanna disassemble as a parameter. For example, `python3 Compiler.py -p WlNic WCheckTxBuf` will disassemble WCheckTxBuf from the file WlNic.c.
 
 The following files are deprecated but kept in the repository for now:
-- `include/Mongoose.h` used to include common preprocessor definitions and included every other header file. It has been splitted into multiple files and replaced by `marionea/Marionea.h`.
+- `include/Mongoose.h` used to include common preprocessor definitions and included every other header file. It has been split into multiple files and replaced by `marionea/Marionea.h`.
 - `include/Prototypes.h` contains prototypes for every function in the binary, which includes functions we're not interested in.
 - `include/Structures.h` contains every structure in the binary, which includes structures we don't use.
 - `include/Registers.h` has been replaced by `marionea/Marionea.h`.
 
 ## What's left?
 
-These functions have an inaccurate implementation
-- [RequestCmdTask](https://decomp.me/scratch/Xdhok) certainly behaves correctly, but does not compile the same.
+### Marionea (Wi-Fi Driver)
+
+These functions have an inaccurate implementation:
+- [CheckFrameTimeout](https://decomp.me/scratch/9KvUP) has some branching issues, but should behave the same?
+- [WlIntrRxEnd](https://decomp.me/scratch/3CheC) has a stack allocation differences, but should behave the same.
 - [WlIntrRxEndTask](https://decomp.me/scratch/UHoXL) has multiple register swapped, but should behave the same.
-- [CheckFrameTimeout](https://decomp.me/scratch/9KvUP) wants my death. I don't know how long they tortured the compiler to get this ; a normal compiler shouldn't output a branch instruction to the next instruction. 
 
 These functions don't have any implementation in the repository
-- [WlIntrRxEnd](https://decomp.me/scratch/3CheC) is a mess. If you manage to make it accurate, you're my hero. (Stack allocation is 100% wrong)
-- [DiagBaseBand](https://decomp.me/scratch/8cHjU) is not really important, but we need it if we ever want to get to the 100%.
-- [DEV_TestSignalReqCmd](https://decomp.me/scratch/w1lZs) is also not important?
+- [DiagBaseBand](https://decomp.me/scratch/8cHjU)
+- [DEV_TestSignalReqCmd](https://decomp.me/scratch/w1lZs)
 
 **All the remaining functions fully compile to the same bytecode.** Some of those have ugly branching and gotos ; if you manage to make these look better without breaking them, feel free to open a merge request!
 
-The WM API part is fully missing and contains the wireless play protocol. The Compiler.py script currently ignores it.
+### ARM7 WMSP (Wi-Fi API)
+
+Inaccurate functions:
+- [WMSP_DisconnectCore](https://decomp.me/scratch/E4qqZ): register swap
+- [WMSP_IndicateThread](https://decomp.me/scratch/6dCWR): stack allocation differences
+- WMSP_SetDCFData: two swapped instructions (moveq/movne)
+- WMSP_SetGameInfo: two swapped instructions (moveq/movne)
+- WMSPi_CommonInit: severe register swap
+- WVR_Begin: it's different
+- WmspChildAdjustVSync1: register swap for 2 instructions
+
+Non-implemented functions:
+- WMSP_FlushSendQueue
+- WMSP_MeasureChannel
+- WMSP_PutSendQueue
+- WMSP_Reset
+- WMSP_SendMaKeyData
+- WMSP_SendMaMP
+- WMSP_StartMP
+- WMSP_StartParent
+- WMSP_StartScan
+- WMSP_StartScanEx
+- WmspChildAdjustVSync2
+- WmspChildVAlarmMP
+- WmspGetTmptt
