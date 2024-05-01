@@ -59,7 +59,6 @@ Non-implemented functions:
 - WMSP_SendMaKeyData
 - WMSP_SendMaMP
 - WMSP_StartMP
-- WMSP_StartParent
 - WMSP_StartScan
 - WMSP_StartScanEx
 - WmspChildAdjustVSync2
