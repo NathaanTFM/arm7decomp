@@ -25,7 +25,7 @@ void WMSP_SetDCFData(void* msg) { // req_SetDCFData.c:28
     
     struct WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :60
     cb->apiid = 18;
-    cb->errcode = wlResult->resultCode != 0;
+    cb->errcode = wlResult->resultCode != 0 ? 1 : 0;
     if (wlResult->resultCode != 0) {
         cb->wlCmdID = 256;
         cb->wlResult = wlResult->resultCode;

@@ -28,7 +28,7 @@ void WMSP_SetGameInfo(void* msg) { // req_SetGameInfo.c:28
     
     struct WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :63
     cb->apiid = 24;
-    cb->errcode = wlResult->resultCode != 0;
+    cb->errcode = wlResult->resultCode != 0 ? 1 : 0;
     if (wlResult->resultCode != 0) {
         cb->wlCmdID = 581;
         cb->wlResult = wlResult->resultCode;
