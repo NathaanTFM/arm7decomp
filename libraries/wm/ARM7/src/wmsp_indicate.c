@@ -249,7 +249,8 @@ static void WmspIndicateMaMultiPollEnd(WlCmdReq* req) {
 
                 if (aid >= 1 && aid <= 0xF) {
                     if (length >= 2 && length != 0xFFFF) {
-                        datap->length = length = length - 2;
+                        length -= 2;
+                        datap->length = length;
                         status->mp_readyBitmap |= (1 << aid);
                         status->mp_lastRecvTick[aid] = now;
 
@@ -575,19 +576,23 @@ static void WmspMaMultiPollAckAlarmCallback() { // wmsp_indicate.c:1119
 }
 
 static void WmspIndicateMaMultiPollAck(WlCmdReq* req) { 
+    WMstartMPCallback* callback;
     WlMaMpAckInd* pInd = (WlMaMpAckInd*)req;
     WlRxMpAckFrame* pFrame = &pInd->ack;
     struct WMStatus* status = wmspW.status;
-    int retryFlag = 0;
+    u32 enabled;
+    int timeout, retryFlag, polled;
+    u16 lower0, lower1, higher;
+
+    retryFlag = 0;
     
     if (status->mp_flag) {
-        int timeout;
-        
         if (pInd->header.length == 0) {
             timeout = 1;
-            u16 lower0 = W_US_COUNT0;
-            u16 higher = W_US_COUNT1;
-            u16 lower1 = W_US_COUNT0;
+            
+            lower0 = W_US_COUNT0;
+            higher = W_US_COUNT1;
+            lower1 = W_US_COUNT0;
             
             if (lower0 > lower1) {
                 higher = W_US_COUNT1;
@@ -601,14 +606,14 @@ static void WmspIndicateMaMultiPollAck(WlCmdReq* req) {
             timeout = 0;
         }
         
-        u32 enabled = OS_DisableInterrupts();
+        enabled = OS_DisableInterrupts();
 
         if (status->mp_waitAckFlag == 0) {
             OS_RestoreInterrupts(enabled);
             
         } else {
             status->mp_waitAckFlag = 0;
-            int polled = status->mp_isPolledFlag;
+            polled = status->mp_isPolledFlag;
             OS_CancelAlarm(&wmspMPAckAlarm);
             OS_RestoreInterrupts(enabled);
 
@@ -626,32 +631,34 @@ static void WmspIndicateMaMultiPollAck(WlCmdReq* req) {
                 retryFlag = WMSP_FlushSendQueue(timeout, unk != 0);
             }
 
-            if (polled) {
-                WMstartMPCallback* callback = WMSP_GetBuffer4Callback2Wm9();
-                callback->apiid = 14;
-                if (timeout) {
-                    callback->errcode = 9;
-                } else if ((pFrame->bitmap & (1 << status->aid)) != 0) {
-                    callback->errcode = 15;
-                } else {
-                    callback->errcode = 0;
-                }
-        
-                callback->state = 13;
-                callback->recvBuf = 0;
-
-                if (!timeout) {
-                    callback->timeStamp = pFrame->timeStamp;
-                    callback->rate_rssi = *(u16*)&pFrame->rate;
-                    MI_CpuCopy8(pFrame->destAdrs, callback->destAdrs, 6);
-                    MI_CpuCopy8(pFrame->srcAdrs, callback->srcAdrs, 6);
-                    callback->seqNum = pFrame->seqCtrl;
-                    callback->tmptt = pFrame->tmptt;
-                    callback->pollbmp = pFrame->bitmap;
-                }
-
-                WMSP_ReturnResult2Wm9(callback);
+            if (!polled) {
+                return;
             }
+            
+            callback = WMSP_GetBuffer4Callback2Wm9();
+            callback->apiid = 14;
+            if (timeout) {
+                callback->errcode = 9;
+            } else if ((pFrame->bitmap & (1 << status->aid)) != 0) {
+                callback->errcode = 15;
+            } else {
+                callback->errcode = 0;
+            }
+    
+            callback->state = 13;
+            callback->recvBuf = 0;
+
+            if (!timeout) {
+                callback->timeStamp = pFrame->timeStamp;
+                callback->rate_rssi = *(u16*)&pFrame->rate;
+                MI_CpuCopy8(pFrame->destAdrs, callback->destAdrs, 6);
+                MI_CpuCopy8(pFrame->srcAdrs, callback->srcAdrs, 6);
+                callback->seqNum = pFrame->seqCtrl;
+                callback->tmptt = pFrame->tmptt;
+                callback->pollbmp = pFrame->bitmap;
+            }
+
+            WMSP_ReturnResult2Wm9(callback);
 
             if (polled) {
                 if (retryFlag == 1 || status->mp_vsyncOrderedFlag == 0) {
