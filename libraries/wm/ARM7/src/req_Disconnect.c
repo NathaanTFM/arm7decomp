@@ -21,9 +21,10 @@ void WMSP_Disconnect(void* msg) { // req_Disconnect.c:189
 }
 
 int WMSP_DisconnectCore(u32* args, int indicateFlag, u16* disconnected) { // req_Disconnect.c:225
-    struct WMStatus* status = wmspW.status;
     u32 wlBuf[128]; // None - :228
+    u16* buf = (u16*)wlBuf; // :229
     WlCmdCfm* pConfirm; // r0 - :230
+    struct WMStatus* status = wmspW.status;
     
     u16 aidBitmap = args[1]; // r0 - :234
     u16 reason = indicateFlag ? args[2] : 0; // None - :235
@@ -31,7 +32,7 @@ int WMSP_DisconnectCore(u32* args, int indicateFlag, u16* disconnected) { // req
     int fCleanQueue = 0; // r6 - :238
     
     if (status->state == 9 || status->state == 7) {
-        if (status->mp_flag == 1) {
+        if (wmspW.status->mp_flag == 1) {
             fCleanQueue = 1;
         }
         
@@ -96,17 +97,17 @@ int WMSP_DisconnectCore(u32* args, int indicateFlag, u16* disconnected) { // req
         MI_CpuCopy8(status->parentMacAddress, wMac, 6);
         
         for (auth_retry = 0; auth_retry < 2; ) {
-            pConfirm = (WlCmdCfm*)WMSP_WL_MlmeDeAuthenticate((u16*)wlBuf, wMac, 3);       
+            pConfirm = (WlCmdCfm*)WMSP_WL_MlmeDeAuthenticate(buf, wMac, 3);       
             
             switch (pConfirm->resultCode) {
                 case 7:
                 case 12:
                     auth_retry++;
-                    break;
+                    continue;
                     
                 case 0:
                 case 1:
-                    goto lbl_1;
+                    break;
                     
                 default:
                     if (indicateFlag) {
@@ -121,14 +122,15 @@ int WMSP_DisconnectCore(u32* args, int indicateFlag, u16* disconnected) { // req
                     
                     return 0;
             }
+
+            break;
         }
         
-lbl_1:
         resBitmap = 1;
         status->beaconIndicateFlag = 0;
         status->state = 3;
         
-        pConfirm = (WlCmdCfm*)WMSP_WL_MlmeReset((u16*)wlBuf, 1);
+        pConfirm = (WlCmdCfm*)WMSP_WL_MlmeReset(buf, 1);
         if (pConfirm->resultCode != 0) {
             if (indicateFlag) {
                 WmspIndError(0, pConfirm->resultCode, aidBitmap, 1);
@@ -143,7 +145,7 @@ lbl_1:
             return 0;
         }
         
-        pConfirm = (WlCmdCfm*)WMSP_WL_DevIdle((u16*)wlBuf);
+        pConfirm = (WlCmdCfm*)WMSP_WL_DevIdle(buf);
         if (pConfirm->resultCode != 0) {
             if (indicateFlag) {
                 WmspIndError(0x302, pConfirm->resultCode, aidBitmap, 1);
@@ -189,75 +191,78 @@ lbl_1:
         long i; // r7 - :467
         u16 aid; // None - :468
         
-        for (i = 1; i < 16; i++) {            
-            if ((1 << i) & (status->child_bitmap & aidBitmap)) {
-                aid = (1 << i);
-                MI_CpuCopy8(status->childMacAddress[i - 1], wMac, 6);
+        for (i = 1; i < 16; i++) {
+            if ( ((1 << i) & (status->child_bitmap & aidBitmap)) == 0 ) {
+                continue;
+            }
+
+            aid = i;
+            MI_CpuCopy8(status->childMacAddress[i - 1], &wMac, sizeof(wMac));
+            
+            long auth_retry; // r4 - :487
+            for (auth_retry = 0; auth_retry < 2; ) {
+                pConfirm = (WlCmdCfm*)WMSP_WL_MlmeDeAuthenticate(buf, wMac, 3);
                 
-                long auth_retry; // r4 - :487
-                for (auth_retry = 0; auth_retry < 2; ) {
-                    pConfirm = (WlCmdCfm*)WMSP_WL_MlmeDeAuthenticate((u16*)wlBuf, wMac, 3);
+                switch (pConfirm->resultCode) {
+                    case 0:
+                        break;
                     
-                    switch (pConfirm->resultCode) {
-                        case 0:
-                            goto lbl_2;
-                            
-                        case 7:
-                        case 12:
-                            auth_retry++;
-                            break;
-                            
-                        default:
-                            if (indicateFlag) {
-                                WmspIndError(5, pConfirm->resultCode, aidBitmap, resBitmap);
-                            } else {
-                                WmspError(5, pConfirm->resultCode, aidBitmap, resBitmap);
-                            }
-                            
-                            if (fCleanQueue) {
-                                WMSP_CleanSendQueue(1);
-                            }
-                            
-                            return 0;
-                    }
+                    case 7:
+                    case 12:
+                        auth_retry++;
+                        continue;
+                        
+                    default:
+                        if (indicateFlag) {
+                            WmspIndError(5, pConfirm->resultCode, aidBitmap, resBitmap);
+                        } else {
+                            WmspError(5, pConfirm->resultCode, aidBitmap, resBitmap);
+                        }
+                        
+                        if (fCleanQueue) {
+                            WMSP_CleanSendQueue(1);
+                        }
+                        
+                        return 0;
                 }
 
-lbl_2:
-                u32 e = OS_DisableInterrupts(); // r0 - :529
+                break;
+            }
 
-                if ((status->child_bitmap & aid) != 0) {
-                    resBitmap |= (1 << i);
-                    
-                    status->child_bitmap &= ~aid;
-                    status->mp_readyBitmap &= ~aid;
-                    status->mp_lastRecvTick[i] = 0;
-                    
-                    MI_CpuFill8(status->childMacAddress[i - 1], 0, 6);
-                    OS_RestoreInterrupts(e);
-                    
-                    if (indicateFlag == 1) {
-                        struct WMStartParentCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :552
-                        cb->apiid = 8;
-                        cb->errcode = 0;
-                        cb->state = 9;
-                        cb->reason = reason;
-                        cb->aid = i;
-                        MI_CpuCopy8(wMac, cb->macAddress, 6);
-                        cb->parentSize = status->mp_parentSize;
-                        cb->childSize = status->mp_childSize;
-                        WMSP_ReturnResult2Wm9(cb);
-                        
-                    } else {
-                        WMSP_IndicateDisconnectionFromMyself(1, i, wMac);
-                    }
-                    
-                    if (fCleanQueue) {
-                        WMSP_CleanSendQueue(aid);
-                    }
+            u32 e = OS_DisableInterrupts(); // r0 - :529
+
+            if ((status->child_bitmap & (1 << i)) != 0) {
+                resBitmap |= (1 << aid);
+                
+                status->child_bitmap &= ~(1 << i);
+                status->mp_readyBitmap &= ~(1 << i);
+                status->mp_lastRecvTick[aid] = 0;
+                
+                MI_CpuFill8(&status->childMacAddress[i - 1], 0, sizeof(status->childMacAddress[i - 1]));
+                OS_RestoreInterrupts(e);
+                
+                if (indicateFlag == 1) {
+                    struct WMStartParentCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :552
+                    cb->apiid = 8;
+                    cb->errcode = 0;
+                    cb->state = 9;
+                    cb->reason = reason;
+                    cb->aid = aid;
+                    MI_CpuCopy8(wMac, cb->macAddress, sizeof(wMac));
+                    cb->parentSize = status->mp_parentSize;
+                    cb->childSize = status->mp_childSize;
+                    WMSP_ReturnResult2Wm9(cb);
                     
                 } else {
-                    OS_RestoreInterrupts(e);
+                    WMSP_IndicateDisconnectionFromMyself(1, i, &wMac);
                 }
+                
+                if (fCleanQueue) {
+                    WMSP_CleanSendQueue(1 << i);
+                }
+                
+            } else {
+                OS_RestoreInterrupts(e);
             }
         }
     }
