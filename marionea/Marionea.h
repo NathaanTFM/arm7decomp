@@ -198,7 +198,7 @@
 #define RING_END_PTR ((void*)0x04805F60)
 #endif /* MARIONEA_INTERNAL */
 
-#define GET_CFM(req) ((void*)((u8*)(req) + ((req)->header.length * 2) + 0x10))
+#define GET_CFM(req) ((void*)((u32)req + ((u16*)req)[7] * 2 + 0x10))
 
 // Structures and typedefs
 typedef unsigned char u8;

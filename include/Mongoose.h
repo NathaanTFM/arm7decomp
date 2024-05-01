@@ -86,7 +86,7 @@
 #define GET_TX_BUF_ADDR(macFrm) (((u32)(macFrm) & 0x3FFF) / 2)
 
 // 0x10 is sizeof(WlCmdHeader) + sizeof(HEAPBUF_HEADER)
-#define GET_CFM(req) ((void*)((u8*)(req) + ((req)->header.length * 2) + 0x10))
+#define GET_CFM(req) ((void*)((u32)req + ((u16*)req)[7] * 2 + 0x10))
 #define GET_HEADER(ptr) (void*)((u8*)(ptr) - (0x10))
 
 // TODO: Decided to make some static functions not static for now so they compile

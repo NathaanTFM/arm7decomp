@@ -1,6 +1,6 @@
 Progress:
-    Functions: 478/505 (94.7%)
-    Bytecode: 75128/97516 (77.0%)
+    Functions: 479/505 (94.9%)
+    Bytecode: 75832/97516 (77.8%)
 
 File progress:
     libraries\wm\ARM7\src\req_AutoDeAuth.c
@@ -236,8 +236,8 @@ File progress:
         Bytecode: 372/372 (100.0%)
 
     marionea\WlCmdIf.c
-        Functions: 4/5 (80.0%)
-        Bytecode: 264/968 (27.3%)
+        Functions: 5/5 (100.0%)
+        Bytecode: 968/968 (100.0%)
 
     marionea\WlIntr.c
         Functions: 19/20 (95.0%)
