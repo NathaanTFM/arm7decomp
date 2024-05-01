@@ -400,35 +400,43 @@ void WlIntrRxEnd() { // WlIntr.c:1101
             WUpdateCounter();
         
         pMFrm = (RXFRM_MAC*)&W_MACMEM(2 * bnry);
+        
         pStatus = (u16 *)pMFrm;
-        pErrSts = (u16 *)AdjustRingPointer(/*&pMFrm->MacHeader.Rx.NextBnry*/(u16*)((u32)pStatus+2));
-        pTimeStamp = (u16 *)AdjustRingPointer(/*&pMFrm->MacHeader.Rx.TimeStamp*/(u16*)((u32)pErrSts+2));
-        pMPDU = (u16 *)AdjustRingPointer(/*&pMFrm->MacHeader.Rx.MPDU*/(u16*)((u32)pTimeStamp+4));
+        pErrSts = (u16*)((u32)pStatus + 2);
+        pErrSts = (u16 *)AdjustRingPointer(pErrSts);
+        pTimeStamp = (u16*)((u32)pErrSts + 2);
+        pTimeStamp = (u16*)AdjustRingPointer(pTimeStamp);
+        pMPDU = (u16*)((u32)pTimeStamp+4);
+        pMPDU = (u16*)AdjustRingPointer(pMPDU);
         pDur = (u16 *)AdjustRingPointer(&pMFrm->Dot11Header.DurationID);
-        *pStatus |= (2 * (*pErrSts)) & 0x400;
+        
+        *pStatus |= (*pErrSts << 1) & 0x400;
         *pTimeStamp = tm[0];
 
         length = *pMPDU;
-        next_bnry = 2 * ((length + 2 * bnry + 15) / 4);
+        next_bnry = ((length + 2 * bnry + 15) / 4) * 2;
+        
         if (next_bnry >= 0xFB0) {
             next_bnry -= pWork->Ofst.RxBuf.Size / 2;
         }
+        
         if (length > 0x92C) {
             *pStatus = 0xFFFF;
             next_bnry = curr;
             pWork->CurrErrCount++;
             
-        } else {
-            if ((wlOperation & 1) != 0 && next_bnry != curr) {
-                RXFRM_MAC* pNextMFrm = (RXFRM_MAC*)&W_MACMEM(2 * next_bnry); // r0 - :1247
+        } else if ((wlOperation & 1) != 0) {
+            if (next_bnry != curr) {
+                RXFRM_MAC* pNextMFrm; // r0 - :1247
                 u16 nextStatus, nextRate; // r2, r0 - :1248
 
+                pNextMFrm = (RXFRM_MAC*)&W_MACMEM(2 * next_bnry);
                 nextStatus = pNextMFrm->MacHeader.Rx.Status;
                 
-                if ((u8*)pNextMFrm < (u8*)0x4805F5A)
-                    nextRate = *(u16*)&pNextMFrm->MacHeader.Rx.Service_Rate;
+                if ((u32)pNextMFrm < 0x4805F5A)
+                    nextRate = *(u16*)&pNextMFrm->MacHeader.Rx.Service_Rate & 0xFF;
                 else
-                    nextRate = *(u16*)((u32)pNextMFrm - (u32)wlMan->Work.Ofst.RxBuf.Size + 6);
+                    nextRate = *(u16*)((u32)pNextMFrm - (u32)pWork->Ofst.RxBuf.Size + 6);
                 
                 if ((nextStatus & 0x7C00) != 0 || (nextRate != 10 && nextRate != 20) || length > 0xFFF) {
                     pWork->CurrErrCount++;
@@ -440,7 +448,7 @@ void WlIntrRxEnd() { // WlIntr.c:1101
             }
         }
 
-        frameType = (*pStatus) & 0xF;
+        frameType = *pStatus & 0xF;
         
         if (frameType == 12) {
             u16 fc = *(u16*)AdjustRingPointer(&pMFrm->Dot11Header.FrameCtrl.Data); // None - :1309
@@ -450,10 +458,10 @@ void WlIntrRxEnd() { // WlIntr.c:1101
                 wlMan->Counter.rx.mpDuplicateErr++;
                 *pStatus = 0xFFFF;
                 
-            } else if (wlMan->Config.NullKeyRes == 0 && pWork->STA == 0x40) {
+            } else if (wlMan->Config.NullKeyRes == 0 && wlMan->Work.STA == 0x40) {
                 if (W_AID_LOW != 0 && ((W_TXBUF_REPLY2 & 0x8000) != 0 || (W_TXBUF_REPLY1 & 0x8000) == 0)) {
                     OS_CancelAlarm(&wlMan->KeyAlarm);
-                    OS_SetAlarm(&wlMan->KeyAlarm, ((33514 * (u64)(*pDur))  >> 6) / 1000, (void *)WClearKSID, 0);
+                    OS_SetAlarm(&wlMan->KeyAlarm, ((33514 * (u64)(*pDur))  >> 6) / 1000, WClearKSID, 0);
                     
                 } else {
                     seqCtrl = 0xFFFF;
@@ -469,12 +477,13 @@ void WlIntrRxEnd() { // WlIntr.c:1101
                 wlMan->Counter.multiPoll.txNull++;
             
         } else if (frameType == 13) {
-            if (wlMan->Config.NullKeyRes == 0 && pWork->STA == 0x40) {
+            if (wlMan->Config.NullKeyRes == 0 && wlMan->Work.STA == 0x40) {
                 if (W_AID_LOW == 0 || (W_TXBUF_REPLY2 & 0x8000) == 0) {
                     *pStatus = 0xFFFF;
                 }
             }
         }
+        
         pRxCtrl->wlCurr = next_bnry;
         *pErrSts = next_bnry;
     }

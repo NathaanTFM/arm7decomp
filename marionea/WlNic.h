@@ -213,7 +213,7 @@ u16 WSetGameInfo(u32 length, u8* pGameInfo);
 void WSetAids(u16 aid);
 void WClearAids();
 void WSetKSID();
-void WClearKSID(int unused);
+void WClearKSID(void* unused);
 void WSetStaState(u32 state);
 void WSetMacAdrs1(u16* dst, u16* src1);
 void WSetMacAdrs2(u16* dst, u16* src1, u16* src2);

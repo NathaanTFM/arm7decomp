@@ -271,7 +271,7 @@ u16 WSetGameInfo(u32 length, u8* pGameInfo); // WlNic.c:1958
 void WSetAids(u16 aid); // WlNic.c:2009
 void WClearAids(); // WlNic.c:2036
 void WSetKSID(); // WlNic.c:2067
-void WClearKSID(); // WlNic.c:2087
+void WClearKSID(void* unused); // WlNic.c:2087
 void WSetStaState(u32 state); // WlNic.c:2111
 void WSetMacAdrs1(u16* dst, u16* src1); // WlNic.c:2157
 void WSetMacAdrs2(u16* dst, u16* src1, u16* src2); // WlNic.c:2178

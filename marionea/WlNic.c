@@ -753,7 +753,7 @@ void WSetKSID() { // WlNic.c:2067
     W_AID_LOW = wlMan->Work.AID;
 }
 
-void WClearKSID(int unused) { // WlNic.c:2087
+void WClearKSID(void* unused) { // WlNic.c:2087
     if ((W_TXBUF_REPLY1 & 0x8000) == 0) {
         WaitLoop_ClrAid();
     }
