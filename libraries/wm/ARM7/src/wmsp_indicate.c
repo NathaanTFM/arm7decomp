@@ -598,7 +598,8 @@ static void WmspIndicateMaMultiPollAck(WlCmdReq* req) {
                 higher = W_US_COUNT1;
             }
 
-            if ( (s16)( (u16)((higher << 12) | (lower1 >> 4)) - status->mp_ackTime) <= 0) {
+            u16 tmp = ((higher << 12) | (lower1 >> 4));
+            if ( (s16)(tmp - status->mp_ackTime) <= 0) {
                 return;
             }
             
