@@ -87,6 +87,10 @@ def disassemble(name, rawAsm, rawSrc):
                 try:
                     if lineAsm.split()[2] == lineSrc.split()[2]:
                         icon = Fore.WHITE + "*"
+                        
+                        if lineSrc.split()[1] == "eb000000":
+                            icon = Fore.LIGHTBLACK_EX + "~"
+                            
                 except Exception:
                     pass
                     
