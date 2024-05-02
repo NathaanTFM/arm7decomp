@@ -47,6 +47,7 @@ Inaccurate functions:
 - WMSP_FlushSendQueue: severe register swap
 - [WMSP_IndicateThread](https://decomp.me/scratch/6dCWR): stack allocation differences
 - WMSP_Reset: register swap
+- [WMSP_StartMP](https://decomp.me/scratch/ZctMm): register swap, and 2 instructions swapped
 - WMSPi_CommonInit: severe register swap
 - WVR_Begin: it's different
 - WmspChildAdjustVSync1: register swap for 2 instructions
@@ -55,7 +56,6 @@ Non-implemented functions:
 - WMSP_MeasureChannel
 - WMSP_SendMaKeyData
 - WMSP_SendMaMP
-- WMSP_StartMP
 - WMSP_StartScan
 - WMSP_StartScanEx
 - WmspChildAdjustVSync2
