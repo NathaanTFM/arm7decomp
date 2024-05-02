@@ -11,6 +11,6 @@
 
 extern WMSPWork wmspW;
 
-#define RSSI_UNK (*(u16*)0x2FFFF98UL)
+#define RSSI_UNK (*(u16 *)0x2FFFF98UL)
 
 #endif

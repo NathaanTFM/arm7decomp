@@ -1,35 +1,38 @@
 #include "Mongoose.h"
 
-void WMSP_Enable(void* msg) { // req_Enable.c:41
-    u32* reqBuf = (u32*)msg; // r0 - :43
-    WMCallback* cb; // r0 - :44
-    WMArm7Buf* p; // r0 - :46
-    
-    p = wmspW.wm7buf = (WMArm7Buf*)reqBuf[1];
-    wmspW.status = (WMStatus*)reqBuf[2];
+void WMSP_Enable(void *msg)
+{                             // req_Enable.c:41
+    u32 *reqBuf = (u32 *)msg; // r0 - :43
+    WMCallback *cb;           // r0 - :44
+    WMArm7Buf *p;             // r0 - :46
+
+    p = wmspW.wm7buf = (WMArm7Buf *)reqBuf[1];
+    wmspW.status = (WMStatus *)reqBuf[2];
     p->status = wmspW.status;
-    p->fifo7to9 = (u32*)reqBuf[3];
+    p->fifo7to9 = (u32 *)reqBuf[3];
     WMSPi_CommonInit(reqBuf[4]);
-    
-    cb = (WMCallback*)WMSP_GetBuffer4Callback2Wm9();
+
+    cb = (WMCallback *)WMSP_GetBuffer4Callback2Wm9();
     cb->apiid = WM_APIID_ENABLE;
     cb->errcode = WM_ERRCODE_SUCCESS;
     WMSP_ReturnResult2Wm9(cb);
 }
 
-void WMSPi_CommonInit(u32 miscFlags) { // req_Enable.c:87
-    WMArm7Buf* p = wmspW.wm7buf; // r6 - :89
-    WMStatus* status = wmspW.status; // r9, not in nef
-    int fCleanQueue = 0; // r7 - :98
-    u32 e = OS_DisableInterrupts(); // r8 - :99
-    
-    if (status->mp_flag == 1) {
+void WMSPi_CommonInit(u32 miscFlags)
+{                                    // req_Enable.c:87
+    WMArm7Buf *p = wmspW.wm7buf;     // r6 - :89
+    WMStatus *status = wmspW.status; // r9, not in nef
+    int fCleanQueue = 0;             // r7 - :98
+    u32 e = OS_DisableInterrupts();  // r8 - :99
+
+    if (status->mp_flag == 1)
+    {
         status->mp_flag = 0;
         fCleanQueue = 1;
         WMSP_CancelVAlarm();
         WMSP_SetThreadPriorityLow();
     }
-    
+
     status->child_bitmap = 0;
     status->mp_readyBitmap = 0;
     status->ks_flag = 0;
@@ -66,21 +69,24 @@ void WMSPi_CommonInit(u32 miscFlags) { // req_Enable.c:87
     status->preamble = 1;
     status->miscFlags = miscFlags;
     OS_RestoreInterrupts(e);
-    
-    if (fCleanQueue) {
+
+    if (fCleanQueue)
+    {
         WMSP_CleanSendQueue(0xFFFF);
     }
-    
-    for (int i = 0; i < 32; i++) { // r2 - :170
+
+    for (int i = 0; i < 32; i++)
+    { // r2 - :170
         p->requestBuf[i * 4] = 0x8000;
     }
-    
+
     MIi_CpuClear16(1, status->portSeqNo, 0x100);
     WMSP_InitAlarm();
     OS_InitMutex(&status->sendQueueMutex);
     WMSP_InitVAlarm();
-    
-    if ((miscFlags & 2) == 0) {
+
+    if ((miscFlags & 2) == 0)
+    {
         PM_SetLEDPattern(PM_LED_PATTERN_WIRELESS);
     }
     status->state = WM_STATE_STOP;

@@ -6,7 +6,7 @@
 #ifdef MARIONEA_INTERNAL
 void WlIntr();
 void MacBugTxMp();
-void* AdjustRingPointer(void* p);
+void *AdjustRingPointer(void *p);
 void InitializeIntr();
 void ReleaseIntr();
 #endif

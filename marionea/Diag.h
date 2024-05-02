@@ -4,7 +4,8 @@
 #define DIAG_H
 
 #ifdef MARIONEA_INTERNAL
-typedef struct {
+typedef struct
+{
     u16 adrs; // offset 00
     u16 mask; // offset 02
 } TEST_REGS;
