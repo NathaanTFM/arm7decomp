@@ -123,14 +123,14 @@ void WMSP_SetVAlarm()
     WMStatus *status = wmspW.status;
     OSVAlarm *pVAlarm = &wmspVAlarm; // r0 - :117
 
-    if (status->mode == 1)
+    if (status->mode == MODE_PARENT)
     {
         if (pVAlarm->handler)
             WMSP_CancelVAlarm();
 
         WmspSetVAlarm(203, (void *)WmspParentAdjustVSync, (void *)3);
     }
-    else if (status->mode == 2)
+    else if (status->mode == MODE_CHILD)
     {
         status->VSyncFlag = 0;
         if (pVAlarm->handler)

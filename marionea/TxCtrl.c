@@ -127,7 +127,7 @@ void TxqPri(u32 pri)
             WSetPowerState(2);
 
         CopyTxFrmToMacBuf(pMacTxFrm, pTxReq);
-        if (pWork->Mode == 1 && ((cam_adrs == 0 && pBufMan->Count > 1) || (cam_adrs != 0 && CAM_GetFrameCount(cam_adrs) > 1)))
+        if (pWork->Mode == MODE_PARENT && ((cam_adrs == 0 && pBufMan->Count > 1) || (cam_adrs != 0 && CAM_GetFrameCount(cam_adrs) > 1)))
         {
             pMacTxFrm->Dot11Header.FrameCtrl.Data |= 0x2000;
         }
@@ -209,7 +209,7 @@ u32 CheckFrameTimeout(TXFRM *pTxFrm)
 
     timeout = pWork->FrameLifeTime * 8;
 
-    if (pTxFrm->Dot11Header.FrameCtrl.Bit.Type != 0 || (pWork->Mode == 1 && (pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 1 || pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 3 || pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 0xB)))
+    if (pTxFrm->Dot11Header.FrameCtrl.Bit.Type != 0 || (pWork->Mode == MODE_PARENT && (pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 1 || pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 3 || pTxFrm->Dot11Header.FrameCtrl.Bit.SubType == 0xB)))
     { // :390
         timeout /= 8;
     }

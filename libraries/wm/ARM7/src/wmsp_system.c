@@ -181,7 +181,7 @@ int WMSP_SetAllParams(u16 wmApiID, u16 *buf)
     pReq->beaconType = 1;
     pReq->probeRes = 1;
 
-    if (status->mode == 1)
+    if (status->mode == MODE_PARENT)
     {
         pReq->beaconLostTh = 0;
     }

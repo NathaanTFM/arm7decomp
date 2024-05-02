@@ -72,8 +72,8 @@ u16 MLME_ScanReqCmd(WlCmdReq *pReqt, WlCmdCfm *pCfmt)
     pMLME->Work.Scan.MaxConfirmLength = pCfm->header.length - 3; // :177
     pCfm->header.length = 3;                                     // :180
 
-    if (pConfig->Mode != 1 && pConfig->Mode != 3 && pConfig->Mode != 2) // :183
-        return 11;                                                      // :187
+    if (pConfig->Mode != MODE_PARENT && pConfig->Mode != MODE_HOTSPOT && pConfig->Mode != MODE_CHILD) // :183
+        return 11;                                                                                    // :187
 
     if (wlMan->Work.STA < STA_CLASS1)
         return 1; // :191
@@ -181,7 +181,7 @@ u16 MLME_AuthReqCmd(WlCmdReq *pReqt, WlCmdCfm *pCfmt)
 
     pCfm->header.length = 6;
 
-    if (pConfig->Mode != 3 && pConfig->Mode != 2)
+    if (pConfig->Mode != MODE_HOTSPOT && pConfig->Mode != MODE_CHILD)
         return 11;
 
     if (pWork->STA < STA_CLASS1)
@@ -260,7 +260,7 @@ u16 MLME_AssReqCmd(WlCmdReq *pReqt, WlCmdCfm *pCfmt)
     MLME_MAN *pMLME = &wlMan->MLME;             // r5 - :502
 
     pCfm->header.length = 3;
-    if (pConfig->Mode != 3 && pConfig->Mode != 2)
+    if (pConfig->Mode != MODE_HOTSPOT && pConfig->Mode != MODE_CHILD)
         return 11;
 
     if (pWork->STA < STA_CLASS2)
@@ -299,7 +299,7 @@ u16 MLME_ReAssReqCmd(WlCmdReq *pReqt, WlCmdCfm *pCfmt)
     MLME_MAN *pMLME = &wlMan->MLME;                 // r14 - :571
 
     pCfm->header.length = 3;
-    if (pConfig->Mode != 3 && pConfig->Mode != 2)
+    if (pConfig->Mode != MODE_HOTSPOT && pConfig->Mode != MODE_CHILD)
         return 11;
 
     if (pWork->STA < STA_CLASS2)
@@ -375,7 +375,7 @@ u16 MLME_StartReqCmd(WlCmdReq *pReqt, WlCmdCfm *pCfmt)
     CONFIG_PARAM *pConfig = &wlMan->Config; // r5 - :723
 
     pCfm->header.length = 1;
-    if (pConfig->Mode != 1 && pConfig->Mode != 0)
+    if (pConfig->Mode != MODE_PARENT && pConfig->Mode != MODE_TEST)
         return 11;
     if (pWork->STA != STA_CLASS1)
         return 1;
@@ -407,7 +407,7 @@ u16 MLME_StartReqCmd(WlCmdReq *pReqt, WlCmdCfm *pCfmt)
         return 5;
     if (FLASH_VerifyCheckSum(0))
         return 14;
-    if (pConfig->Mode == 0)
+    if (pConfig->Mode == MODE_TEST)
         WSetBssid(BC_ADRS);
     else
         WSetBssid(pConfig->MacAdrs);

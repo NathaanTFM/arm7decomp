@@ -34,7 +34,7 @@ void WMSP_StartParent(void *msg)
         return;
     }
 
-    status->mode = 1;
+    status->mode = MODE_PARENT;
     status->aid = 0;
 
     u32 e = OS_DisableInterrupts(); // r0 - :94

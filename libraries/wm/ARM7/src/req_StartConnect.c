@@ -91,11 +91,11 @@ void WMSP_StartConnectEx(void *msg)
 
     if (p->connectPInfo.gameInfoLength == 0)
     {
-        status->mode = 3;
+        status->mode = MODE_HOTSPOT;
     }
     else
     {
-        status->mode = 2;
+        status->mode = MODE_CHILD;
     }
 
     if (!WMSP_SetAllParams(0xC, buf))
@@ -165,7 +165,7 @@ void WMSP_StartConnectEx(void *msg)
         WlBssDesc bss_desc;       // None - :243
 
         MI_CpuCopy8(&p->connectPInfo, &bss_desc, 0x40);
-        if (status->mode == 2)
+        if (status->mode == MODE_CHILD)
         {
             bss_desc.ssidLength = 32;
             *(u16 *)&bss_desc.ssid[0] = p->connectPInfo.gameInfo.ggid;
