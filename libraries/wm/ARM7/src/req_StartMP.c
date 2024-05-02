@@ -9,7 +9,7 @@ static inline void UnkFunction(WMMPTmpParam *tmpParam)
     u32 mask = tmpParam->mask;
     WMStatus *status = wmspW.status;
 
-    if (status->state != WM_STATE_MP_PARENT && status->state != WM_STATE_MP_CHILD)
+    if (wmspW.status->state != WM_STATE_MP_PARENT && wmspW.status->state != WM_STATE_MP_CHILD)
     {
         enabled = OS_DisableInterrupts();
 
