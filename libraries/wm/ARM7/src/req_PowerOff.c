@@ -1,32 +1,32 @@
 #include "Mongoose.h"
 
 void WMSP_PowerOff() { // req_PowerOff.c:32
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     u32 wlBuf[128]; // None - :37
-    struct WMCallback* cb; // r0 - :38
+    WMCallback* cb; // r0 - :38
     WlCmdCfm* pConfirm; // r0 - :39
     
-    if (status->state != 2) {
+    if (status->state != WM_STATE_IDLE) {
         cb = WMSP_GetBuffer4Callback2Wm9();
-        cb->apiid = 6;
-        cb->errcode = 3;
+        cb->apiid = WM_APIID_POWER_OFF;
+        cb->errcode = WM_ERRCODE_ILLEGAL_STATE;
         WMSP_ReturnResult2Wm9(cb);
         
     } else {
         pConfirm = (WlCmdCfm*)WMSP_WL_DevShutdown((u16*)wlBuf);
         if (pConfirm->resultCode != 0) {
             cb = WMSP_GetBuffer4Callback2Wm9();
-            cb->apiid = 6;
-            cb->errcode = 1;
+            cb->apiid = WM_APIID_POWER_OFF;
+            cb->errcode = WM_ERRCODE_FAILED;
             cb->wlCmdID = 0x301;
             cb->wlResult = pConfirm->resultCode;
             WMSP_ReturnResult2Wm9(cb);
             
         } else {
-            status->state = 1;
+            status->state = WM_STATE_STOP;
             cb = WMSP_GetBuffer4Callback2Wm9();
-            cb->apiid = 6;
-            cb->errcode = 0;
+            cb->apiid = WM_APIID_POWER_OFF;
+            cb->errcode = WM_ERRCODE_SUCCESS;
             WMSP_ReturnResult2Wm9(cb);
         }
         

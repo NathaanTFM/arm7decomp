@@ -44,7 +44,9 @@ These functions don't have any implementation in the repository
 
 Inaccurate functions:
 - [WMSP_DisconnectCore](https://decomp.me/scratch/E4qqZ): register swap
+- WMSP_FlushSendQueue: severe register swap
 - [WMSP_IndicateThread](https://decomp.me/scratch/6dCWR): stack allocation differences
+- WMSP_Reset: register swap
 - WMSP_SetDCFData: two swapped instructions (moveq/movne)
 - WMSP_SetGameInfo: two swapped instructions (moveq/movne)
 - WMSPi_CommonInit: severe register swap
@@ -52,10 +54,7 @@ Inaccurate functions:
 - WmspChildAdjustVSync1: register swap for 2 instructions
 
 Non-implemented functions:
-- WMSP_FlushSendQueue
 - WMSP_MeasureChannel
-- WMSP_PutSendQueue
-- WMSP_Reset
 - WMSP_SendMaKeyData
 - WMSP_SendMaMP
 - WMSP_StartMP

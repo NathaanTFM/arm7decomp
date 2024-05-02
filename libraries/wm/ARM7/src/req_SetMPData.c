@@ -2,7 +2,7 @@
 
 void WMSP_SetMPData(void* msg) { // req_SetMPData.c:28
     u32* buf = (u32*)msg; // r0 - :30
-    struct WMStatus *status = wmspW.status;
+    WMStatus *status = wmspW.status;
     u16* sendData = (u16*)buf[1]; // r11 - :33
     u16 sendSize = buf[2]; // r4 - :34
     u32 destBitmap = buf[3]; // r5 - :35
@@ -29,10 +29,10 @@ void WMSP_SetMPData(void* msg) { // req_SetMPData.c:28
     }
     
     if (result != 2) {
-        struct WMPortSendCallback* cb_PortSend = WMSP_GetBuffer4Callback2Wm9(); // r0 - :83
-        cb_PortSend->apiid = 129;
+        WMPortSendCallback* cb_PortSend = WMSP_GetBuffer4Callback2Wm9(); // r0 - :83
+        cb_PortSend->apiid = WM_APIID_PORT_SEND;
         cb_PortSend->errcode = result;
-        cb_PortSend->state = 20;
+        cb_PortSend->state = WM_STATECODE_PORT_SEND;
         cb_PortSend->port = port;
         cb_PortSend->destBitmap = destBitmap;
         cb_PortSend->restBitmap = result == 10 ? (destBitmap & childBitmap) : 0;

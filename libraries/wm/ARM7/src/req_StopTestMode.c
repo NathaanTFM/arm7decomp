@@ -1,10 +1,10 @@
 #include "Mongoose.h"
 
 void WMSP_StopTestMode() { // req_StopTestMode.c:36
-    struct WMCallback* cb; // r0 - :40
+    WMCallback* cb; // r0 - :40
     
     cb = (WMCallback*)WMSP_GetBuffer4Callback2Wm9();
-    cb->apiid = 27;
-    cb->errcode = 4;
+    cb->apiid = WM_APIID_STOP_TESTMODE;
+    cb->errcode = WM_ERRCODE_WM_DISABLE;
     WMSP_ReturnResult2Wm9(cb);
 }

@@ -44,6 +44,33 @@ def parseOutput(output):
     return result
     
     
+def regswapChecker(asm, src):
+    REGISTERS = ("r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "ip", "sp", "lr", "pc")
+    
+    def trimRegisters(line):
+        for reg in REGISTERS:
+            line = re.sub(r"\b" + reg + r"\b", "(reg)", line)
+            
+        return line
+        
+    def findRegisters(line):
+        return re.findall(r"\b(" + "|".join(REGISTERS) + r")\b", line)
+        
+    # check if it's a regswap (remove registers, if it matches, it's most certainly a regswap)
+    if trimRegisters(asm) != trimRegisters(src):
+        return False 
+        
+    # TODO: figure out what registers have been swapped
+    registers_asm = findRegisters(asm)
+    registers_src = findRegisters(src)
+    
+    if len(registers_asm) != len(registers_src):
+        return False
+        
+    # (code goes here)    
+    return True
+    
+    
 def disassemble(name, rawAsm, rawSrc):
     with open("rawAsm.bin", "wb") as f:
         f.write(rawAsm)
@@ -91,7 +118,12 @@ def disassemble(name, rawAsm, rawSrc):
                         if lineSrc.split()[1] == "eb000000":
                             icon = Fore.LIGHTBLACK_EX + "~"
                             
-                except Exception:
+                        else:
+                            # Check for regswap
+                            if regswapChecker(lineAsm.split(None, 2)[2], lineSrc.split(None, 2)[2]):
+                                icon = Fore.CYAN + "r"
+                            
+                except Exception as e:
                     pass
                     
             print(icon + " " + lineAsm.ljust(LENGTH) + " | " + lineSrc.ljust(LENGTH) + Style.RESET_ALL)
@@ -116,6 +148,7 @@ def compile(path, target):
             COMPILER,
             "-o", target,
             "-Iinclude",
+            "-Imarionea",
             "-ipa", "file",
             
             "-O4",
@@ -169,6 +202,9 @@ def compile(path, target):
                         results[name] = (1, len(rawAsm), len(rawSrc))#("    %-30s length mismatch (%d, %d)" % (name, len(rawSrc), len(rawAsm)))
                         continue
                         
+                    nonMatching = 0
+                    firstMismatch = None
+                    
                     for n in range(0, len(raw), 4):
                         valSrc, valAsm = rawSrc[n:n+4], rawAsm[n:n+4]
                         if valSrc != valAsm:
@@ -180,9 +216,14 @@ def compile(path, target):
                                 # relocation, probably
                                 continue
                                 
-                            results[name] = (2, len(rawAsm), n, rawSrc[n:n+4], rawAsm[n:n+4])#("    %-30s %02d -> %r %r" % (name, n, rawSrc[n:n+4].hex(" "), rawAsm[n:n+4].hex(" ")))
-                            break
-                            
+                            if firstMismatch is None:
+                                firstMismatch = n
+                                
+                            nonMatching += 4
+                        
+                    if firstMismatch is not None:
+                        results[name] = (2, len(rawAsm), firstMismatch, rawSrc[firstMismatch:firstMismatch+4], rawAsm[firstMismatch:firstMismatch+4], len(rawAsm) - nonMatching)#("    %-30s %02d -> %r %r" % (name, n, rawSrc[n:n+4].hex(" "), rawAsm[n:n+4].hex(" ")))
+                        
                     else:
                         results[name] = (0, len(rawAsm))#("    %-30s OK" % (name))
                         
@@ -240,13 +281,16 @@ for directory in ("marionea", "libraries"):
             progressPerFile[path] = [0, 0, 0, 0] # bytesOk, bytesTot, funcsOk, funcsTot
             
             for name, (status, *args) in results.items():
-                if status == 0:
+                if status == 0: # OK
                     progressPerFile[path][0] += args[0]
                     progressPerFile[path][2] += 1
                     
-                if status != 3:
+                elif status == 2: # mismatch
+                    progressPerFile[path][0] += args[4] # these are the identical bytes
+                    
+                if status != 3: # (missing .bin file)
                     progressPerFile[path][1] += args[0]
-                    progressPerFile[path][3] += 1 
+                    progressPerFile[path][3] += 1
             
             if "-e" in sys.argv:
                 # sort the interesting results per size

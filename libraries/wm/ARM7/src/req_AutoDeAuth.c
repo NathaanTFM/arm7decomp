@@ -17,12 +17,12 @@ void WMSP_AutoDeAuth(void* msg) { // req_AutoDeAuth.c:42
         auth_retry++;
     }
     
-    struct WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :86
-    cb->apiid = 34;
+    WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :86
+    cb->apiid = WM_APIID_AUTO_DEAUTH;
     if (pConfirm->resultCode == 0) {
-        cb->errcode = 0;
+        cb->errcode = WM_ERRCODE_SUCCESS;
     } else {
-        cb->errcode = 1;
+        cb->errcode = WM_ERRCODE_FAILED;
         cb->wlCmdID = 5;
         cb->wlResult = pConfirm->resultCode;
     }

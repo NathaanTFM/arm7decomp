@@ -2,14 +2,14 @@
 
 #define FLAG_UNK (*(u16*)0x2FFFF96UL)
 
-struct WMSPWork wmspW; // :27
-static struct _OSThread wmspRequestThread; // :32
-static struct _OSThread wmspIndicateThread; // :33
+WMSPWork wmspW; // :27
+static OSThread wmspRequestThread; // :32
+static OSThread wmspIndicateThread; // :33
 
 static void WmspError(u16 wmApiID, u16 wlCommand, u16 wlResult);
-STATIC void WmspPxiCallback(enum _enum_31522 unused, u32 data, int err);
+STATIC void WmspPxiCallback(PXIFifoTag unused, u32 data, int err);
 
-void WM_sp_init(WlInit* wlInit, struct WmInit* wmInit) { // wmsp_system.c:55
+void WM_sp_init(WlInit* wlInit, WmInit* wmInit) { // wmsp_system.c:55
     wmspW.dmaNo = wmInit->dmaNo;
     wmspW.arenaId = wlInit->heapFunc.os.id;
     wmspW.heapHandle = wlInit->heapFunc.os.heapHandle;
@@ -78,7 +78,7 @@ void* WMSP_GetBuffer4Callback2Wm9() { // wmsp_system.c:237
 
 u16* WMSP_WlRequest(u16* request) { // wmsp_system.c:264
     void* msg; // None - :266
-    struct WMIndCallback* callback; // r0 - :278
+    WMIndCallback* callback; // r0 - :278
     WlCmdCfm *pCfm; // not in nef
     
     OS_SendMessage(&wmspW.toWLmsgQ, request, 1);
@@ -86,10 +86,10 @@ u16* WMSP_WlRequest(u16* request) { // wmsp_system.c:264
     
     pCfm = GET_CFM((WlCmdReq*)msg);
     if (pCfm->resultCode == 14) {
-        callback = (struct WMIndCallback*)WMSP_GetBuffer4Callback2Wm9();
-        callback->apiid = 128;
-        callback->errcode = 19;
-        callback->state = 24;
+        callback = (WMIndCallback*)WMSP_GetBuffer4Callback2Wm9();
+        callback->apiid = WM_APIID_INDICATION;
+        callback->errcode = WM_ERRCODE_FLASH_ERROR;
+        callback->state = WM_STATECODE_UNKNOWN;
         WMSP_ReturnResult2Wm9(callback);
         SND_BeginSleep();
         OS_Terminate();
@@ -98,14 +98,14 @@ u16* WMSP_WlRequest(u16* request) { // wmsp_system.c:264
     return (u16*)msg;
 }
 
-STATIC void WmspPxiCallback(enum _enum_31522 unused, u32 data, int err) { // wmsp_system.c:306
+STATIC void WmspPxiCallback(PXIFifoTag unused, u32 data, int err) { // wmsp_system.c:306
     int result; // r0 - :310
     
     if (err == 0 && OS_SendMessage(&wmspW.requestQ, (void*)data, 0) == 0) {
         if (wmspW.wm7buf) {
-            struct WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :328
+            WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :328
             cb->apiid = *(u16*)data;
-            cb->errcode = 8;
+            cb->errcode = WM_ERRCODE_FIFO_ERROR;
             cb->wlCmdID = 0;
             cb->wlResult = 0;
             WMSP_ReturnResult2Wm9(cb);
@@ -126,7 +126,7 @@ int WMSP_CheckMacAddress(u8* macAdr) { // wmsp_system.c:348
          && macAdr[5] == myMacAddress[5]);
 }
 
-void WMSP_CopyParentParam(struct WMGameInfo* gameInfop, struct WMParentParam* pparamp) { // wmsp_system.c:422
+void WMSP_CopyParentParam(WMGameInfo* gameInfop, WMParentParam* pparamp) { // wmsp_system.c:422
     gameInfop->ggid = pparamp->ggid;
     gameInfop->tgid = pparamp->tgid;
     
@@ -144,7 +144,7 @@ void WMSP_CopyParentParam(struct WMGameInfo* gameInfop, struct WMParentParam* pp
 }
 
 int WMSP_SetAllParams(u16 wmApiID, u16* buf) { // wmsp_system.c:461
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     WlParamSetCfm* pConfirm; // r0 - :468
     WlParamSetAllReq* pReq  = (WlParamSetAllReq*)buf; // r0 - :472
     
@@ -179,7 +179,7 @@ int WMSP_SetAllParams(u16 wmApiID, u16* buf) { // wmsp_system.c:461
     
     pReq->activeZoneTime = 10;
     
-    if (wmApiID == 38) {
+    if (wmApiID == WM_APIID_START_SCAN_EX) {
         MIi_CpuClear16(0, pReq->ssidMask, 32);
         
     } else {
@@ -307,9 +307,9 @@ void WMSP_SetThreadPriorityHigh() { // wmsp_system.c:792
 }
 
 static void WmspError(u16 wmApiID, u16 wlCommand, u16 wlResult) {
-    struct WMStartConnectCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :1135
+    WMStartConnectCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :1135
     callback->apiid = wmApiID;
-    callback->errcode = 1;
+    callback->errcode = WM_ERRCODE_FAILED;
     callback->wlCmdID = wlCommand;
     callback->wlResult = wlResult;
     WMSP_ReturnResult2Wm9(callback);
@@ -338,7 +338,7 @@ u32* WMSP_GetInternalRequestBuf() { // wmsp_system.c:914
 }
 
 void WMSP_ResetSizeVars() { // wmsp_system.c:943
-    struct WMStatus *status = wmspW.status;
+    WMStatus *status = wmspW.status;
     
     status->mp_sendSize = 0;
     status->mp_recvSize = 0;
@@ -353,7 +353,7 @@ void WMSP_ResetSizeVars() { // wmsp_system.c:943
 void WMSP_SetParentMaxSize(u16 parentMaxSize) { // wmsp_system.c:962
     u16 maxSendSize; // r0 - :976
     u16 maxRecvSize; // r0 - :983
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     
     if (parentMaxSize > 0x200)
         parentMaxSize = 0x200;
@@ -374,7 +374,7 @@ void WMSP_SetParentMaxSize(u16 parentMaxSize) { // wmsp_system.c:962
 void WMSP_SetChildMaxSize(u16 childMaxSize) { // wmsp_system.c:994
     u16 maxRecvSize; // r0 - :1008
     u16 maxSendSize; // r0 - :1015
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     
     if (childMaxSize > 0x200)
         childMaxSize = 0x200;
@@ -393,7 +393,7 @@ void WMSP_SetChildMaxSize(u16 childMaxSize) { // wmsp_system.c:994
 }
 
 void WMSP_SetParentSize(u16 parentSize) { // wmsp_system.c:1026
-    struct WMStatus *status = wmspW.status;
+    WMStatus *status = wmspW.status;
     status->mp_parentSize = parentSize;
     
     if (status->aid == 0) {
@@ -407,7 +407,7 @@ void WMSP_SetParentSize(u16 parentSize) { // wmsp_system.c:1026
 void WMSP_SetChildSize(u16 childSize) { // wmsp_system.c:1051
     // FIXME: this variable isn't a thing(?) but it made compilation accurate
     // for that specific function because the compiler won't optimize
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     
     status->mp_childSize = childSize;
     

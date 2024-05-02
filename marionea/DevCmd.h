@@ -21,7 +21,7 @@ typedef struct {
 typedef struct {
     WlCmdHeader header; // offset 00
     u16 resultCode; // offset 04
-} WlDevRebootCfm;
+} WlDevRebootCfm, WlDevRestartCfm;
 
 typedef struct {
     WlCmdHeader header; // offset 00
@@ -35,7 +35,7 @@ typedef struct {
     u16 macVersion; // offset 0e
     u16 bbpVersion[2]; // offset 10
     u16 rfVersion; // offset 14
-} WlDevGetVerInfoCfm;
+} WlDevGetVerInfoCfm, WlDevGetVersionCfm;
 
 typedef struct {
     WlCmdHeader header; // offset 00
@@ -48,7 +48,7 @@ typedef struct {
     WlCmdHeader header; // offset 00
     u16 resultCode; // offset 04
     u16 state; // offset 06
-} WlDevGetStateCfm;
+} WlDevGetStateCfm, WlDevGetStationStateCfm;
 
 typedef struct {
     u16 wlRsv[6]; // offset 00

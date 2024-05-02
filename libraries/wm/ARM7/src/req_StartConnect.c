@@ -14,45 +14,45 @@ STATIC void WmspError(u16 wlCommand, u16 wlResult, u16 wlStatus);
 void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
     u32 wlBuf[128]; // None - :51
     u16* buf = (u16*)wlBuf;
-    struct WMStatus* status = wmspW.status;
-    struct WMArm7Buf* p = wmspW.wm7buf; // r8 - :54
-    struct WMStartConnectReq* args = (struct WMStartConnectReq*)msg; // r0 - :58
+    WMStatus* status = wmspW.status;
+    WMArm7Buf* p = wmspW.wm7buf; // r8 - :54
+    WMStartConnectReq* args = (WMStartConnectReq*)msg; // r0 - :58
     WlMlmeAssociateCfm* assConfirm; // r9 - :59
     
-    if (wmspW.status->state != 2 || (wmspW.status->miscFlags & 1) != 0) {
-        struct WMStartConnectCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :64
-        callback->apiid = 12;
-        callback->errcode = 3;
-        callback->state = 6;
+    if (wmspW.status->state != WM_STATE_IDLE || (wmspW.status->miscFlags & 1) != 0) {
+        WMStartConnectCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :64
+        callback->apiid = WM_APIID_START_CONNECT;
+        callback->errcode = WM_ERRCODE_ILLEGAL_STATE;
+        callback->state = WM_STATECODE_CONNECT_START;
         WMSP_ReturnResult2Wm9(callback);
         return;
     }
     
     MI_CpuCopy8(args->pInfo, &p->connectPInfo, 0xC0);
     if (p->connectPInfo.gameInfoLength >= 16 && (p->connectPInfo.gameInfo.attribute & 1) == 0) {
-        struct WMStartConnectCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :88
-        cb->apiid = 12;
-        cb->errcode = 11;
-        cb->state = 6;
+        WMStartConnectCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :88
+        cb->apiid = WM_APIID_START_CONNECT;
+        cb->errcode = WM_ERRCODE_NO_ENTRY;
+        cb->state = WM_STATECODE_CONNECT_START;
         WMSP_ReturnResult2Wm9(cb);
         return;
     }
     
     int tmp = (1 << p->connectPInfo.channel); // not defined anywhere!
     if ((tmp & status->enableChannel) == 0 || ((tmp >> 1) & 0x1FFF) == 0) {
-        struct WMStartConnectCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :107
-        cb->apiid = 12;
-        cb->errcode = 6;
-        cb->state = 6;
+        WMStartConnectCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :107
+        cb->apiid = WM_APIID_START_CONNECT;
+        cb->errcode = WM_ERRCODE_INVALID_PARAM;
+        cb->state = WM_STATECODE_CONNECT_START;
         WMSP_ReturnResult2Wm9(cb);
         return;
     }
     
     {
-        struct WMStartConnectCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :120
-        callback->apiid = 12;
-        callback->errcode = 0;
-        callback->state = 6;
+        WMStartConnectCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :120
+        callback->apiid = WM_APIID_START_CONNECT;
+        callback->errcode = WM_ERRCODE_SUCCESS;
+        callback->state = WM_STATECODE_CONNECT_START;
         WMSP_ReturnResult2Wm9(callback);
     }
     
@@ -89,7 +89,7 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
         WlCmdCfm* p_confirm = (WlCmdCfm*)WMSP_WL_ParamSetNullKeyResponseMode(buf, 0); // r0 - :166
         
         if (p_confirm->resultCode != 0) {
-            WmspError(534, p_confirm->resultCode, 0);
+            WmspError(PARAMSET_NULL_KEY_MODE_REQ_CMD, p_confirm->resultCode, 0);
             return;
         }
     }
@@ -105,7 +105,7 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
         
         p_confirm = WMSP_WL_ParamSetBeaconLostThreshold(buf, beaconLostTh & 0xFFFF);
         if (p_confirm->resultCode != 0) {
-            WmspError(523, p_confirm->resultCode, 0);
+            WmspError(PARAMSET_BEACON_LOST_TH_REQ_CMD, p_confirm->resultCode, 0);
             return;
         }
     }
@@ -114,11 +114,11 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
         WlDevClass1Cfm* p_confirm = WMSP_WL_DevClass1(buf); // r0 - :206
         
         if (p_confirm->resultCode != 0) {
-            WmspError(771, p_confirm->resultCode, 0);
+            WmspError(DEV_CLASS1_REQ_CMD, p_confirm->resultCode, 0);
             return;
         }
         
-        status->state = 3;
+        status->state = WM_STATE_CLASS1;
     }
         
     {
@@ -130,7 +130,7 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
         p_confirm = WMSP_WL_MlmePowerManagement(buf, pwrMgtMode, 0, 1);
         
         if (p_confirm->resultCode != 0) {
-            WmspError(1, p_confirm->resultCode, 0);
+            WmspError(MLME_PWR_MGT_REQ_CMD, p_confirm->resultCode, 0);
             return;
         }
         
@@ -154,7 +154,7 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
         p_confirm = WMSP_WL_MlmeJoin(buf, 2000, &bss_desc);
         
         if (p_confirm->resultCode != 0 || p_confirm->statusCode != 0) {
-            WmspError(3, p_confirm->resultCode, p_confirm->statusCode);
+            WmspError(MLME_JOIN_REQ_CMD, p_confirm->resultCode, p_confirm->statusCode);
             return;
         }
         
@@ -171,16 +171,16 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
         p_confirm = WMSP_WL_MlmeAuthenticate(buf, mac, args->authMode, 0x7D0);
         
         if (p_confirm->resultCode == 12 && p_confirm->statusCode == 19) {
-            struct WMStartConnectCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :324
-            callback->apiid = 12;
-            callback->errcode = 12;
-            callback->state = 6;
+            WMStartConnectCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :324
+            callback->apiid = WM_APIID_START_CONNECT;
+            callback->errcode = WM_ERRCODE_OVER_MAX_ENTRY;
+            callback->state = WM_STATECODE_CONNECT_START;
             WMSP_ReturnResult2Wm9(callback);
             return;
         }
         
         if (p_confirm->resultCode != 0 || p_confirm->statusCode != 0) {
-            WmspError(4, p_confirm->resultCode, p_confirm->statusCode);
+            WmspError(MLME_AUTH_REQ_CMD, p_confirm->resultCode, p_confirm->statusCode);
             return;
         }
     }
@@ -195,17 +195,17 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
     if (assConfirm->resultCode == 12 && assConfirm->statusCode == 19) {
         OS_RestoreInterrupts(e);
         
-        struct WMStartConnectCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :366
-        callback->apiid = 12;
-        callback->errcode = 12;
-        callback->state = 6;
+        WMStartConnectCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :366
+        callback->apiid = WM_APIID_START_CONNECT;
+        callback->errcode = WM_ERRCODE_OVER_MAX_ENTRY;
+        callback->state = WM_STATECODE_CONNECT_START;
         WMSP_ReturnResult2Wm9(callback);
         return;
     }
     
     if (assConfirm->resultCode != 0 || assConfirm->statusCode != 0) {
         OS_RestoreInterrupts(e);
-        WmspError(6, assConfirm->resultCode, assConfirm->statusCode);
+        WmspError(MLME_ASS_REQ_CMD, assConfirm->resultCode, assConfirm->statusCode);
         return;
     }
     
@@ -228,7 +228,7 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
             status->mp_lastRecvTick[0] = OS_GetTick() | 1;
         }
         
-        status->state = 8;
+        status->state = WM_STATE_CHILD;
         
         WMSP_SetParentMaxSize(p->connectPInfo.gameInfo.parentMaxSize + ((p->connectPInfo.gameInfo.attribute & 4) ? 42 : 0));
         WMSP_SetChildMaxSize(p->connectPInfo.gameInfo.childMaxSize + ((p->connectPInfo.gameInfo.attribute & 4) ? 6 : 0));
@@ -238,10 +238,10 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
     
     status->beaconIndicateFlag = 1;
     
-    struct WMStartConnectCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :438
-    callback->apiid = 12;
-    callback->errcode = 0;
-    callback->state = 7;
+    WMStartConnectCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :438
+    callback->apiid = WM_APIID_START_CONNECT;
+    callback->errcode = WM_ERRCODE_SUCCESS;
+    callback->state = WM_STATECODE_CONNECTED;
     callback->aid = status->aid;
     MI_CpuCopy8(status->parentMacAddress, callback->macAddress, 6);
     callback->parentSize = status->mp_parentSize;
@@ -252,10 +252,10 @@ void WMSP_StartConnectEx(void* msg) { // req_StartConnect.c:48
 }
 
 STATIC void WmspError(u16 wlCommand, u16 wlResult, u16 wlStatus) { // req_StartConnect.c:473
-    struct WMStartConnectCallback* callback; // r0 - :475
+    WMStartConnectCallback* callback; // r0 - :475
     callback = WMSP_GetBuffer4Callback2Wm9();
-    callback->apiid = 12;
-    callback->errcode = 1;
+    callback->apiid = WM_APIID_START_CONNECT;
+    callback->errcode = WM_ERRCODE_FAILED;
     callback->wlCmdID = wlCommand;
     callback->wlResult = wlResult;
     callback->wlStatus = wlStatus;

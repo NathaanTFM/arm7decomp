@@ -21,8 +21,8 @@ static void (*WmspRequestFuncTable[46])(void*) = {
 }; // :30
 
 void WMSP_RequestThread() { // wmsp_request.c:89
-    struct WMSPWork* p = &wmspW; // r0 - :93
-    struct WMStatus* status = p->status; // r9 - :94
+    WMSPWork* p = &wmspW; // r0 - :93
+    WMStatus* status = p->status; // r9 - :94
     void* msg; // None - :95
     u16 apiid; // r10 - :96
     
@@ -36,7 +36,7 @@ void WMSP_RequestThread() { // wmsp_request.c:89
         if (apiid & 0x8000)
             apiid &= ~0x8000;
         
-        if (apiid < 0x2E) {
+        if (apiid < WM_APIID_ASYNC_KIND_MAX) {
             status->apiBusy = 1;
             status->BusyApiid = apiid;
             WmspRequestFuncTable[apiid](msg);

@@ -3,13 +3,13 @@
 static void WmspStabilizeBeacon();
 
 void WMSP_PowerOn() { // req_PowerOn.c:47
-    struct WMStatus *status = wmspW.status;
-    struct WMCallback* cb; // r0 - :51
+    WMStatus *status = wmspW.status;
+    WMCallback* cb; // r0 - :51
     
-    if (status->state != 1) {
+    if (status->state != WM_STATE_STOP) {
         cb = WMSP_GetBuffer4Callback2Wm9();
-        cb->apiid = 5;
-        cb->errcode = 3;
+        cb->apiid = WM_APIID_POWER_ON;
+        cb->errcode = WM_ERRCODE_ILLEGAL_STATE;
         WMSP_ReturnResult2Wm9(cb);
         
     } else {
@@ -18,25 +18,25 @@ void WMSP_PowerOn() { // req_PowerOn.c:47
         
         if (!WMSPi_CommonWlIdle(&wlcom, &wlres)) {
             cb = WMSP_GetBuffer4Callback2Wm9();
-            cb->apiid = 5;
-            cb->errcode = 1;
+            cb->apiid = WM_APIID_POWER_ON;
+            cb->errcode = WM_ERRCODE_FAILED;
             cb->wlCmdID = wlcom;
             cb->wlResult = wlres;
             WMSP_ReturnResult2Wm9(cb);
             
         } else {
-            status->state = 2;
+            status->state = WM_STATE_IDLE;
             
             cb = WMSP_GetBuffer4Callback2Wm9();
-            cb->apiid = 5;
-            cb->errcode = 0;
+            cb->apiid = WM_APIID_POWER_ON;
+            cb->errcode = WM_ERRCODE_SUCCESS;
             WMSP_ReturnResult2Wm9(cb);
         }
     }
 }
 
 int WMSPi_CommonWlIdle(u16* pWlCommand, u16* pWlResult) { // req_PowerOn.c:120
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     WlCmdCfm* pConfirm; // r0 - :123
     u32 wlBuf[128]; // None - :124
     u16 enableChannel; // r0 - :125

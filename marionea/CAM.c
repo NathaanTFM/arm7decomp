@@ -14,7 +14,7 @@ u32 CAM_Search(u16* pMacAdrs) { // CAM.c:63
         pCAM = wlMan->Config.pCAM + 1; // :74
         
         for (i = 0, pos = 1; pos < wlMan->Config.MaxStaNum; pos++, pCAM++) { // :77
-            if (pCAM->state) { // :80
+            if (pCAM->state != STA_SHUTDOWN) { // :80
                 if (MatchMacAdrs(pCAM->macAdrs, pMacAdrs)) // :83
                     return pos;
                 
@@ -40,7 +40,7 @@ u32 CAM_SearchAdd(u16* pMacAdrs) { // CAM.c:109
         pCAM = &pConfig->pCAM[1];
         
         for (free = 0, i = 0, pos = 1; pos < pConfig->MaxStaNum; pos++, pCAM++) {
-            if (pCAM->state) {
+            if (pCAM->state != STA_SHUTDOWN) {
                 if (MatchMacAdrs(pCAM->macAdrs, pMacAdrs)) {
                     return pos;
                 }
@@ -66,7 +66,7 @@ u32 CAM_SearchAdd(u16* pMacAdrs) { // CAM.c:109
         lifeTime = 0x10000;
         
         for (i = 1, pos = 0; i < pConfig->MaxStaNum; i++) {
-            if (pCAM[i].state < 0x30 && pCAM[i].frameCount == 0 && lifeTime > pCAM[i].lifeTime) {
+            if (pCAM[i].state < STA_CLASS2 && pCAM[i].frameCount == 0 && lifeTime > pCAM[i].lifeTime) {
                 lifeTime = pCAM[i].lifeTime;
                 pos = i;
             }
@@ -101,7 +101,7 @@ void CAM_IncFrameCount(TXFRM* pFrm) { // CAM.c:291
     
     x = OS_DisableIrqMask(0x1000000);
     
-    if (wlMan->Work.Mode == 1 && pCAM->frameCount == 0)
+    if (wlMan->Work.Mode == MODE_PARENT && pCAM->frameCount == 0)
         CAM_SetTIMElementBitmap(cam_adrs);  
     
     pCAM->frameCount++;
@@ -121,7 +121,7 @@ void CAM_DecFrameCount(TXFRM* pFrm) { // CAM.c:336
     
     x = OS_DisableIrqMask(0x1000000);
     
-    if (wlMan->Work.Mode == 1 && pCAM->frameCount == 1)
+    if (wlMan->Work.Mode == MODE_PARENT && pCAM->frameCount == 1)
         CAM_ClrTIMElementBitmap(cam_adrs);  
     
     pCAM->frameCount--;
@@ -131,11 +131,11 @@ void CAM_DecFrameCount(TXFRM* pFrm) { // CAM.c:336
 void CAM_SetStaState(u16 camAdrs, u16 state) { // CAM.c:396
     u32 x = OS_DisableIrqMask(0x1000000); // r5 - :398
     
-    if (state < 0x40) {
+    if (state < STA_CLASS3) {
         CAM_SetAwake(camAdrs);
         wlMan->CamMan.NotClass3 |= (1 << camAdrs);
         
-        if (wlMan->Work.Mode == 1 && CAM_GetAID(camAdrs))
+        if (wlMan->Work.Mode == MODE_PARENT && CAM_GetAID(camAdrs))
             CAM_ReleaseAID(camAdrs);
         
     } else {
@@ -165,7 +165,7 @@ void CAM_SetPowerMgtMode(u16 camAdrs, u16 pmtMode) { // CAM.c:473
 }
 
 void CAM_SetDoze(u32 camAdrs) { // CAM.c:505
-    if (CAM_GetStaState(camAdrs) == 0x40) {
+    if (CAM_GetStaState(camAdrs) == STA_CLASS3) {
         wlMan->CamMan.PowerState &= ~(1 << camAdrs);
     }
 }
@@ -281,7 +281,7 @@ void CAM_SetTIMElementBitmap(u32 camAdrs) { // CAM.c:1030
     TIM_ELEMENT* pTIM; // r7 - :1032
     u32 tmp, x, aid; // r0, r5, r0 - :1033
     
-    if (CAM_GetStaState(camAdrs) != 0x40)
+    if (CAM_GetStaState(camAdrs) != STA_CLASS3)
         return;
     
     if ((wlMan->CamMan.NotSetTIM & (1 << camAdrs)) != 0)
@@ -307,7 +307,7 @@ void CAM_ClrTIMElementBitmap(u32 camAdrs) { // CAM.c:1089
     TIM_ELEMENT* pTIM; // r6 - :1091
     u32 tmp, x, aid; // r0, r4, r0 - :1092
     
-    if (CAM_GetStaState(camAdrs) != 0x40)
+    if (CAM_GetStaState(camAdrs) != STA_CLASS3)
         return;
     
     pTIM = (TIM_ELEMENT*)((char*)0x480425C + wlMan->Work.Ofst.Beacon.TIM);
@@ -336,18 +336,18 @@ void CAM_TimerTask() { // CAM.c:1158
     cnt = pWlMan->CamMan.Count;
     
     for (i = 0, pos = 1; pos < pWlMan->Config.MaxStaNum; pos++, pCAM++) { // :1168
-        if (pCAM->state) {
+        if (pCAM->state != STA_SHUTDOWN) {
             if (pCAM->lifeTime != 0 && pCAM->lifeTime != 0xFFFF) {
                 pCAM->lifeTime--;
                 
                 if (pCAM->lifeTime == 0) {
-                    if (pCAM->state >= 0x20) {
+                    if (pCAM->state >= STA_CLASS1) {
                         state = CAM_GetStaState(pos);
-                        CAM_SetStaState(pos, 0x20);
+                        CAM_SetStaState(pos, STA_CLASS1);
                         DeleteTxFrames(pos);
                         
-                        if (pWlMan->Work.Mode == 1) {
-                            if (state > 0x20) {
+                        if (pWlMan->Work.Mode == MODE_PARENT) {
+                            if (state > STA_CLASS1) {
                                 wlMan->CamMan.NotSetTIM |= (1 << pos);
                                 CAM_SetPowerMgtMode(pos, 0);
                                 CAM_SetAwake(pos);
@@ -374,13 +374,13 @@ void CAM_TimerTask() { // CAM.c:1158
                                 continue;
                             }
                             
-                            WSetStaState(0x20);
+                            WSetStaState(STA_CLASS1);
                             WClearAids();
                             MLME_IssueDeAuthIndication(pCAM->macAdrs, 1);
                         }
                     }
                     
-                    pCAM->state = 0;
+                    pCAM->state = STA_SHUTDOWN;
                     pWlMan->CamMan.Count--;
                 }
             }
@@ -394,7 +394,7 @@ void CAM_TimerTask() { // CAM.c:1158
 
 void CAM_Delete(u16 camAdrs) { // CAM.c:1267
     DeleteTxFrames(camAdrs);
-    wlMan->Config.pCAM[camAdrs].state = 0;
+    wlMan->Config.pCAM[camAdrs].state = STA_SHUTDOWN;
     wlMan->CamMan.Count--;
 }
 
@@ -411,7 +411,7 @@ void InitializeCAM() { // CAM.c:1307
         pCAM[i].maxLifeTime = 0xFFFF;
     
     CAM_InitElement(0, BC_ADRS);
-    CAM_SetStaState(0, 0x40);
+    CAM_SetStaState(0, STA_CLASS3);
 }
 
 void InitCAM() { // CAM.c:1346
@@ -435,7 +435,7 @@ void InitCAM() { // CAM.c:1346
 static void CAM_InitElement(u32 camAdrs, u16* pMacAdrs) { // CAM.c:1385
     CAM_ELEMENT* pCAM = &wlMan->Config.pCAM[camAdrs]; // r7 - :1387
     
-    if (!pCAM->state)
+    if (pCAM->state == STA_SHUTDOWN)
         wlMan->CamMan.Count++;
     
     MIi_CpuClear16(0, pCAM, sizeof(CAM_ELEMENT)-2); // maxLifeTime IS NOT reset
@@ -449,5 +449,5 @@ static void CAM_InitElement(u32 camAdrs, u16* pMacAdrs) { // CAM.c:1385
     pCAM->supRateSet = wlMan->Work.RateSet.Support;
     pCAM->lifeTime = pCAM->maxLifeTime;
     
-    CAM_SetStaState(camAdrs, 0x20);
+    CAM_SetStaState(camAdrs, STA_CLASS1);
 }

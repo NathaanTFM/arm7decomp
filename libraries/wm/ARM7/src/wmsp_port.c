@@ -4,7 +4,7 @@ STATIC u16 WmspGetTmptt(u32 dataLength, u32 txop, u32 pollBitmap, u32 targetVCou
 
 void WMSP_InitSendQueue() { // wmsp_port.c:38
     u16 i; // r4 - :43
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     
     OS_LockMutex(&status->sendQueueMutex);
     MIi_CpuClear16(0, status->sendQueueData, 0x400);
@@ -57,7 +57,7 @@ void WMSP_ResumeMaMP(u16 pollBitmap) { // wmsp_port.c:294
     u16 currTsf; // r5 - :304
     u32 wmHeader; // r6 - :305
     u16 recvSize; // r8 - :309
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     
     // ???
     u32 e = OS_DisableInterrupts(); // r0 - :312
@@ -87,30 +87,197 @@ void WMSP_ResumeMaMP(u16 pollBitmap) { // wmsp_port.c:294
 }
 
 int WMSP_PutSendQueue(u32 childBitmap, u16 priority, u16 port, u32 destBitmap, u16* sendData, u16 sendDataSize, void (*callback)(void*), void* arg) { // wmsp_port.c:748
-    WMPortSendQueueData* queueData; // r9 - :755
-    WMPortSendQueue* queue; // r10 - :756
+    WMStatus* status = wmspW.status;
+    WMPortSendQueueData* queueData = status->sendQueueData; // r9 - :755
+    WMPortSendQueue* queue = &status->readyQueue[priority]; // r10 - :756
     WMPortSendQueueData* newData; // r0 - :757
     u16 newIndex; // r1 - :758
+    
+    if (sendDataSize == 0) {
+        OSi_TWarning("wmsp_port.c", 762, "put null data");
+        return 6;
+    }
+    
+    if (sendDataSize + ((port & 8) ? 2 : 0) > 516) {
+        OSi_TWarning("wmsp_port.c", 772, "size=%d+%d < maxSize=%d", sendDataSize, (port & 8) ? 2 : 0, wmspW.status->mp_maxSendSize);
+        return 6;
+    }
+    
+    OS_LockMutex(&wmspW.status->sendQueueMutex);
+    newIndex = status->sendQueueFreeList.head;
+    
+    if (status->mp_flag == 0) {
+        OS_UnlockMutex(&status->sendQueueMutex);
+        return 15;
+    }
+    
+    if (newIndex == 0xFFFF) {
+        OS_UnlockMutex(&status->sendQueueMutex);
+        return 10;
+    }
+    
+    status->sendQueueFreeList.head = queueData[newIndex].next;
+    newData = &queueData[newIndex];
+    
+    if (status->sendQueueFreeList.tail == newIndex) {
+        status->sendQueueFreeList.tail = 0xFFFF;
+    }
+    
+    newData->port = port;
+    newData->destBitmap = destBitmap;
+    newData->restBitmap = destBitmap & childBitmap;
+    newData->sentBitmap = 0;
+    newData->sendingBitmap = 0;
+    newData->data = sendData;
+    newData->size = sendDataSize;
+    newData->callback = callback;
+    newData->arg = arg;
+    newData->next = 0xFFFF;
+    newData->seqNo = 0xFFFF;
+    newData->retryCount = status->mp_current_defaultRetryCount;
+    
+    if (queue->tail == 0xFFFF) {
+        queue->head = newIndex;
+    } else {
+        queueData[queue->tail].next = newIndex;
+    }
+    
+    queue->tail = newIndex;
+    OS_UnlockMutex(&status->sendQueueMutex);
+    return 2;
 }
 
 int WMSP_FlushSendQueue(int timeout, u16 pollBitmap) { // wmsp_port.c:869
-    WMPortSendQueueData* queueData; // r4 - :874
+    WMStatus* status = wmspW.status;
+    WMPortSendQueueData* queueData = wmspW.status->sendQueueData; // r4 - :874
     int iPrio; // r0 - :875
     int isParent; // r6 - :876
     u32 childBitmap; // None - :877
-    int retryFlag; // None - :879
-    u32 e; // r0 - :911
-    WMPortSendQueue* queue; // r0 - :924
-    u32 index; // r5 - :926
-    u16* prevPointer; // r6 - :927
-    WMPortSendQueueData* data; // r7 - :938
-    struct WMPortSendCallback* cb_PortSend; // r0 - :997
-    u16 parentSize; // r1 - :1022
-    u16 childSize; // r0 - :1023
+    int retryFlag = 0; // None - :879
+    
+    if (status->state == WM_STATE_MP_PARENT) {
+        isParent = 1;
+        
+    } else if (status->state == WM_STATE_MP_CHILD) {
+        isParent = 0;
+        
+    } else {
+        OSi_TWarning("wmsp_port.c", 897, "invalid state: %d", status->state);
+        return retryFlag;
+    }
+    
+    OS_LockMutex(&status->sendQueueMutex);
+    
+    if (!status->sendQueueInUse) {
+        OS_UnlockMutex(&status->sendQueueMutex);
+        return retryFlag;
+    }
+    
+    if (isParent) {
+        u32 e = OS_DisableInterrupts(); // r0 - :911
+        childBitmap = status->child_bitmap;
+        OS_RestoreInterrupts(e);
+        
+    } else {
+        childBitmap = 1;
+    }
+    
+    for (iPrio = 0; iPrio < 4; iPrio++) {
+        WMPortSendQueue* queue = &status->sendQueue[iPrio]; // r0 - :924
+        u32 index = queue->head; // r5 - :926
+        u16* prevPointer = &queue->head; // r6 - :927
+        u16 prevIndex = 0xFFFF;
+        u16 newIndex = 0xFFFF;
+        
+        while (index != 0xFFFF) {
+            WMPortSendQueueData* data = &queueData[index]; // r7 - :938
+            if (timeout == 0) {
+                data->sentBitmap |= data->sendingBitmap & ~pollBitmap;
+                data->restBitmap &= ~(data->sentBitmap);
+            }
+            data->restBitmap &= childBitmap;
+            data->sendingBitmap = 0;
+            
+            if (data->restBitmap != 0 && ((data->port & 8) != 0 || data->retryCount != 0)) {
+                retryFlag = 1;
+                if (data->retryCount != 0) {
+                    data->retryCount--;
+                }
+                
+                if (data->next == 0xFFFF) {
+                    queue->tail = 0xFFFF;
+                }
+                
+                queue->head = data->next;
+                data->next = 0xFFFF;
+                
+                if (prevIndex == 0xFFFF) {
+                    newIndex = index;
+                    
+                } else {
+                    queueData[prevIndex].next = index;
+                }
+                
+                prevIndex = index;    
+                
+            } else {
+                WMPortSendCallback* cb_PortSend = WMSP_GetBuffer4Callback2Wm9(); // r0 - :997
+                cb_PortSend->apiid = WM_APIID_PORT_SEND;
+                cb_PortSend->errcode = data->restBitmap == 0 ? WM_ERRCODE_SUCCESS : WM_ERRCODE_SEND_FAILED;
+                cb_PortSend->state = WM_STATECODE_PORT_SEND;
+                cb_PortSend->port = data->port;
+                cb_PortSend->destBitmap = data->destBitmap;
+                cb_PortSend->restBitmap = data->restBitmap;
+                cb_PortSend->sentBitmap = data->sentBitmap;
+                cb_PortSend->size = data->size;
+                cb_PortSend->data = data->data;
+                cb_PortSend->callback = data->callback;
+                cb_PortSend->arg = data->arg;
+                cb_PortSend->seqNo = data->seqNo;
+                
+                u16 parentSize = status->mp_parentSize; // r1 - :1022
+                u16 childSize = status->mp_childSize; // r0 - :1023
+                cb_PortSend->maxSendDataSize = status->aid == 0 ? parentSize : childSize;
+                cb_PortSend->maxRecvDataSize = status->aid == 0 ? childSize : parentSize;
+                
+                WMSP_ReturnResult2Wm9(cb_PortSend);
+                
+                if (data->next == 0xFFFF) {
+                    queue->tail = 0xFFFF;
+                }
+                
+                *prevPointer = data->next;
+                data->next = 0xFFFF;
+                
+                if (status->sendQueueFreeList.tail == 0xFFFF) {
+                    status->sendQueueFreeList.head = index;
+                    
+                } else {
+                    queueData[status->sendQueueFreeList.tail].next = index;
+                };
+                
+                status->sendQueueFreeList.tail = index;
+            }
+            
+            index = queue->head;
+        }
+        
+        if (prevIndex != 0xFFFF) {
+            queueData[prevIndex].next = status->readyQueue[iPrio].head;
+            if (status->readyQueue[iPrio].tail == 0xFFFF) {
+                status->readyQueue[iPrio].tail = prevIndex;
+            }
+            status->readyQueue[iPrio].head = newIndex;
+        }
+    }
+    
+    status->sendQueueInUse = 0;
+    OS_UnlockMutex(&status->sendQueueMutex);
+    return retryFlag;
 }
 
 void WMSP_CleanSendQueue(u16 aidBitmap) { // wmsp_port.c:1134
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     WMPortSendQueueData* queueData = wmspW.status->sendQueueData; // r5 - :1139
     int iQueue; // None - :1140
     int iPrio; // r6 - :1141
@@ -118,7 +285,7 @@ void WMSP_CleanSendQueue(u16 aidBitmap) { // wmsp_port.c:1134
     
     OS_LockMutex(&wmspW.status->sendQueueMutex);
     
-    for (iQueue = 0; iQueue < 2; iQueue++) {
+    for (iQueue = 0; iQueue < 2; iQueue++) { // Is this even useful? Maybe an older version had [2][4] queues?
         WMPortSendQueue* baseQueue = status->readyQueue; // r11 - :1158
     
         for (iPrio = 0; iPrio < 4; iPrio++) {
@@ -133,10 +300,10 @@ void WMSP_CleanSendQueue(u16 aidBitmap) { // wmsp_port.c:1134
                 data->sendingBitmap &= aidBitmapMask;
                 
                 if (data->restBitmap == 0) {
-                    struct WMPortSendCallback* cb_PortSend = WMSP_GetBuffer4Callback2Wm9(); // r0 - :1193
-                    cb_PortSend->apiid = 129;
-                    cb_PortSend->errcode = 0;
-                    cb_PortSend->state = 20;
+                    WMPortSendCallback* cb_PortSend = WMSP_GetBuffer4Callback2Wm9(); // r0 - :1193
+                    cb_PortSend->apiid = WM_APIID_PORT_SEND;
+                    cb_PortSend->errcode = WM_ERRCODE_SUCCESS;
+                    cb_PortSend->state = WM_STATECODE_PORT_SEND;
                     cb_PortSend->port = data->port;
                     cb_PortSend->destBitmap = data->destBitmap;
                     cb_PortSend->restBitmap = data->restBitmap;
@@ -186,8 +353,8 @@ void WMSP_CleanSendQueue(u16 aidBitmap) { // wmsp_port.c:1134
     OS_UnlockMutex(&status->sendQueueMutex);
 }
 
-void WMSP_ParsePortPacket(u16 aid, u16 wmHeader, u16* data, u8 rssi, u16 length, struct WMMpRecvBuf* recvBuf) { // wmsp_port.c:1290
-    struct WMStatus* status = wmspW.status; // r5 - :1292
+void WMSP_ParsePortPacket(u16 aid, u16 wmHeader, u16* data, u8 rssi, u16 length, WMMpRecvBuf* recvBuf) { // wmsp_port.c:1290
+    WMStatus* status = wmspW.status; // r5 - :1292
     int restSize = length; // r6 - :1293
     int firstPacketFlag; // None - :1294
     
@@ -270,11 +437,11 @@ void WMSP_ParsePortPacket(u16 aid, u16 wmHeader, u16* data, u8 rssi, u16 length,
         
         if (unk1 != 1 || (*footer & (1 << status->aid)) != 0) {
             if (len > 0) {
-                struct WMPortRecvCallback* cb_Port; // r0 - :1451
+                WMPortRecvCallback* cb_Port; // r0 - :1451
                 cb_Port = WMSP_GetBuffer4Callback2Wm9();
-                cb_Port->apiid = 130;
-                cb_Port->errcode = 0;
-                cb_Port->state = 21; // :1456
+                cb_Port->apiid = WM_APIID_PORT_RECV;
+                cb_Port->errcode = WM_ERRCODE_SUCCESS;
+                cb_Port->state = WM_STATECODE_PORT_RECV; // :1456
                 cb_Port->port = port; // :1457
                 cb_Port->recvBuf = recvBuf; // :1458
                 cb_Port->data = contents;
@@ -298,10 +465,33 @@ void WMSP_ParsePortPacket(u16 aid, u16 wmHeader, u16* data, u8 rssi, u16 length,
     }
 }
 
-#if 0
+// I can't get it to match, so enjoy this partial version
 STATIC u16 WmspGetTmptt(u32 dataLength, u32 txop, u32 pollBitmap, u32 targetVCount) { // wmsp_port.c:1694
     long tmptt; // r3 - :1708
     u32 pollCnt; // r0 - :1710
     u32 mp_time; // r4 - :1711
+    
+    if ((txop & 0x8000) != 0) { // :1714
+        mp_time = txop & 0x7FFF; // :1716
+    } else {
+        mp_time = 4 * (txop + 0x1C) + 0x66; // :1721
+    }
+    
+    pollCnt = MATH_CountPopulation(pollBitmap); // :1723
+    dataLength = (dataLength + 0x22) * 4 + 0x60; // :1724
+    mp_time = dataLength + (mp_time * pollCnt) + 0x388; // :1725
+    
+    u16 tmp = REG_VCOUNT; // :1728
+    tmptt = targetVCount - 2 - tmp;
+    if (tmptt < 0) {
+        do {
+            tmptt = tmptt + 0x100 + 7;
+        } while (tmptt < 0);
+    }
+    
+    tmptt = (127 * tmptt) / 20;
+    if (10 * tmptt < mp_time)
+        tmptt &= ~0xFFFF;
+    
+    return tmptt;
 }
-#endif

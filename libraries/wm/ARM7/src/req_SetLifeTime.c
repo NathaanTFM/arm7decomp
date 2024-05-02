@@ -5,7 +5,7 @@ static void WmspError(u16 wlCommand, u16 wlResult);
 void WMSP_SetLifeTime(void* msg) { // req_SetLifeTime.c:36
     u32* buf = (u32*)msg; // r0 - :39
     u32 wlBuf[128]; // None - :40
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     WlParamSetCfm* pConfirm; // r0 - :43
     u16 mpLifeTime; // r6 - :45
     
@@ -13,7 +13,7 @@ void WMSP_SetLifeTime(void* msg) { // req_SetLifeTime.c:36
     pConfirm = WMSP_WL_ParamSetLifeTime((u16*)wlBuf, buf[1], buf[2], buf[3]);
     
     if (pConfirm->resultCode != 0) {
-        WmspError(529, pConfirm->resultCode);
+        WmspError(PARAMSET_LIFE_TIME_REQ_CMD, pConfirm->resultCode);
         return;
     }
     
@@ -30,17 +30,17 @@ void WMSP_SetLifeTime(void* msg) { // req_SetLifeTime.c:36
         status->mp_lastRecvTick[i] = now;
     }
     
-    struct WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :105
-    cb->apiid = 29;
-    cb->errcode = 0;
+    WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :105
+    cb->apiid = WM_APIID_SET_LIFETIME;
+    cb->errcode = WM_ERRCODE_SUCCESS;
     WMSP_ReturnResult2Wm9(cb);
 }
 
 static void WmspError(u16 wlCommand, u16 wlResult) { // req_EndMP.c:193
-    struct WMCallback* cb; // r0 - :195
+    WMCallback* cb; // r0 - :195
     cb = WMSP_GetBuffer4Callback2Wm9();
-    cb->apiid = 29;
-    cb->errcode = 1;
+    cb->apiid = WM_APIID_SET_LIFETIME;
+    cb->errcode = WM_ERRCODE_FAILED;
     cb->wlCmdID = wlCommand;
     cb->wlResult = wlResult;
     WMSP_ReturnResult2Wm9(cb);

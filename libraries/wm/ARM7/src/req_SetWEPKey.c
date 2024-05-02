@@ -1,10 +1,10 @@
 #include "Mongoose.h"
 
 static void WmspError(u16 wlCommand, u16 wlResult) {
-    struct WMCallback* callback;
+    WMCallback* callback;
     callback = WMSP_GetBuffer4Callback2Wm9();
-    callback->apiid = 20;
-    callback->errcode = 1;
+    callback->apiid = WM_APIID_SET_WEPKEY;
+    callback->errcode = WM_ERRCODE_FAILED;
     callback->wlCmdID = wlCommand;
     callback->wlResult = wlResult;
     WMSP_ReturnResult2Wm9(callback);
@@ -12,7 +12,7 @@ static void WmspError(u16 wlCommand, u16 wlResult) {
 
 void WMSP_SetWEPKey(void* msg) { // req_SetWEPKey.c:34
     u32* buf = (u32*)msg; // r0 - :36
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     
     status->wepMode = buf[1];
     
@@ -38,15 +38,15 @@ void WMSP_SetWEPKey(void* msg) { // req_SetWEPKey.c:34
         MI_CpuFill8(status->wepKey, 0, sizeof(status->wepKey));
     }
     
-    struct WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :70
-    cb->apiid = 20;
-    cb->errcode = 0;
+    WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :70
+    cb->apiid = WM_APIID_SET_WEPKEY;
+    cb->errcode = WM_ERRCODE_SUCCESS;
     WMSP_ReturnResult2Wm9(cb);
 }
 
 void WMSP_SetWEPKeyEx(void* msg) { // req_SetWEPKey.c:90
     u32* msgbuf = (u32*)msg; // r0 - :92
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     
     status->wepMode = msgbuf[1];
     
@@ -79,11 +79,11 @@ void WMSP_SetWEPKeyEx(void* msg) { // req_SetWEPKey.c:90
     pConfirm = (WlCmdCfm*)WMSP_WL_ParamSetWepKeyId((u16*)wlBuf, status->wepKeyId);
     
     if (pConfirm->resultCode != 0) {
-        WmspError(0x207, pConfirm->resultCode);
+        WmspError(PARAMSET_WEP_KEY_ID_REQ_CMD, pConfirm->resultCode);
     }
     
-    struct WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :139
-    cb->apiid = 39;
-    cb->errcode = 0;
+    WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :139
+    cb->apiid = WM_APIID_SET_WEPKEY_EX;
+    cb->errcode = WM_ERRCODE_SUCCESS;
     WMSP_ReturnResult2Wm9(cb);
 }

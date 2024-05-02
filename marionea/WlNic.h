@@ -3,6 +3,21 @@
 #ifndef WL_NIC_H
 #define WL_NIC_H
 
+// Station states
+#define STA_SHUTDOWN (0x00)
+#define STA_IDLE (0x10)
+#define STA_IDLE_TEST1 (0x11)
+#define STA_IDLE_TEST2 (0x12)
+#define STA_CLASS1 (0x20)
+#define STA_CLASS2 (0x30)
+#define STA_CLASS3 (0x40)
+
+#define MODE_TEST (0)
+#define MODE_PARENT (1)
+#define MODE_CHILD (2)
+#define MODE_HOTSPOT (3)
+#define MODE_MEASURE (4)
+
 typedef struct {
     struct {
         u32 success; // offset 00

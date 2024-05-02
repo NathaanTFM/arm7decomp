@@ -197,13 +197,13 @@ typedef struct {
     WlCmdHeader header; // offset 0c
     u16 peerMacAdrs[3]; // offset 10
     u16 reasonCode; // offset 16
-} WlMlmeDeAuthReq;
+} WlMlmeDeAuthReq, WlMlmeDeAuthenticateReq;
 
 typedef struct {
     WlCmdHeader header; // offset 00
     u16 resultCode; // offset 04
     u16 peerMacAdrs[3]; // offset 06
-} WlMlmeDeAuthCfm;
+} WlMlmeDeAuthCfm, WlMlmeDeAuthenticateCfm;
 
 typedef struct {
     u16 wlRsv[6]; // offset 00
@@ -211,14 +211,14 @@ typedef struct {
     u16 peerMacAdrs[3]; // offset 10
     u16 listenInterval; // offset 16
     u16 timeOut; // offset 18
-} WlMlmeAssReq;
+} WlMlmeAssReq, WlMlmeAssociateReq;
 
 typedef struct {
     WlCmdHeader header; // offset 00
     u16 resultCode; // offset 04
     u16 statusCode; // offset 06
     u16 aid; // offset 08
-} WlMlmeAssCfm;
+} WlMlmeAssCfm, WlMlmeAssociateCfm;
 
 typedef struct {
     u16 wlRsv[6]; // offset 00
@@ -274,14 +274,30 @@ typedef struct {
     u16 edThreshold; // offset 14
     u16 measureTime; // offset 16
     u8 channelList[16]; // offset 18
-} WlMlmeMeasChanReq;
+} WlMlmeMeasChanReq, WlMlmeMeasureChannelReq;
 
 typedef struct {
     WlCmdHeader header; // offset 00
     u16 resultCode; // offset 04
     u16 reserved; // offset 06
     u16 ccaBusyInfo[16]; // offset 08
-} WlMlmeMeasChanCfm;
+} WlMlmeMeasChanCfm, WlMlmeMeasureChannelCfm;
+
+typedef struct {
+    u16 wlRsv[6]; // offset 00
+    WlCmdHeader header; // offset 0c
+    u16 peerMacAdrs[3]; // offset 10
+    u16 reasonCode; // offset 16
+} WlMlmeDeAuthenticateInd;
+
+typedef struct {
+    u16 wlRsv[6]; // offset 00
+    WlCmdHeader header; // offset 0c
+    u16 peerMacAdrs[3]; // offset 10
+    u16 aid; // offset 16
+    u16 ssidLength; // offset 18
+    u8 ssid[32]; // offset 1a
+} WlMlmeAssociateInd;
 
 #ifdef MARIONEA_INTERNAL
 

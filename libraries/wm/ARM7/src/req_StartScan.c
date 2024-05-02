@@ -1,15 +1,17 @@
 #include "Mongoose.h"
 
+STATIC void WmspError(u16 wlCommand, u16 wlResult, int exFlag);
+
 void WMSP_StartScan(void* msg) { // req_StartScan.c:44
     u32 wlBuf[128]; // None - :47
     u16 scanChannel; // r8 - :54
     u16 scanBssid[3]; // None - :55
     u16 scanMaxChannelTime; // r9 - :56
-    struct WMStartScanReq* args; // r0 - :59
-    struct WMStartScanCallback* callback; // r0 - :65
+    WMStartScanReq* args; // r0 - :59
+    WMStartScanCallback* callback; // r0 - :65
     if (0) {
-        struct WMStartScanCallback* callback; // r0 - :96
-        struct WMStartScanCallback* cb; // r0 - :107
+        WMStartScanCallback* callback; // r0 - :96
+        WMStartScanCallback* cb; // r0 - :107
         WlDevGetStationStateCfm* p_confirm; // r0 - :120
     }
     if (0) {
@@ -22,7 +24,7 @@ void WMSP_StartScan(void* msg) { // req_StartScan.c:44
         WlMlmeScanCfm* p_confirm; // r0 - :178
         u16 ssid[16]; // None - :183
         u8 channelList[16]; // None - :185
-        struct WMStartScanCallback* callback; // r9 - :237
+        WMStartScanCallback* callback; // r9 - :237
         u8 tempRssi; // r0 - :261
     }
 }
@@ -38,10 +40,10 @@ void WMSP_StartScanEx(void* msg) { // req_StartScan.c:307
     u16 scanSsidLength; // r4 - :326
     u8 scanSsid[32]; // None - :327
     u16 scanBufSize; // r8 - :328
-    struct WMStartScanExReq* args; // r0 - :331
-    struct WMStartScanExCallback* callback; // r0 - :337
+    WMStartScanExReq* args; // r0 - :331
+    WMStartScanExCallback* callback; // r0 - :337
     if (0) {
-        struct WMStartScanExCallback* callback; // r0 - :397
+        WMStartScanExCallback* callback; // r0 - :397
         WlDevGetStationStateCfm* p_confirm; // r0 - :410
     }
     if (0) {
@@ -65,27 +67,27 @@ void WMSP_StartScanEx(void* msg) { // req_StartScan.c:307
         u8 channelList[16]; // None - :527
         u16 j; // r9 - :528
         u16 i; // r1 - :528
-        struct WMStartScanExCallback* callback; // r6 - :561
+        WMStartScanExCallback* callback; // r6 - :561
     }
     if (0) {
         int i; // r7 - :575
-        struct WMBssDesc* dest; // r9 - :576
-        struct WMBssDesc* src; // r8 - :576
+        WMBssDesc* dest; // r9 - :576
+        WMBssDesc* src; // r8 - :576
         u16 length_byte; // r11 - :586
         u8 tempRssi; // r0 - :608
     }
 }
 
 STATIC void WmspError(u16 wlCommand, u16 wlResult, int exFlag) { // req_StartScan.c:713
-    struct WMStartScanCallback* callback; // r0 - :715
+    WMStartScanCallback* callback; // r0 - :715
     callback = WMSP_GetBuffer4Callback2Wm9();
     if (exFlag) {
-        callback->apiid = 38;
+        callback->apiid = WM_APIID_START_SCAN_EX;
     } else {
-        callback->apiid = 10;
+        callback->apiid = WM_APIID_START_SCAN;
     }
-    callback->errcode = 1;
-    callback->state = 4;
+    callback->errcode = WM_ERRCODE_FAILED;
+    callback->state = WM_STATECODE_PARENT_NOT_FOUND;
     callback->wlCmdID = wlCommand;
     callback->wlResult = wlResult;
     WMSP_ReturnResult2Wm9(callback);

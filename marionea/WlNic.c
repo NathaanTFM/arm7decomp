@@ -131,7 +131,7 @@ u16 WSetEnableChannel(u16 enableChannel) { // WlNic.c:427
 }
 
 u16 WSetMode(u16 mode) { // WlNic.c:454
-    if (mode > 3)
+    if (mode > MODE_HOTSPOT)
         return 5;
     
     wlMan->Config.Mode = mode;
@@ -170,7 +170,7 @@ u16 WSetWepMode(u16 mode) { // WlNic.c:516
         pWork->FrameCtrl |= 0x4000;
     }
     
-    if (pWork->STA == 0x40 && mode == 1) {
+    if (pWork->STA == STA_CLASS3 && mode == 1) {
         ((BEACON_BODY*)&wlMan->TxCtrl.Beacon.pMacFrm->Body)->CapaInfo.Data = pWork->CapaInfo;
     }
     
@@ -270,7 +270,7 @@ u16 WSetPreambleType(u16 type) { // WlNic.c:769
         pWork->CapaInfo |= 0x20;
     }
     
-    if (pWork->STA == 0x40 && wlMan->Config.Mode == 1) {
+    if (pWork->STA == STA_CLASS3 && wlMan->Config.Mode == MODE_PARENT) {
         ((BEACON_BODY*)&wlMan->TxCtrl.Beacon.pMacFrm->Body)->CapaInfo.Data = pWork->CapaInfo;
     }
     
@@ -322,7 +322,7 @@ u16 WSetDiversity(u32 diversity, u32 useAntenna) { // WlNic.c:902
             break;
             
         case 1:
-            if (wlMan->Config.Mode != 1) // :914
+            if (wlMan->Config.Mode != MODE_PARENT) // :914
                 return 11;
         
             wlMan->Config.UseAntenna = 0; // :915
@@ -385,7 +385,7 @@ u16 WSetSsid(u16 length, u8* pSsid) { // WlNic.c:1065
     if (length > 0x20)
         return 5;
     
-    if (pWork->STA == 0x40 && wlMan->Config.Mode == 1) {
+    if (pWork->STA == STA_CLASS3 && wlMan->Config.Mode == MODE_PARENT) {
         if (pWork->SSIDLength != length)
             return 6;
         
@@ -599,7 +599,7 @@ u16 WSetPowerMgtMode(u32 mode) { // WlNic.c:1574
     
     wlMan->Work.PowerMgtMode = mode;
     
-    if (mode != 0 && pConfig->Mode != 1) {
+    if (mode != 0 && pConfig->Mode != MODE_PARENT) {
         W_MODE_WEP |= 0x40;
         
     } else {
@@ -744,7 +744,7 @@ void WClearAids() { // WlNic.c:2036
     W_AID_FULL = 0;
     if (pWork->APCamAdrs) {
         DeleteTxFrames(pWork->APCamAdrs);
-        CAM_SetStaState(pWork->APCamAdrs, 0x20);
+        CAM_SetStaState(pWork->APCamAdrs, STA_CLASS1);
         pWork->APCamAdrs = 0;
     }
 }
@@ -763,22 +763,22 @@ void WSetStaState(u32 state) { // WlNic.c:2111
     WORK_PARAM* pWork = &wlMan->Work; // r4 - :2113
     
     if (pWork->STA != state) {
-        if (pWork->STA == 0x40)
+        if (pWork->STA == STA_CLASS3)
             OS_CancelAlarm(&wlMan->Alarm);
         
         switch (state) {
-            case 0:
+            case STA_SHUTDOWN:
                 WShutdown();
                 break;
                 
-            case 0x10:
+            case STA_IDLE:
                 W_POWERFORCE = 0;
                 WStop();
                 WWakeUp();
                 break;
                 
-            case 0x40:
-                if (pWork->Mode == 2)
+            case STA_CLASS3:
+                if (pWork->Mode == MODE_CHILD)
                     WEnableTmpttPowerSave();
                 
                 SetupPeriodicTimeOut(0x64, WIntervalTimer);
@@ -1018,7 +1018,7 @@ void WStart() { // WlNic.c:2700
     W_X_00Ah = 0;
 
     switch (pWork->Mode) {
-        case 0:
+        case MODE_TEST:
             W_IE = 0x3F;
             W_RXFILTER = 0xFFFF;
             W_RXFILTER2 = 8;
@@ -1028,7 +1028,7 @@ void WStart() { // WlNic.c:2700
             W_MODE_RST = 1;
             break;
 
-        case 1:
+        case MODE_PARENT:
             W_IE = 0x703F;
             W_RXSTAT_OVF_IE = 0x1FFF;
             W_RXFILTER = 0x301;
@@ -1053,12 +1053,12 @@ void WStart() { // WlNic.c:2700
             W_US_COMPARE0 = ptsf[0] | 1;
             W_US_COUNTCNT = 1;
             W_US_COMPARECNT = 1;
-            WSetStaState(0x40);
+            WSetStaState(STA_CLASS3);
             StartBeaconFrame();
             W_TXREQ_SET = 2;
             break;
 
-        case 2:
+        case MODE_CHILD:
             W_IE = 0xE0BF;
             if (wlMan->WlOperation & 0x20) {
                 W_IE |= 0x40;
@@ -1074,10 +1074,10 @@ void WStart() { // WlNic.c:2700
             W_MODE_RST = 1;
             W_US_COUNTCNT = 1;
             W_US_COMPARECNT = 1;
-            WSetStaState(0x20);
+            WSetStaState(STA_CLASS1);
             break;
 
-        case 3:
+        case MODE_HOTSPOT:
             W_IF = 0xFFFF;
             W_IE = 0xC03F;
             if ((pWork->BSSID[0] & 1) != 0) {
@@ -1091,14 +1091,14 @@ void WStart() { // WlNic.c:2700
             W_US_COUNTCNT = 1;
             W_US_COMPARECNT = 1;
             W_POWER_unk = 0;
-            WSetStaState(0x20);
+            WSetStaState(STA_CLASS1);
             break;
 
-        case 4:
+        case MODE_MEASURE:
             W_IE = 0;
             W_RXSTAT_OVF_IE = 0;
             W_MODE_RST = 1;
-            WSetStaState(0x20);
+            WSetStaState(STA_CLASS1);
             break;
     }
 
@@ -1116,7 +1116,7 @@ void WStop() { // WlNic.c:2919
     
     OS_CancelAlarm(&wlMan->PeriodicAlarm);
     OS_CancelAlarm(&wlMan->Alarm);
-    WSetStaState(0x20);
+    WSetStaState(STA_CLASS1);
     
     pWork->bUpdateGameInfo = 0;
     pWork->bSynchro = 0;
@@ -1128,7 +1128,7 @@ void WStop() { // WlNic.c:2919
     W_TXSTATCNT = 0;
     W_X_00Ah = 0;
     
-    if (pWork->Mode == 1)
+    if (pWork->Mode == MODE_PARENT)
         StopBeaconFrame();
     
     W_TXREQ_RESET = 0xFFFF;
@@ -1455,7 +1455,7 @@ void WCheckTxBuf() { // WlNic.c:4819
     TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r5 - :4822
     
     switch (wlMan->Work.Mode) {
-        case 1:
+        case MODE_PARENT:
             if (WCheckTxBufIdBeforeFrame(&pTxCtrl->Beacon)) { // :4867
                 WaitMacStop();
                 MakeBeaconFrame();
@@ -1466,7 +1466,7 @@ void WCheckTxBuf() { // WlNic.c:4819
             
             break;
             
-        case 2:
+        case MODE_CHILD:
             WCheckTxBufIdBeforeFrame(&pTxCtrl->Key[1]); // :4890
             
             if (WCheckTxBufIdBeforeFrame(&pTxCtrl->Txq[2])) {
@@ -1506,7 +1506,7 @@ void SendFatalErrMsgTask() { // WlNic.c:5026
     if (pWork->FatalErr) {
         pInd = (WlMaFatalErrInd*)AllocateHeapBuf(&wlMan->HeapMan.TmpBuf, sizeof(*pInd));
         if (pInd) {
-            pInd->header.code = 0x186;
+            pInd->header.code = MA_FATAL_ERR_IND_CMD;
             pInd->header.length = 1;
             
             x = OS_DisableIrqMask(0x1000000);

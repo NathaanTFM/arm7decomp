@@ -1,29 +1,29 @@
 #include "Mongoose.h"
 
 void WMSP_SetMPParameter(void* msg) { // req_SetMPParameter.c:28
-    struct WMMPParam* param; // r0 - :33
-    struct WMMPParam old_param; // None - :34
-    enum WMErrCode result; // r0 - :36
-    struct WMSetMPParameterCallback* cb; // r0 - :45
+    WMMPParam* param; // r0 - :33
+    WMMPParam old_param; // None - :34
+    WMErrCode result; // r0 - :36
+    WMSetMPParameterCallback* cb; // r0 - :45
     
     param = (WMMPParam*)((u32)msg + 4);
     result = WMSP_SetMPParameterCore(param, &old_param);
     
     cb = WMSP_GetBuffer4Callback2Wm9();
-    cb->apiid = 35;
+    cb->apiid = WM_APIID_SET_MP_PARAMETER;
     cb->errcode = result;
     cb->mask = param->mask;
-    MI_CpuCopy8(&old_param, &cb->oldParam, sizeof(struct WMMPParam));
+    MI_CpuCopy8(&old_param, &cb->oldParam, sizeof(WMMPParam));
     WMSP_ReturnResult2Wm9(cb);
 }
 
-enum WMErrCode WMSP_SetMPParameterCore(struct WMMPParam* param, struct WMMPParam* old_param) { // req_SetMPParameter.c:65
+WMErrCode WMSP_SetMPParameterCore(WMMPParam* param, WMMPParam* old_param) { // req_SetMPParameter.c:65
     u32 enabled; // r4 - :68
-    enum WMErrCode result = WM_ERRCODE_SUCCESS; // r5 - :70
+    WMErrCode result = WM_ERRCODE_SUCCESS; // r5 - :70
     u32 mask = param->mask; // r6 - :71
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     
-    if ((u16)(status->state + 0xFFF7) <= 1 && (mask & 0x2C00) != 0) {
+    if ((u16)(status->state + 0x10000 - WM_STATE_MP_PARENT) <= 1 && (mask & 0x2C00) != 0) {
         mask &= ~0x2C00;
         result = WM_ERRCODE_ILLEGAL_STATE;
     }

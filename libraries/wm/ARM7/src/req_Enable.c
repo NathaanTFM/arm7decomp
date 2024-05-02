@@ -2,24 +2,24 @@
 
 void WMSP_Enable(void* msg) { // req_Enable.c:41
     u32* reqBuf = (u32*)msg; // r0 - :43
-    struct WMCallback* cb; // r0 - :44
-    struct WMArm7Buf* p; // r0 - :46
+    WMCallback* cb; // r0 - :44
+    WMArm7Buf* p; // r0 - :46
     
-    p = wmspW.wm7buf = (struct WMArm7Buf*)reqBuf[1];
-    wmspW.status = (struct WMStatus*)reqBuf[2];
+    p = wmspW.wm7buf = (WMArm7Buf*)reqBuf[1];
+    wmspW.status = (WMStatus*)reqBuf[2];
     p->status = wmspW.status;
     p->fifo7to9 = (u32*)reqBuf[3];
     WMSPi_CommonInit(reqBuf[4]);
     
-    cb = (struct WMCallback*)WMSP_GetBuffer4Callback2Wm9();
-    cb->apiid = 3;
-    cb->errcode = 0;
+    cb = (WMCallback*)WMSP_GetBuffer4Callback2Wm9();
+    cb->apiid = WM_APIID_ENABLE;
+    cb->errcode = WM_ERRCODE_SUCCESS;
     WMSP_ReturnResult2Wm9(cb);
 }
 
 void WMSPi_CommonInit(u32 miscFlags) { // req_Enable.c:87
-    struct WMArm7Buf* p = wmspW.wm7buf; // r6 - :89
-    struct WMStatus* status = wmspW.status; // r9, not in nef
+    WMArm7Buf* p = wmspW.wm7buf; // r6 - :89
+    WMStatus* status = wmspW.status; // r9, not in nef
     int fCleanQueue = 0; // r7 - :98
     u32 e = OS_DisableInterrupts(); // r8 - :99
     
@@ -83,5 +83,5 @@ void WMSPi_CommonInit(u32 miscFlags) { // req_Enable.c:87
     if ((miscFlags & 2) == 0) {
         PM_SetLEDPattern(PM_LED_PATTERN_WIRELESS);
     }
-    status->state = 1;
+    status->state = WM_STATE_STOP;
 }

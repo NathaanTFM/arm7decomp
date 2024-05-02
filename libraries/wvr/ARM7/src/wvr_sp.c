@@ -6,7 +6,7 @@ static void* wvrVramImageBuf; // :72
 static u32 wvrVramImageBufSize; // :73
 static int wvrHeapHandle; // :74
 static u8 wvrStatus; // :75
-static struct _OSThread wvrThread; // :77
+static OSThread wvrThread; // :77
 static u32 wvrWlWork[448]; // :80
 static u32 wvrWlStack[384]; // :81
 static WlStaElement wvrWlStaElement[16]; // :82
@@ -30,7 +30,7 @@ void WVR_Shutdown() { // wvr_sp.c:229
 
 static void WvrBegin(int handle) { // wvr_sp.c:248
     WlInit wlInit; // None - :250
-    struct WmInit wmInit; // None - :251
+    WmInit wmInit; // None - :251
     
     wlInit.heapFunc.os.heapHandle = handle;
     wlInit.workingMemAdrs = (u32)wvrWlWork;

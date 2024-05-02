@@ -189,27 +189,14 @@
 #define GET_TX_BUF_ADDR(macFrm) (((u32)(macFrm) & 0x3FFF) / 2)
 #define GET_HEADER(ptr) (void*)((u8*)(ptr) - (0x10))
 
-#define global_vtsf_var (*(u16*)0x0380FFF0)
 #define wlMan (*(WL_MAN**)0x0380FFF4)
-
-#define REG_VCOUNT (*(volatile u16*)0x4000006)
-#define REG_POWERCNT (*(volatile u16*)0x4000304)
 
 #define RING_END_PTR ((void*)0x04805F60)
 #endif /* MARIONEA_INTERNAL */
 
 #define GET_CFM(req) ((void*)((u32)req + ((u16*)req)[7] * 2 + 0x10))
 
-// Structures and typedefs
-typedef unsigned char u8;
-typedef unsigned short u16;
-typedef unsigned long u32;
-typedef unsigned long long u64;
-
-typedef signed char s8;
-typedef signed short s16;
-typedef signed long s32;
-typedef signed long long s64;
+#define global_vtsf_var (*(u16*)0x0380FFF0)
 
 // Don't pack this one
 #include "PublicSdk.h"

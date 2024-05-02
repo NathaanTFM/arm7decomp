@@ -3,19 +3,19 @@
 STATIC void WmspError(u16 wlCommand, u16 wlResult);
 
 void WMSP_StartParent(void* msg) { // req_StartParent.c:51
-    struct WMStatus* status = wmspW.status; // r7 - :53
+    WMStatus* status = wmspW.status; // r7 - :53
     u32 wlBuf[128]; // None - :54
     u16* buf = (u16*)wlBuf; // r11 - :55
-    struct WMStartParentCallback* cb; // r0 - :56
+    WMStartParentCallback* cb; // r0 - :56
     WlCmdCfm* pConfirm; // r0 - :57
     u16 ssidLength; // r0 - :58
     int powerSave; // r8 - :59
     
-    if (status->state != 2 || (status->miscFlags & 1) != 0) {
-        struct WMStartParentCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :64
-        callback->apiid = 8;
-        callback->errcode = 3;
-        callback->state = 0;
+    if (status->state != WM_STATE_IDLE || (status->miscFlags & 1) != 0) {
+        WMStartParentCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :64
+        callback->apiid = WM_APIID_START_PARENT;
+        callback->errcode = WM_ERRCODE_ILLEGAL_STATE;
+        callback->state = WM_STATECODE_PARENT_START;
         WMSP_ReturnResult2Wm9(callback);
         return;
     }
@@ -24,9 +24,9 @@ void WMSP_StartParent(void* msg) { // req_StartParent.c:51
     
     if ((status->allowedChannel & (1 << status->pparam.channel >> 1)) == 0) {
         cb = WMSP_GetBuffer4Callback2Wm9();
-        cb->apiid = 8;
-        cb->errcode = 6;
-        cb->state = 0;
+        cb->apiid = WM_APIID_START_PARENT;
+        cb->errcode = WM_ERRCODE_INVALID_PARAM;
+        cb->state = WM_STATECODE_PARENT_START;
         WMSP_ReturnResult2Wm9(cb);
         return;
     }
@@ -47,7 +47,7 @@ void WMSP_StartParent(void* msg) { // req_StartParent.c:51
     pConfirm = (WlCmdCfm*)WMSP_WL_DevClass1(buf);
     
     if (pConfirm->resultCode != 0) {
-        WmspError(771, pConfirm->resultCode);
+        WmspError(DEV_CLASS1_REQ_CMD, pConfirm->resultCode);
         return;
     }
     
@@ -57,15 +57,15 @@ void WMSP_StartParent(void* msg) { // req_StartParent.c:51
     pConfirm = (WlCmdCfm*)WMSP_WL_MlmePowerManagement(buf, pwrMgtMode, 0, 1);
     
     if (pConfirm->resultCode != 0) {
-        WmspError(1, pConfirm->resultCode);
+        WmspError(MLME_PWR_MGT_REQ_CMD, pConfirm->resultCode);
         return;
     }
     
     status->pwrMgtMode = pwrMgtMode;
     
     u16 ssid[16]; // None - :136
-    struct WMParentParam* pparam = &status->pparam; // r9 - :139
-    struct WMGameInfo GameInfo; // None - :140
+    WMParentParam* pparam = &status->pparam; // r9 - :139
+    WMGameInfo GameInfo; // None - :140
     
     MIi_CpuClear16(0, &GameInfo, 0x80);
     WMSP_CopyParentParam(&GameInfo, pparam);
@@ -80,7 +80,7 @@ void WMSP_StartParent(void* msg) { // req_StartParent.c:51
     pConfirm = (WlCmdCfm*)WMSP_WL_MlmeStart(buf, ssidLength, (u8*)ssid, pparam->beaconPeriod, 2, pparam->channel, 3, 3, pparam->userGameInfoLength + 16, &GameInfo);
     
     if (pConfirm->resultCode != 0) {
-        WmspError(9, pConfirm->resultCode);
+        WmspError(MLME_START_REQ_CMD, pConfirm->resultCode);
         return;
     }
     
@@ -88,11 +88,11 @@ void WMSP_StartParent(void* msg) { // req_StartParent.c:51
     WMSP_SetChildMaxSize(pparam->childMaxSize + (pparam->KS_Flag ? 6 : 0));
     
     cb = WMSP_GetBuffer4Callback2Wm9();
-    status->state = 7;
+    status->state = WM_STATE_PARENT;
     
-    cb->apiid = 8;
-    cb->errcode = 0;
-    cb->state = 0;
+    cb->apiid = WM_APIID_START_PARENT;
+    cb->errcode = WM_ERRCODE_SUCCESS;
+    cb->state = WM_STATECODE_PARENT_START;
     cb->parentSize = status->mp_parentSize;
     cb->childSize = status->mp_childSize;
     WMSP_ReturnResult2Wm9(cb);
@@ -101,11 +101,11 @@ void WMSP_StartParent(void* msg) { // req_StartParent.c:51
 }
 
 STATIC void WmspError(u16 wlCommand, u16 wlResult) { // req_StartParent.c:227
-    struct WMStartParentCallback* cb; // r0 - :229
+    WMStartParentCallback* cb; // r0 - :229
     cb = WMSP_GetBuffer4Callback2Wm9();
-    cb->apiid = 8;
-    cb->errcode = 1;
-    cb->state = 0;
+    cb->apiid = WM_APIID_START_PARENT;
+    cb->errcode = WM_ERRCODE_FAILED;
+    cb->state = WM_STATECODE_PARENT_START;
     cb->wlCmdID = wlCommand;
     cb->wlResult = wlResult;
     WMSP_ReturnResult2Wm9(cb);

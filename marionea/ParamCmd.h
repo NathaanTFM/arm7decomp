@@ -137,7 +137,7 @@ typedef struct {
     u16 wlRsv[6]; // offset 00
     WlCmdHeader header; // offset 0c
     u16 count; // offset 10
-} WlParamSetMaxConnReq;
+} WlParamSetMaxConnReq, WlParamSetMaxConnectableChildReq;
 typedef struct {
     u16 wlRsv[6]; // offset 00
     WlCmdHeader header; // offset 0c

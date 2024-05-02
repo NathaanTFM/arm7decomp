@@ -2,7 +2,7 @@
 
 void WMSP_SetDCFData(void* msg) { // req_SetDCFData.c:28
     u32* buf = (u32*)msg; // r0 - :30
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     u32 wlBuf[128]; // None - :33
     WlTxFrame wlTxFrame; // None - :34
     WlMaDataCfm* wlResult; // r4 - :35
@@ -23,9 +23,9 @@ void WMSP_SetDCFData(void* msg) { // req_SetDCFData.c:28
     
     wlResult = WMSP_WL_MaData((u16*)wlBuf, &wlTxFrame);
     
-    struct WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :60
-    cb->apiid = 18;
-    cb->errcode = wlResult->resultCode != 0 ? 1 : 0;
+    WMCallback* cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :60
+    cb->apiid = WM_APIID_SET_DCF_DATA;
+    cb->errcode = wlResult->resultCode == 0 ? WM_ERRCODE_SUCCESS : WM_ERRCODE_FAILED;
     if (wlResult->resultCode != 0) {
         cb->wlCmdID = 256;
         cb->wlResult = wlResult->resultCode;

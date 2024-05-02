@@ -5,10 +5,10 @@ u16 DEV_ShutdownReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:49
     WlDevShutdownCfm* pCfm = (WlDevShutdownCfm*)pCfmt;
     pCfm->header.length = 1;
     
-    if (!(wlMan->Work.STA == 0 || wlMan->Work.STA == 0x10))
+    if (!(wlMan->Work.STA == STA_SHUTDOWN || wlMan->Work.STA == STA_IDLE))
         return 1;
     
-    WSetStaState(0);
+    WSetStaState(STA_SHUTDOWN);
     return 0;
 }
 
@@ -16,7 +16,7 @@ u16 DEV_IdleReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:84
     WlDevIdleCfm* pCfm = (WlDevIdleCfm*)pCfmt;
     pCfm->header.length = 1;
     
-    if (wlMan->Work.STA > 0x20)
+    if (wlMan->Work.STA > STA_CLASS1)
         return 1; // :94
     
     if (wlMan->Work.bSynchro) // :97
@@ -25,7 +25,7 @@ u16 DEV_IdleReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:84
     if (FLASH_VerifyCheckSum(0) != 0)
         return 14; // :104
     
-    WSetStaState(0x10); // :108
+    WSetStaState(STA_IDLE); // :108
     return 0; // :110
 }
 
@@ -33,8 +33,8 @@ u16 DEV_Class1ReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:127
     WlDevClass1Cfm* pCfm = (WlDevClass1Cfm*)pCfmt;
     pCfm->header.length = 1; // :137
     
-    if (wlMan->Work.STA == 0x10 || (wlMan->Work.STA == 0x20 && !wlMan->Work.bSynchro)) {
-        WSetStaState(0x20); // :144
+    if (wlMan->Work.STA == STA_IDLE || (wlMan->Work.STA == STA_CLASS1 && !wlMan->Work.bSynchro)) {
+        WSetStaState(STA_CLASS1); // :144
         return 0; // :146
         
     } else {
@@ -46,7 +46,7 @@ u16 DEV_RebootReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:166
     WlDevRebootCfm* pCfm = (WlDevRebootCfm*)pCfmt;
     pCfm->header.length = 1;
     
-    if (wlMan->Work.STA >= 0x20)
+    if (wlMan->Work.STA >= STA_CLASS1)
         WStop();
     
     WlessLibReboot();
@@ -55,7 +55,7 @@ u16 DEV_RebootReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:166
 
 u16 DEV_ClearWlInfoReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:201
     WlDevClrInfoCfm* pCfm = (WlDevClrInfoCfm*)pCfmt;
-    if (wlMan->Work.STA == 0)
+    if (wlMan->Work.STA == STA_SHUTDOWN)
         return 1;
     
     pCfm->header.length = 1;
@@ -94,7 +94,7 @@ u16 DEV_GetVerInfoReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:239
 u16 DEV_GetWlInfoReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:293
     WlDevGetInfoCfm* pCfm = (WlDevGetInfoCfm*)pCfmt; // r0 - :297
     
-    if (wlMan->Work.STA == 0)
+    if (wlMan->Work.STA == STA_SHUTDOWN)
         return 1;
     
     pCfm->header.length = 92; // sizeof...?
@@ -145,26 +145,26 @@ u16 DEV_TestRxReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:690
     WORK_PARAM* pWork = &wlMan->Work; // r4 - :694
     
     pCfm->header.length = 1;
-    if ((pWork->STA & 0xF0) != 0x10) 
+    if ((pWork->STA & 0xF0) != STA_IDLE) 
         return 1;
     
     switch (pReq->control) {
         case 1:
-            if (pWork->STA != 0x10) {
+            if (pWork->STA != STA_IDLE) {
                 return 1;
                 
             } else {
                 WSetChannel(pReq->channel, 1);
-                pWork->Mode = 0;
+                pWork->Mode = MODE_TEST;
                 WStart();
                 WSetForcePowerState(0x8000);
             }
             
-            pWork->STA = 0x11;
+            pWork->STA = STA_IDLE_TEST1;
             break;
         
         case 0:
-            if (pWork->STA == 0x11) {
+            if (pWork->STA == STA_IDLE_TEST1) {
                 WSetForcePowerState(0);
                 WStop();
                 
@@ -172,7 +172,7 @@ u16 DEV_TestRxReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // DevCmd.c:690
                 return 1;
             }
             
-            pWork->STA = 0x10;
+            pWork->STA = STA_IDLE;
             break;
     }
     

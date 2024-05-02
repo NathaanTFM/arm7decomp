@@ -7,7 +7,7 @@ u16 PARAMSET_AllReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:64
     WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
     pCfm->header.length = 1;
-    if (wlMan->Work.STA != 0x10)
+    if (wlMan->Work.STA != STA_IDLE)
         return 1;
 
     ret = WSetMacAdrs(pReq->staMacAdrs);
@@ -33,7 +33,7 @@ u16 PARAMSET_MacAdrsReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:109
     WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
     pCfm->header.length = 1;
-    if (wlMan->Work.STA != 0x10)
+    if (wlMan->Work.STA != STA_IDLE)
         return 1;
     
     return WSetMacAdrs(pReq->staMacAdrs);
@@ -52,7 +52,7 @@ u16 PARAMSET_EnableChannelReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd
     WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
     pCfm->header.length = 1;
-    if (wlMan->Work.STA != 0x10)
+    if (wlMan->Work.STA != STA_IDLE)
         return 1;
     
     return WSetEnableChannel(pReq->enableChannel);
@@ -63,10 +63,10 @@ u16 PARAMSET_ModeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:192
     WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
     pCfm->header.length = 1;
-    if (wlMan->Work.STA > 0x20)
+    if (wlMan->Work.STA > STA_CLASS1)
         return 1;
     
-    if (wlMan->Work.STA == 0x20 && wlMan->Work.bSynchro)
+    if (wlMan->Work.STA == STA_CLASS1 && wlMan->Work.bSynchro)
         return 1;
     
     return WSetMode(pReq->mode); // :203
@@ -109,7 +109,7 @@ u16 PARAMSET_BeaconTypeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:
     WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
     pCfm->header.length = 1;
-    if (wlMan->Work.STA > 0x20)
+    if (wlMan->Work.STA > STA_CLASS1)
         return 1;
     
     return WSetBeaconType(pReq->beaconType);
@@ -218,7 +218,7 @@ u16 PARAMSET_MaxConnReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:617
     WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
     pCfm->header.length = 1;
-    if (wlMan->Work.STA > 0x20)
+    if (wlMan->Work.STA > STA_CLASS1)
         return 1;
     
     pReq->count++;
@@ -234,7 +234,7 @@ u16 PARAMSET_MainAntennaReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c
     WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
     pCfm->header.length = 1;
-    if (wlMan->Work.STA < 0x10)
+    if (wlMan->Work.STA < STA_IDLE)
         return 1;
     
     return WSetMainAntenna(pReq->mainAntenna);
@@ -245,7 +245,7 @@ u16 PARAMSET_DiversityReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:6
     WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
     pCfm->header.length = 1;
-    if (wlMan->Work.STA < 0x10)
+    if (wlMan->Work.STA < STA_IDLE)
         return 1;
     
     return WSetDiversity(pReq->diversity, pReq->useAntenna);
@@ -256,7 +256,7 @@ u16 PARAMSET_BcnSendRecvIndReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCm
     WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
     pCfm->header.length = 1;
-    if (wlMan->Work.STA < 0x10)
+    if (wlMan->Work.STA < STA_IDLE)
         return 1;
     
     return WSetBeaconSendRecvIndicate(pReq->enableMessage);
@@ -267,7 +267,7 @@ u16 PARAMSET_NullKeyModeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c
     WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
     pCfm->header.length = 1;
-    if (wlMan->Work.STA < 0x10)
+    if (wlMan->Work.STA < STA_IDLE)
         return 1;
     
     return WSetNullKeyMode(pReq->mode);
@@ -278,7 +278,7 @@ u16 PARAMSET_McPassModeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:
     WlParamSetCfm* pCfm = (WlParamSetCfm*)pCfmt;
     
     pCfm->header.length = 1;
-    if (wlMan->Work.STA < 0x10)
+    if (wlMan->Work.STA < STA_IDLE)
         return 1;
     
     return WSetMcPassMode(pReq->mode);
@@ -496,7 +496,7 @@ u16 PARAMGET_MaxConnReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:149
 u16 PARAMGET_MainAntennaReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:1520
     WlParamGetMainAntennaCfm* pCfm = (WlParamGetMainAntennaCfm*)pCfmt; // r0 - :1523
     pCfm->header.length = 2;
-    if (wlMan->Work.STA < 0x10)
+    if (wlMan->Work.STA < STA_IDLE)
         return 1;
     
     pCfm->mainAntenna = wlMan->Config.MainAntenna;
@@ -506,7 +506,7 @@ u16 PARAMGET_MainAntennaReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c
 u16 PARAMGET_DiversityReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:1553
     WlParamGetDiversityCfm* pCfm = (WlParamGetDiversityCfm*)pCfmt; // r0 - :1556
     pCfm->header.length = 3;
-    if (wlMan->Work.STA < 0x10)
+    if (wlMan->Work.STA < STA_IDLE)
         return 1;
     
     pCfm->diversity = wlMan->Config.Diversity;
@@ -518,7 +518,7 @@ u16 PARAMGET_BcnSendRecvIndReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCm
     WlParamGetBeaconSendRecvIndCfm* pCfm = (WlParamGetBeaconSendRecvIndCfm*)pCfmt; // r0 - :1590
     pCfm->header.length = 2;
     
-    if (wlMan->Work.STA < 0x10)
+    if (wlMan->Work.STA < STA_IDLE)
         return 1;
     
     pCfm->enableMessage = wlMan->Config.BcnTxRxIndMsg;
@@ -528,7 +528,7 @@ u16 PARAMGET_BcnSendRecvIndReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCm
 u16 PARAMGET_NullKeyModeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:1620
     WlParamGetNullKeyModeCfm* pCfm = (WlParamGetNullKeyModeCfm*)pCfmt; // r0 - :1623
     pCfm->header.length = 2;
-    if (wlMan->Work.STA < 0x10)
+    if (wlMan->Work.STA < STA_IDLE)
         return 1;
     
     pCfm->mode = wlMan->Config.NullKeyRes;
@@ -538,7 +538,7 @@ u16 PARAMGET_NullKeyModeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c
 u16 PARAMGET_McPassModeReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // ParamCmd.c:1653
     WlParamGetMcPassModeCfm* pCfm = (WlParamGetMcPassModeCfm*)pCfmt; // r0 - :1656
     pCfm->header.length = 2;
-    if (wlMan->Work.STA < 0x10)
+    if (wlMan->Work.STA < STA_IDLE)
         return 1;
     
     pCfm->mode = wlMan->Config.MulticastPass;

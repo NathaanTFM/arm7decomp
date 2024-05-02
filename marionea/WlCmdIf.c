@@ -139,26 +139,26 @@ void RequestCmdTask() { // WlCmdIf.c:267
         
     } else {
         switch (pReq->header.code & 0xFF00) {
-            case 0:
+            case MLME_REQ_CMD:
                 currBusy = 0x1;
                 pCmdTbl = WlibCmdTbl_MLME;
                 vCode = pReq->header.code & 0xFF;
-                vCodeMax = 11;
+                vCodeMax = NELEMS(WlibCmdTbl_MLME);
 
                 if ((pCmdIf->Busy & 1) != 0) {
                     err = 2;
-                } else if (wlMan->Work.STA < 0x20) {
+                } else if (wlMan->Work.STA < STA_CLASS1) {
                     err = 1;
                 }
                 break;
 
-            case 0x100:
+            case MA_REQ_CMD:
                 currBusy = 0x2;
                 pCmdTbl = WlibCmdTbl_MA;
                 vCode = pReq->header.code & 0xFF;
-                vCodeMax = 5;
+                vCodeMax = NELEMS(WlibCmdTbl_MA);
                 
-                if (wlMan->Work.STA != 0x40) {
+                if (wlMan->Work.STA != STA_CLASS3) {
                     err = 1;
                 }
                 break;
@@ -166,48 +166,48 @@ void RequestCmdTask() { // WlCmdIf.c:267
             case 0x200:
                 vCode = pReq->header.code & 0xFF;
                 
-                if (vCode < 0x40) {
-                    if (wlMan->Work.STA < 0x10) {
+                if (vCode < (PARAMSET2_REQ_CMD & 0xFF)) {
+                    if (wlMan->Work.STA < STA_IDLE) {
                         err = 1;
                     }
                     currBusy = 0x4;
                     pCmdTbl = WlibCmdTbl_PARAMSET;
-                    vCodeMax = 24;
+                    vCodeMax = NELEMS(WlibCmdTbl_PARAMSET);
                     
-                } else if (vCode < 0x80) {
-                    if (wlMan->Work.STA != 0x40) {
+                } else if (vCode < (PARAMGET_REQ_CMD & 0xFF)) {
+                    if (wlMan->Work.STA != STA_CLASS3) {
                         err = 1;
                     }
                     currBusy = 0x8;
                     pCmdTbl = WlibCmdTbl_PARAMSET2;
-                    vCode -= 0x40;
-                    vCodeMax = 6;
+                    vCode -= (PARAMSET2_REQ_CMD & 0xFF);
+                    vCodeMax = NELEMS(WlibCmdTbl_PARAMSET2);
                     
-                } else if (vCode < 0xC0) {
-                    if (wlMan->Work.STA < 0x10) {
+                } else if (vCode < (PARAMGET2_REQ_CMD & 0xFF)) {
+                    if (wlMan->Work.STA < STA_IDLE) {
                         err = 1;
                     }
                     currBusy = 0x10;
                     pCmdTbl = WlibCmdTbl_PARAMGET;
-                    vCode -= 0x80;
-                    vCodeMax = 24;
+                    vCode -= (PARAMGET_REQ_CMD & 0xFF);
+                    vCodeMax = NELEMS(WlibCmdTbl_PARAMGET);
                     
                 } else {
-                    if (wlMan->Work.STA < 0x10) {
+                    if (wlMan->Work.STA < STA_IDLE) {
                         err = 1;
                     }
                     currBusy = 0x20;
                     pCmdTbl = WlibCmdTbl_PARAMGET2;
-                    vCode -= 0xC0;
-                    vCodeMax = 6;
+                    vCode -= (PARAMGET2_REQ_CMD & 0xFF);
+                    vCodeMax = NELEMS(WlibCmdTbl_PARAMGET2);
                 }
                 break;
 
-            case 0x300:
+            case DEV_REQ_CMD:
                 currBusy = 0x40;
                 pCmdTbl = WlibCmdTbl_DEV;
                 vCode = pReq->header.code & 0xFF;
-                vCodeMax = 11;
+                vCodeMax = NELEMS(WlibCmdTbl_DEV);
                 break;
 
             default:

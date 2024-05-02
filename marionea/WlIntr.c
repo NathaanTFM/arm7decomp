@@ -65,7 +65,7 @@ static void WlIntrPreTbtt() { // WlIntr.c:175
     
     W_IF = 0x8000;
     
-    if (pWork->STA == 0x40 && pWork->BeaconLostTh) {
+    if (pWork->STA == STA_CLASS3 && pWork->BeaconLostTh) {
         if (pWork->CurrListenInterval == pWork->ListenInterval) {
             pWork->BeaconLostCnt++;
             if (pWork->BeaconLostCnt > pWork->BeaconLostTh) {
@@ -89,7 +89,7 @@ static void WlIntrTbtt() { // WlIntr.c:240
 
     W_IF = 0x4000;
     switch (pWork->Mode) {
-        case 1:
+        case MODE_PARENT:
             p = &pTxCtrl->Beacon.pMacFrm->Body[pWork->Ofst.Beacon.GameInfo];
             vtsf = global_vtsf_var;
             WL_WriteByte(&p[8], vtsf);
@@ -110,7 +110,7 @@ static void WlIntrTbtt() { // WlIntr.c:240
             }
             break;
         
-        case 2:
+        case MODE_CHILD:
             if (pWork->bSynchro) {
                 W_POST_BEACON = pConfig->ActiveZone + W_POST_BEACON + 1;
             } else {
@@ -122,8 +122,8 @@ static void WlIntrTbtt() { // WlIntr.c:240
             
             //break;
         
-        case 3:
-            if (pWork->STA != 0x40) {
+        case MODE_HOTSPOT:
+            if (pWork->STA != STA_CLASS3) {
                 bWakeUp = 1;
                 
             } else {
@@ -179,7 +179,7 @@ static void WlIntrActEnd() { // WlIntr.c:457
     } else if (pWork->bFirstTbtt == 2) {
         pWork->bFirstTbtt = 0;
         
-    } else if (pWork->Mode == 2 && pWork->STA != 0x40) {
+    } else if (pWork->Mode == MODE_CHILD && pWork->STA != STA_CLASS3) {
         W_POWER_unk = 0;
     }
 }
@@ -279,7 +279,7 @@ static void WlIntrTxEnd() { // WlIntr.c:857
     u32 txFrm; // r8 - :860
     
     W_IF = 2;
-    if (wlMan->Work.STA == 0x12) {
+    if (wlMan->Work.STA == STA_IDLE_TEST2) {
         IntrCarrierSuppresionSignal(); // :873
         
     } else {
@@ -322,7 +322,7 @@ static void WlIntrTxEnd() { // WlIntr.c:857
                 setmap = pTxCtrl->SetKeyMap;
                 pKeyData = pTxCtrl->pMpEndInd->mpKey.data;
                 
-                if (pollmap > 1 && wlMan->Config.Diversity) {
+                if (pollmap > 1 && wlMan->Config.Diversity != 0) {
                     if ((W_RF_PINS & 1) == 0) {
                         W_X_290h = W_X_290h ^ 1;
                     }
@@ -376,7 +376,7 @@ void WlIntrRxEnd() { // WlIntr.c:1101
     u32 tm[4]; // not in nef, but probably exists
 
     W_IF = 1;
-    if (pWork->Mode == 0) {
+    if (pWork->Mode == MODE_TEST) {
         W_RXBUF_READCSR = W_RXBUF_WRCSR;
     }
 
@@ -458,7 +458,7 @@ void WlIntrRxEnd() { // WlIntr.c:1101
                 wlMan->Counter.rx.mpDuplicateErr++;
                 *pStatus = 0xFFFF;
                 
-            } else if (wlMan->Config.NullKeyRes == 0 && wlMan->Work.STA == 0x40) {
+            } else if (wlMan->Config.NullKeyRes == 0 && wlMan->Work.STA == STA_CLASS3) {
                 if (W_AID_LOW != 0 && ((W_TXBUF_REPLY2 & 0x8000) != 0 || (W_TXBUF_REPLY1 & 0x8000) == 0)) {
                     OS_CancelAlarm(&wlMan->KeyAlarm);
                     OS_SetAlarm(&wlMan->KeyAlarm, ((33514 * (u64)(*pDur))  >> 6) / 1000, WClearKSID, 0);
@@ -477,7 +477,7 @@ void WlIntrRxEnd() { // WlIntr.c:1101
                 wlMan->Counter.multiPoll.txNull++;
             
         } else if (frameType == 13) {
-            if (wlMan->Config.NullKeyRes == 0 && wlMan->Work.STA == 0x40) {
+            if (wlMan->Config.NullKeyRes == 0 && wlMan->Work.STA == STA_CLASS3) {
                 if (W_AID_LOW == 0 || (W_TXBUF_REPLY2 & 0x8000) == 0) {
                     *pStatus = 0xFFFF;
                 }

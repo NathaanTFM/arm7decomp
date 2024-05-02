@@ -67,7 +67,7 @@ u16 MLME_ScanReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:166
     if (pConfig->Mode != 1 && pConfig->Mode != 3 && pConfig->Mode != 2) // :183
         return 11; // :187
     
-    if (wlMan->Work.STA < 0x20) return 1; // :191
+    if (wlMan->Work.STA < STA_CLASS1) return 1; // :191
     if (pReq->ssidLength > 0x20) return 5; // :198
     if (pReq->scanType > 1) return 5; // :199
     if (!WL_ReadByte(pReq->channelList)) return 5; // :200
@@ -102,8 +102,8 @@ u16 MLME_JoinReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:245
     
     pCfm->header.length = 5;
     if (pWlMan->Config.Mode != 3 && pWlMan->Config.Mode != 2) return 11;
-    if (pWork->STA < 0x20) return 1;
-    WSetStaState(0x20);
+    if (pWork->STA < STA_CLASS1) return 1;
+    WSetStaState(STA_CLASS1);
     if ((pReq->bssDesc.bssid[0] & 1) != 0) return 5;
     if (pReq->bssDesc.ssidLength == 0) return 5;
     if (pReq->bssDesc.ssidLength > 32) return 5;
@@ -148,13 +148,13 @@ u16 MLME_AuthReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:336
     if (pConfig->Mode != 3 && pConfig->Mode != 2)
         return 11;
     
-    if (pWork->STA < 0x20) return 1;
+    if (pWork->STA < STA_CLASS1) return 1;
     if (pReq->peerMacAdrs[0] & 1) return 5;
     if (pReq->algorithm > 1) return 5;
     if (pReq->timeOut > 2000) return 5;
     if (pReq->timeOut < 10) return 5;
     
-    WSetStaState(0x20);
+    WSetStaState(STA_CLASS1);
     
     pMLME->pReq.Auth = pReq;
     pMLME->pCfm.Auth = pCfm;
@@ -177,7 +177,7 @@ u16 MLME_DeAuthReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:403
     if (wlMan->Config.Mode != 3 && wlMan->Config.Mode != 2 && wlMan->Config.Mode != 1)
         return 11;
     
-    if (wlMan->Work.STA < 0x30)
+    if (wlMan->Work.STA < STA_CLASS2)
         return 1;
     
     if ((u16)(0x10000 + wlMan->Config.Mode - 2) <= 1 && pReq->peerMacAdrs[0] & 1)
@@ -219,14 +219,14 @@ u16 MLME_AssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:497
     if (pConfig->Mode != 3 && pConfig->Mode != 2)
         return 11;
     
-    if (pWork->STA < 0x30) return 1;
+    if (pWork->STA < STA_CLASS2) return 1;
     if (pReq->peerMacAdrs[0] & 1) return 5;
     if (pReq->listenInterval == 0) return 5;
     if (pReq->listenInterval > 0xFF) return 5;
     if (pReq->timeOut > 2000) return 5;
     if (pReq->timeOut < 10) return 5;
     
-    WSetStaState(0x30);
+    WSetStaState(STA_CLASS2);
     WClearAids();
     
     pWork->ListenInterval = pReq->listenInterval;
@@ -251,7 +251,7 @@ u16 MLME_ReAssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:566
     if (pConfig->Mode != 3 && pConfig->Mode != 2)
         return 11;
     
-    if (pWork->STA < 0x30) return 1;
+    if (pWork->STA < STA_CLASS2) return 1;
     if (pReq->newApMacAdrs[0] & 1) return 5;
     if (pReq->listenInterval < 1) return 5;
     if (pReq->listenInterval > 0xFF) return 5;
@@ -282,7 +282,7 @@ u16 MLME_DisAssReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:632
     if (wlMan->Config.Mode != 1 && (pReq->peerMacAdrs[0] & 1) != 0)
         return 5;
     
-    if (wlMan->Work.STA != 64)
+    if (wlMan->Work.STA != STA_CLASS3)
         return 1;
     
     pFrm = (TXFRM*)MakeDisAssFrame(pReq->peerMacAdrs, pReq->reasonCode);
@@ -315,7 +315,7 @@ u16 MLME_StartReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:719
     
     pCfm->header.length = 1;
     if (pConfig->Mode != 1 && pConfig->Mode != 0) return 11;
-    if (pWork->STA != 0x20) return 1;
+    if (pWork->STA != STA_CLASS1) return 1;
     if (pReq->ssidLength > 0x20) return 5;
     if (pReq->ssidLength == 0) return 5;
     if (pReq->beaconPeriod < 10) return 5;
@@ -353,7 +353,7 @@ u16 MLME_MeasChanReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MLME.c:803
     u32 i, ch; // r8, r0 - :808
     
     pCfm->header.length = 18;
-    if (wlMan->Work.STA != 0x20) return 1;
+    if (wlMan->Work.STA != STA_CLASS1) return 1;
     if (pReq->ccaMode > 3) return 5;
     if (pReq->edThreshold > 0x3F) return 5;
     if (pReq->measureTime == 0) return 5;
@@ -390,8 +390,8 @@ void MLME_ScanTask() { // MLME.c:886
     
     switch (pMLME->State) {
         case STATE_SCAN_0:
-            WSetStaState(0x20);
-            pWork->Mode = 2;
+            WSetStaState(STA_CLASS1);
+            pWork->Mode = MODE_CHILD;
             pMLME->pCfm.Scan->bssDescCount = 0;
             pMLME->pCfm.Scan->foundMap = 0;
             pMLME->Work.Scan.ChannelCount = 0;
@@ -633,7 +633,7 @@ void MLME_MeasChannelTask() { // MLME.c:1695
             pMLME->Work.Measure.bkCCAMode = BBP_Read(0x13);
             pMLME->Work.Measure.bkEdTh = BBP_Read(0x35);
             WSetCCA_ED(pMLME->pReq.MeasChannel->ccaMode, pMLME->pReq.MeasChannel->edThreshold);
-            pWork->Mode = 4;
+            pWork->Mode = MODE_MEASURE;
             pMLME->Work.Measure.sts = 0;
             
             // fall to next case!
@@ -742,7 +742,7 @@ u32 MLME_IssueAuthIndication(u16* pMacAdrs, u16 algorithm) { // MLME.c:1981
         return 0;
     }
     
-    pInd->header.code = 0x84;
+    pInd->header.code = MLME_AUTH_IND_CMD;
     pInd->header.length = 4;
     WSetMacAdrs1(pInd->peerMacAdrs, pMacAdrs);
     pInd->algorithm = algorithm;
@@ -761,7 +761,7 @@ u32 MLME_IssueDeAuthIndication(u16* pMacAdrs, u16 reason) { // MLME.c:2022
         return 0;
     }
     
-    pInd->header.code = 0x85;
+    pInd->header.code = MLME_DE_AUTH_IND_CMD;
     pInd->header.length = 4;
     WSetMacAdrs1(pInd->peerMacAdrs, pMacAdrs);
     pInd->reasonCode = reason;
@@ -781,7 +781,7 @@ u32 MLME_IssueAssIndication(u16* pMacAdrs, u16 aid, SSID_ELEMENT* pSSID) { // ML
         return 0;
     }
     
-    pInd->header.code = 0x86;
+    pInd->header.code = MLME_ASS_IND_CMD;
     pInd->header.length = 21;
     
     WSetMacAdrs1(pInd->peerMacAdrs, pMacAdrs);
@@ -816,7 +816,7 @@ u32 MLME_IssueReAssIndication(u16* pMacAdrs, u16 aid, SSID_ELEMENT* pSSID) { // 
         return 0;
     }
     
-    pInd->header.code = 0x87;
+    pInd->header.code = MLME_RE_ASS_IND_CMD;
     pInd->header.length = 21;
     
     WSetMacAdrs1(pInd->peerMacAdrs, pMacAdrs);
@@ -851,7 +851,7 @@ u32 MLME_IssueDisAssIndication(u16* pMacAdrs, u16 reason) { // MLME.c:2185
         return 0;
     }
     
-    pInd->header.code = 0x88;
+    pInd->header.code = MLME_DIS_ASS_IND_CMD;
     pInd->header.length = 4;
     WSetMacAdrs1(pInd->peerMacAdrs, pMacAdrs);
     pInd->reasonCode = reason;
@@ -870,7 +870,7 @@ u32 MLME_IssueBeaconLostIndication(u16* pMacAdrs) { // MLME.c:2227
         return 0;
     }
     
-    pInd->header.code = 0x8B;
+    pInd->header.code = MLME_BCN_LOST_IND_CMD;
     pInd->header.length = 3;
     WSetMacAdrs1(pInd->apMacAdrs, pMacAdrs);
     
@@ -888,7 +888,7 @@ u32 MLME_IssueBeaconSendIndication() { // MLME.c:2267
         return 0;
     }
     
-    pInd->header.code = 0x8C;
+    pInd->header.code = MLME_BCN_SEND_IND_CMD;
     pInd->header.length = 0;
     SendMessageToWmDirect(&wlMan->HeapMan.TmpBuf, pInd);
     return 1;
@@ -907,7 +907,7 @@ u32 MLME_IssueBeaconRecvIndication(void* pRxFrm) { // MLME.c:2304
         return 0;
     }
     
-    pInd->header.code = 0x8D;
+    pInd->header.code = MLME_BCN_RECV_IND_CMD;
     pInd->header.length = (pWork->GameInfoLength + 1) / 2 + 22;
     WL_WriteByte(&pInd->rssi, pFrm->MacHeader.Rx.rsv_RSSI);
     WL_WriteByte(&pInd->rate, pFrm->MacHeader.Rx.Service_Rate);

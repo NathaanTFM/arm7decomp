@@ -44,7 +44,7 @@ void RxDataFrameTask() { // RxCtrl.c:66
             multiCast = 1;
     }
 
-    if (pWork->STA != 0x40 && (pConfig->MulticastPass == 0 || multiCast == 0 || pWork->STA != 0x20 || pWork->bSynchro != 1 || (pMLME->State & 0xF0) == STATE_AUTH)) {
+    if (pWork->STA != STA_CLASS3 && (pConfig->MulticastPass == 0 || multiCast == 0 || pWork->STA != STA_CLASS1 || pWork->bSynchro != 1 || (pMLME->State & 0xF0) == STATE_AUTH)) {
         ReleaseHeapBuf(&pHeapMan->RxData, pInd);
         
     } else {
@@ -60,8 +60,8 @@ void RxDataFrameTask() { // RxCtrl.c:66
             case 1:
                 if ((pFrm->Dot11Header.FrameCtrl.Data & 1) == 0) {
                     camAdrs = CAM_Search(pFrm->Dot11Header.Adrs2);
-                    if (camAdrs == 0xFF || CAM_GetStaState(camAdrs) != 0x40) {
-                        if (CAM_GetStaState(camAdrs) == 0x30) {
+                    if (camAdrs == 0xFF || CAM_GetStaState(camAdrs) != STA_CLASS3) {
+                        if (CAM_GetStaState(camAdrs) == STA_CLASS2) {
                             if (!IsExistManFrame(pFrm->Dot11Header.Adrs2, 0xA0)) {
                                 pDeAuth = (DEAUTH_FRAME*)MakeDisAssFrame(pFrm->Dot11Header.Adrs2, 7);
                                 
@@ -125,7 +125,7 @@ void RxDataFrameTask() { // RxCtrl.c:66
             CAM_SetLastSeqCtrl(camAdrs, pFrm->Dot11Header.SeqCtrl.Data);
             CAM_UpdateLifeTime(camAdrs);
             pFrm->FirmHeader.Length = pFrm->MacHeader.Rx.MPDU - 24;
-            pInd->header.code = 0x180;
+            pInd->header.code = MA_DATA_IND_CMD;
             pInd->header.length = ((u32)pFrm->FirmHeader.Length + 45) / 2;
             SendMessageToWmDirect(&pHeapMan->RxData, pInd);
             
@@ -145,7 +145,7 @@ u32 RxMpFrame(RXFRM* pFrm) { // RxCtrl.c:324
     u32 cnt, x; // r7, r0 - :329
     u16 bitmap, out; // r2, r0 - :330
     
-    if (pWork->STA != 0x40)
+    if (pWork->STA != STA_CLASS3)
         return 1;
     
     if (!MatchMacAdrs(pFrm->Dot11Header.Adrs2, pWork->BSSID) || !MatchMacAdrs(pFrm->Dot11Header.Adrs3, pWork->LinkAdrs))
@@ -164,7 +164,7 @@ u32 RxMpFrame(RXFRM* pFrm) { // RxCtrl.c:324
     pInd = GET_HEADER(pFrm);
     pFrm->FirmHeader.Length = pFrm->MacHeader.Rx.MPDU - 28;
     
-    pInd->header.code = 0x182; // ?
+    pInd->header.code = MA_MP_IND_CMD;
     pInd->header.length = ((u32)pFrm->FirmHeader.Length + 49) / 2;
     
     bitmap = pInd->frame.bitmap;
@@ -199,7 +199,7 @@ void RxKeyDataFrame(RXFRM* pFrm) { // RxCtrl.c:450
         
         camAdrs = CAM_Search(pFrm->Dot11Header.Adrs2);
         
-        if (camAdrs == 0xFF || (camAdrs != 0 && CAM_GetStaState(camAdrs) != 0x40)) {
+        if (camAdrs == 0xFF || (camAdrs != 0 && CAM_GetStaState(camAdrs) != STA_CLASS3)) {
             DEAUTH_FRAME* pTxDeAuthFrm; // r0 - :519
             
             if (!IsExistManFrame(pFrm->Dot11Header.Adrs2, 0xC0)) {
@@ -249,7 +249,7 @@ u32 RxMpAckFrame(RXFRM* pFrm) { // RxCtrl.c:645
     WORK_PARAM* pWork = &wlMan->Work; // r6 - :647
     WlMaMpAckInd* pInd; // r0 - :648
     
-    if (wlMan->Work.STA != 0x40)
+    if (wlMan->Work.STA != STA_CLASS3)
         return 1;
     
     if (!MatchMacAdrs(pFrm->Dot11Header.Adrs2, pWork->BSSID) || !MatchMacAdrs(pFrm->Dot11Header.Adrs3, pWork->LinkAdrs))
@@ -258,7 +258,7 @@ u32 RxMpAckFrame(RXFRM* pFrm) { // RxCtrl.c:645
     pInd = GET_HEADER(pFrm);
     pFrm->FirmHeader.Length = pFrm->MacHeader.Rx.MPDU - 28;
     
-    pInd->header.code = 0x185; // ?
+    pInd->header.code = MA_MP_ACK_IND_CMD;
     pInd->header.length = 24;
     pInd->ack.txKeySts |= wlMan->RxCtrl.TxKeyReg | ((W_TXBUF_REPLY2 & 0x8000) >> 4) | ((W_TXBUF_REPLY1 & 0x8000) >> 3);
     
@@ -440,7 +440,7 @@ void RxBeaconFrame(BEACON_FRAME* pFrm) { // RxCtrl.c:740
                                 }
                             }
                             
-                            if (pWork->STA == 0x40 && elementCheck.pTIM && pWork->PowerMgtMode == 1) { // :1035
+                            if (pWork->STA == STA_CLASS3 && elementCheck.pTIM && pWork->PowerMgtMode == 1) { // :1035
                                 u16 dtimCnt = WL_ReadByte(&elementCheck.pTIM->DTIMCount); // r0 - :1039
                                 if (pWork->DTIMCount != dtimCnt) { // :1041
                                     pWork->DTIMCount = dtimCnt; // :1045
@@ -485,13 +485,13 @@ static void RxDisAssFrame(DISASS_FRAME* pFrm) { // RxCtrl.c:1146
         case 1:
             st = CAM_GetStaState(cam_adrs);
             
-            if (st == 0x40) {
-                CAM_SetStaState(cam_adrs, 0x30);
+            if (st == STA_CLASS3) {
+                CAM_SetStaState(cam_adrs, STA_CLASS2);
                 MLME_IssueDisAssIndication(pFrm->Dot11Header.SA, pFrm->Body.ReasonCode);
                 DeleteTxFrames(cam_adrs);
                 
             } else {
-                if (st == 0x30) {
+                if (st == STA_CLASS2) {
                     // ugly cast is ugly. should just have been a TXFRM*
                     pDeAuth = (DEAUTH_FRAME*)MakeDisAssFrame(pFrm->Dot11Header.SA, 7);
                     
@@ -507,8 +507,8 @@ static void RxDisAssFrame(DISASS_FRAME* pFrm) { // RxCtrl.c:1146
             
         case 2:
         case 3:
-            if (pWork->STA == 0x40 && MatchMacAdrs(pFrm->Dot11Header.SA, pWork->LinkAdrs)) {
-                WSetStaState(0x30);
+            if (pWork->STA == STA_CLASS3 && MatchMacAdrs(pFrm->Dot11Header.SA, pWork->LinkAdrs)) {
+                WSetStaState(STA_CLASS2);
                 WClearAids();
                 MLME_IssueDisAssIndication(pFrm->Dot11Header.SA, pFrm->Body.ReasonCode);
             }
@@ -538,7 +538,7 @@ static void RxAssReqFrame(ASSREQ_FRAME* pFrm) { // RxCtrl.c:1228
     
     cam_adrs = pFrm->FirmHeader.CamAdrs; // :1268
     
-    if (cam_adrs == 0 || CAM_GetStaState(cam_adrs) < 0x30) { // :1272
+    if (cam_adrs == 0 || CAM_GetStaState(cam_adrs) < STA_CLASS2) { // :1272
         if (IsExistManFrame(pFrm->Dot11Header.SA, 0xC0)) // :1276
             return;
             
@@ -549,8 +549,8 @@ static void RxAssReqFrame(ASSREQ_FRAME* pFrm) { // RxCtrl.c:1228
         return;
     }
     
-    if (CAM_GetStaState(cam_adrs) == 0x40) {
-        CAM_SetStaState(cam_adrs, 0x30);
+    if (CAM_GetStaState(cam_adrs) == STA_CLASS3) {
+        CAM_SetStaState(cam_adrs, STA_CLASS2);
         MLME_IssueDisAssIndication(pFrm->Dot11Header.SA, 1);    
     }
     
@@ -614,13 +614,13 @@ static void RxAssResFrame(ASSRES_FRAME* pFrm) {
         MakePsPollFrame(pWork->AID);
         WSetMacAdrs1(pWork->LinkAdrs, pFrm->Dot11Header.SA);
         pWork->APCamAdrs = CAM_Search(pFrm->Dot11Header.SA);
-        CAM_SetStaState(pWork->APCamAdrs, 0x40);
+        CAM_SetStaState(pWork->APCamAdrs, STA_CLASS3);
     }
     
     if (pAssRes->StatusCode == 0) {
         pMLME->pCfm.Ass->resultCode = 0;
         pMLME->pCfm.Ass->statusCode = 0;
-        WSetStaState(0x40);
+        WSetStaState(STA_CLASS3);
         
     } else {
         pMLME->pCfm.Ass->resultCode = 12;
@@ -657,7 +657,7 @@ static void RxReAssReqFrame(REASSREQ_FRAME* pFrm) {
     
     cam_adrs = pFrm->FirmHeader.CamAdrs;
     
-    if (CAM_GetStaState(cam_adrs) < 0x30) {
+    if (CAM_GetStaState(cam_adrs) < STA_CLASS2) {
         if (IsExistManFrame(pFrm->Dot11Header.SA, 0xC0)) // :1276
             return;
             
@@ -668,8 +668,8 @@ static void RxReAssReqFrame(REASSREQ_FRAME* pFrm) {
         return;
     }
     
-    if (CAM_GetStaState(cam_adrs) == 0x40) {
-        CAM_SetStaState(cam_adrs, 0x30);
+    if (CAM_GetStaState(cam_adrs) == STA_CLASS3) {
+        CAM_SetStaState(cam_adrs, STA_CLASS2);
         MLME_IssueDisAssIndication(pFrm->Dot11Header.SA, 1);
         
     } else if (CAM_GetAID(cam_adrs) != 0) {
@@ -731,14 +731,14 @@ static void RxReAssResFrame(REASSRES_FRAME* pFrm) {
         MakePsPollFrame(pWork->AID);
         WSetMacAdrs1(pWork->LinkAdrs, pFrm->Dot11Header.SA);
         pWork->APCamAdrs = CAM_Search(pFrm->Dot11Header.SA);
-        CAM_SetStaState(pWork->APCamAdrs, 0x40);
-        WSetStaState(0x40);
+        CAM_SetStaState(pWork->APCamAdrs, STA_CLASS3);
+        WSetStaState(STA_CLASS3);
     }
     
     if (pReAssRes->StatusCode == 0) {
         pMLME->pCfm.ReAss->resultCode = 0;
         pMLME->pCfm.ReAss->statusCode = 0;
-        WSetStaState(0x40);
+        WSetStaState(STA_CLASS3);
         
     } else {
         pMLME->pCfm.ReAss->resultCode = 12;
@@ -943,8 +943,8 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
         }
 
         if (pWork->Mode == 1) {
-            if (CAM_GetStaState(cam_adrs) > 0x20) {
-                CAM_SetStaState(cam_adrs, 0x20);
+            if (CAM_GetStaState(cam_adrs) > STA_CLASS1) {
+                CAM_SetStaState(cam_adrs, STA_CLASS1);
                 MLME_IssueDeAuthIndication(pFrm->Dot11Header.SA, 1);
             }
             if ((pFrm->MacHeader.Tx.Status & 0x400) != 0 && CAM_GetAuthSeed(cam_adrs) != 0) {
@@ -980,7 +980,7 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
                         if (pMLME->pReq.Auth->algorithm == 0 && MatchMacAdrs(pMLME->pReq.Auth->peerMacAdrs, pFrm->Dot11Header.SA) && pMLME->State == STATE_AUTH_1) {
                             ClearTimeOut();
                             if (pFrm->Body.StatusCode == 0) {
-                                WSetStaState(0x30);
+                                WSetStaState(STA_CLASS2);
                                 pMLME->pCfm.Auth->resultCode = 0;
                                 pMLME->pCfm.Auth->statusCode = 0;
                                 
@@ -998,7 +998,7 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
 
             case 1:
                 if (pWork->Mode == 1) {
-                    CAM_SetStaState(cam_adrs, 0x20);
+                    CAM_SetStaState(cam_adrs, STA_CLASS1);
                     if (pFrm->Body.SeqNum == 1) {
                         pTxFrm = MakeAuthFrame(pFrm->Dot11Header.SA, 0x80, 1);
                         if (pTxFrm) {
@@ -1010,7 +1010,7 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
                         }
                         
                     } else if (pFrm->Body.SeqNum == 3) {
-                        if (CAM_GetStaState(cam_adrs) != 32 || CAM_GetAuthSeed(cam_adrs) == 0) {
+                        if (CAM_GetStaState(cam_adrs) != STA_CLASS1 || CAM_GetAuthSeed(cam_adrs) == 0) {
                             stsCode = 1;
                             bTxAuth = 1;
                             
@@ -1042,7 +1042,7 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
                                     pMLME->pCfm.Auth->resultCode = 12;
                                     pMLME->pCfm.Auth->statusCode = pFrm->Body.StatusCode;
                                     AddTask(PRIORITY_LOW, TASK_AUTH);
-                                    WSetStaState(0x20);
+                                    WSetStaState(STA_CLASS1);
                                     
                                 } else {
                                     pMLME->State = STATE_AUTH_3;
@@ -1066,7 +1066,7 @@ static void RxAuthFrame(AUTH_FRAME* pFrm) { // RxCtrl.c:1993
                                 pMLME->pCfm.Auth->resultCode = 12;
                                 pMLME->pCfm.Auth->statusCode = pFrm->Body.StatusCode;
                             } else {
-                                WSetStaState(0x30);
+                                WSetStaState(STA_CLASS2);
                                 pMLME->pCfm.Auth->resultCode = 0;
                                 pMLME->pCfm.Auth->statusCode = 0;
                             }
@@ -1104,8 +1104,8 @@ static void RxDeAuthFrame(DEAUTH_FRAME* pFrm) { // RxCtrl.c:2418
     
     switch (pWork->Mode) {
         case 1:
-            if (CAM_GetStaState(cam_adrs) > 0x20) {
-                CAM_SetStaState(cam_adrs, 0x20);
+            if (CAM_GetStaState(cam_adrs) > STA_CLASS1) {
+                CAM_SetStaState(cam_adrs, STA_CLASS1);
                 MLME_IssueDeAuthIndication(pFrm->Dot11Header.SA, pFrm->Body.ReasonCode);
                 DeleteTxFrames(cam_adrs);
             }
@@ -1113,8 +1113,8 @@ static void RxDeAuthFrame(DEAUTH_FRAME* pFrm) { // RxCtrl.c:2418
             
         case 2:
         case 3:
-            if (pWork->STA > 0x20 && MatchMacAdrs(pFrm->Dot11Header.SA, pWork->LinkAdrs)) {
-                WSetStaState(0x20);
+            if (pWork->STA > STA_CLASS1 && MatchMacAdrs(pFrm->Dot11Header.SA, pWork->LinkAdrs)) {
+                WSetStaState(STA_CLASS1);
                 WClearAids();
                 MLME_IssueDeAuthIndication(pFrm->Dot11Header.SA, pFrm->Body.ReasonCode);
             }
@@ -1127,7 +1127,7 @@ static void RxPsPollFrame(PSPOLL_FRAME* pFrm) {
     HEAP_MAN* pHeapMan = &wlMan->HeapMan;
     u32 cam_adrs = pFrm->FirmHeader.CamAdrs;
     
-    if (CAM_GetStaState(cam_adrs) != 64)
+    if (CAM_GetStaState(cam_adrs) != STA_CLASS3)
         return;
     
     CAM_SetAwake(cam_adrs);
@@ -1615,7 +1615,7 @@ void DefragTask() { // RxCtrl.c:3011
     
     pFrm = (RXFRM*)&pPacket->frame;
     
-    if (wlMan->Work.STA == 0x40 && pFrm->MacHeader.Rx.MPDU <= 1532) {
+    if (wlMan->Work.STA == STA_CLASS3 && pFrm->MacHeader.Rx.MPDU <= 1532) {
         fc = pFrm->Dot11Header.FrameCtrl.Data;
         
         if ((fc & 0x100) != 0) {

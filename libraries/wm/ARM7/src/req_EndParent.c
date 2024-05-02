@@ -3,15 +3,15 @@
 STATIC void WmspError(u16 wlCommand, u16 wlResult);
 
 void WMSP_EndParent() { // req_EndParent.c:131
-    struct WMStatus* status = wmspW.status;
+    WMStatus* status = wmspW.status;
     u32 wlBuf[128]; // None - :136
-    struct WMCallback* cb; // r0 - :137
+    WMCallback* cb; // r0 - :137
     WlCmdCfm* pConfirm; // r0 - :138
     
-    if (wmspW.status->state != 7) {
-        struct WMCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :145
-        callback->apiid = 9;
-        callback->errcode = 3;
+    if (wmspW.status->state != WM_STATE_PARENT) {
+        WMCallback* callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :145
+        callback->apiid = WM_APIID_END_PARENT;
+        callback->errcode = WM_ERRCODE_ILLEGAL_STATE;
         WMSP_ReturnResult2Wm9(callback);
         return;
     }
@@ -52,21 +52,21 @@ void WMSP_EndParent() { // req_EndParent.c:131
     pConfirm = (WlCmdCfm*)WMSP_WL_MlmeReset((u16*)wlBuf, 1);
     
     if (pConfirm->resultCode != 0) {
-        WmspError(0, pConfirm->resultCode);
+        WmspError(MLME_RESET_REQ_CMD, pConfirm->resultCode);
         return;
     }
     
     status->beaconIndicateFlag = 0;
-    status->state = 3;
+    status->state = WM_STATE_CLASS1;
     
     pConfirm = (WlCmdCfm*)WMSP_WL_DevIdle((u16*)wlBuf);
     
     if (pConfirm->resultCode != 0) {
-        WmspError(770, pConfirm->resultCode);
+        WmspError(DEV_IDLE_REQ_CMD, pConfirm->resultCode);
         return;
     }
     
-    status->state = 2;
+    status->state = WM_STATE_IDLE;
     status->wep_flag = 0;
     status->wepMode = 0;
     MI_CpuFill8(status->wepKey, 0, 0x50);
@@ -74,16 +74,16 @@ void WMSP_EndParent() { // req_EndParent.c:131
     WMSP_ResetSizeVars();
     
     cb = WMSP_GetBuffer4Callback2Wm9();
-    cb->apiid = 9;
-    cb->errcode = 0;
+    cb->apiid = WM_APIID_END_PARENT;
+    cb->errcode = WM_ERRCODE_SUCCESS;
     WMSP_ReturnResult2Wm9(cb);
 }
 
 STATIC void WmspError(u16 wlCommand, u16 wlResult) { // req_EndParent.c:269
-    struct WMCallback* cb; // r0 - :271
+    WMCallback* cb; // r0 - :271
     cb = WMSP_GetBuffer4Callback2Wm9();
-    cb->apiid = 9;
-    cb->errcode = 1;
+    cb->apiid = WM_APIID_END_PARENT;
+    cb->errcode = WM_ERRCODE_FAILED;
     cb->wlCmdID = wlCommand;
     cb->wlResult = wlResult;
     WMSP_ReturnResult2Wm9(cb);

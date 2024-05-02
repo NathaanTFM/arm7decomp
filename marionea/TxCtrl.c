@@ -90,11 +90,11 @@ void TxqPri(u32 pri) { // TxCtrl.c:64
                 continue;
             }
             
-            if (pri == 0 || (pri == 1 && CAM_GetStaState(cam_adrs) == 0x40)) { // :140
+            if (pri == 0 || (pri == 1 && CAM_GetStaState(cam_adrs) == STA_CLASS3)) { // :140
                 if (!CAM_IsActive(cam_adrs))  // :144
                     continue;
                     
-                if (CAM_GetStaState(cam_adrs) != 0x40) { // :146
+                if (CAM_GetStaState(cam_adrs) != STA_CLASS3) { // :146
                     pTxFrm->MacHeader.Tx.Status = 2; // :150
                     IssueMaDataConfirm(pBufMan, GET_HEADER(pTxFrm)); // :151
                     CAM_DecFrameCount(pTxFrm); // :152
@@ -143,7 +143,7 @@ void CopyTxFrmToMacBuf(TXFRM_MAC* pMacTxFrm, WlMaDataReq* pTxReq) { // TxCtrl.c:
         if (wlMan->Work.Mode == 3)
             WUpdateCounter();
         
-        if (pTxReq->header.code == (u16)-1) {
+        if (pTxReq->header.code == 0xFFFF) {
             DMA_WepWriteHeaderData(pMacTxFrm, &pTxFrm->MacHeader, pTxFrm->Data.Body, pTxFrm->FirmHeader.Length); // :316
             
         } else {
@@ -160,7 +160,7 @@ void CopyTxFrmToMacBuf(TXFRM_MAC* pMacTxFrm, WlMaDataReq* pTxReq) { // TxCtrl.c:
         }
         
     } else {
-        if (pTxReq->header.code == (u16)-1) {
+        if (pTxReq->header.code == 0xFFFF) {
             DMA_Write(pMacTxFrm, &pTxFrm->MacHeader, pTxFrm->FirmHeader.Length + 36); // :322
             
         } else {
@@ -233,7 +233,7 @@ void TxqEndData(TXFRM* pFrm, u32 flag) { // TxCtrl.c:442
         if (pBufMan->Count) {
             TxqPri(0);
             
-        } else if ((u16)(0x10000 + pWork->Mode - 2) <= 1 && pWork->STA == 0x40 && pWork->PowerMgtMode) {
+        } else if ((u16)(0x10000 + pWork->Mode - MODE_CHILD) <= 1 && pWork->STA == STA_CLASS3 && pWork->PowerMgtMode) {
             if (CAM_GetFrameCount(pWork->APCamAdrs) == 0 && pWork->bExistTIM == 0) {
                 WSetPowerState(1);
             }
@@ -282,11 +282,11 @@ void TxqEndManCtrl(TXFRM* pFrm, u32 flag) { // TxCtrl.c:541
             if (cam_adrs != 0) {
                 if ((pAuth->MacHeader.Tx.Status & 2) == 0) {
                     if (pAuth->Body.AlgoType == 0 && pAuth->Body.SeqNum == 2 && pAuth->Body.StatusCode == 0) {
-                        CAM_SetStaState(cam_adrs, 0x30);
+                        CAM_SetStaState(cam_adrs, STA_CLASS2);
                         MLME_IssueAuthIndication(pAuth->Dot11Header.DA, pAuth->Body.AlgoType);
                         
                     } else if (pAuth->Body.AlgoType == 1 && pAuth->Body.SeqNum == 4 && pAuth->Body.StatusCode == 0) {
-                        CAM_SetStaState(cam_adrs, 0x30);
+                        CAM_SetStaState(cam_adrs, STA_CLASS2);
                         MLME_IssueAuthIndication(pAuth->Dot11Header.DA, pAuth->Body.AlgoType);
                     }
                 }
@@ -300,8 +300,8 @@ void TxqEndManCtrl(TXFRM* pFrm, u32 flag) { // TxCtrl.c:541
             if (cam_adrs != 0) {
                 if ((pFrm->MacHeader.Tx.Status & 2) == 0) {
                     // TODO: find matching struct
-                    if (pAssRes->Body.StatusCode == 0 && CAM_GetStaState(cam_adrs) == 0x30) {
-                        CAM_SetStaState(cam_adrs, 0x40);
+                    if (pAssRes->Body.StatusCode == 0 && CAM_GetStaState(cam_adrs) == STA_CLASS2) {
+                        CAM_SetStaState(cam_adrs, STA_CLASS3);
                         
                         if (type == 0x10) {
                             MLME_IssueAssIndication(
@@ -333,23 +333,23 @@ void TxqEndManCtrl(TXFRM* pFrm, u32 flag) { // TxCtrl.c:541
             break;
 
         case 0xA0: // Disassocation
-            if (pWork->Mode == 1) {
+            if (pWork->Mode == MODE_PARENT) {
                 if (cam_adrs != 0) {
-                    if (CAM_GetStaState(cam_adrs) > 0x30) {
-                        CAM_SetStaState(cam_adrs, 0x30);
+                    if (CAM_GetStaState(cam_adrs) > STA_CLASS2) {
+                        CAM_SetStaState(cam_adrs, STA_CLASS2);
                     }
                 } else {
                     if ((pFrm->Dot11Header.Adrs1[0] & 1) != 0) {
                         for (i = 1; i < wlMan->Config.MaxStaNum; i++) {
-                            if (CAM_GetStaState(i) > 0x30) {
-                                CAM_SetStaState(i, 0x30);
+                            if (CAM_GetStaState(i) > STA_CLASS2) {
+                                CAM_SetStaState(i, STA_CLASS2);
                             }
                         }
                     }
                 }
             } else {
-                if (pWork->STA > 0x30) {
-                    WSetStaState(0x30);
+                if (pWork->STA > STA_CLASS2) {
+                    WSetStaState(STA_CLASS2);
                     WClearAids();
                 }
             }
@@ -368,23 +368,23 @@ void TxqEndManCtrl(TXFRM* pFrm, u32 flag) { // TxCtrl.c:541
         case 0xC0: // Deauthentication
             pDeAuth = (DEAUTH_FRAME*)pFrm;
             
-            if (pWork->Mode == 1) {
+            if (pWork->Mode == MODE_PARENT) {
                 if (cam_adrs != 0) {
-                    if (CAM_GetStaState(cam_adrs) > 0x20) {
-                        CAM_SetStaState(cam_adrs, 0x20);
+                    if (CAM_GetStaState(cam_adrs) > STA_CLASS1) {
+                        CAM_SetStaState(cam_adrs, STA_CLASS1);
                     }
                 } else {
                     if ((pDeAuth->Dot11Header.DA[0] & 1) != 0) {
                         for (i = 1; i < wlMan->Config.MaxStaNum; i++) {
-                            if (CAM_GetStaState(i) > 0x20) {
-                                CAM_SetStaState(i, 0x20);
+                            if (CAM_GetStaState(i) > STA_CLASS1) {
+                                CAM_SetStaState(i, STA_CLASS1);
                             }
                         }
                     }
                 }
             } else {
-                if (pWork->STA > 0x20) {
-                    WSetStaState(0x20);
+                if (pWork->STA > STA_CLASS1) {
+                    WSetStaState(STA_CLASS1);
                     WClearAids();
                 }
             }
@@ -527,7 +527,7 @@ void ClearTxData() { // TxCtrl.c:1144
     TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r4 - :1146
     u32 x = OS_DisableIrqMask(0x1000000); // r5 - :1147
     
-    if (wlMan->Work.Mode == 1) {
+    if (wlMan->Work.Mode == MODE_PARENT) {
         W_TXBUF_RESET = 9;
         if (pTxCtrl->Txq[2].Busy)
             ClearQueuedPri(2);
@@ -638,8 +638,8 @@ void DeleteTxFrameByAdrs(u16* pMacAdrs) { // TxCtrl.c:1367
         if (i != 255)
             DeleteTxFrames(i);
         
-        if (wlMan->Config.Mode == 1 && CAM_GetStaState(i) == 0x40) {
-            CAM_SetStaState(i, 0x20);
+        if (wlMan->Config.Mode == 1 && CAM_GetStaState(i) == STA_CLASS3) {
+            CAM_SetStaState(i, STA_CLASS1);
             ClearTxKeyData();
         }
     }
@@ -649,7 +649,7 @@ void DeleteAllTxFrames() { // TxCtrl.c:1413
     TX_CTRL* pTxCtrl = &wlMan->TxCtrl; // r5 - :1415
     
     switch (wlMan->Work.Mode) {
-        case 1:
+        case MODE_PARENT:
             MessageDeleteTx(0, 1);
             MessageDeleteTx(1, 0);
             MessageDeleteTx(2, 1);
@@ -661,8 +661,8 @@ void DeleteAllTxFrames() { // TxCtrl.c:1413
             }
             break;
             
-        case 2:
-        case 3:
+        case MODE_CHILD:
+        case MODE_HOTSPOT:
             MessageDeleteTx(0, 1);
             MessageDeleteTx(1, 0);
             MessageDeleteTx(2, 0);
@@ -901,7 +901,7 @@ DISASS_FRAME* MakeDisAssFrame(u16* pDA, u16 reasonCode) { // TxCtrl.c:1923
         return (DISASS_FRAME*)pReq;
     }
     
-    pReq->header.code = -1;
+    pReq->header.code = 0xFFFF;
     
     pFrm = (DISASS_FRAME*)&pReq->frame;
     InitManHeader((TXFRM*)pFrm, pDA);
@@ -931,7 +931,7 @@ ASSREQ_FRAME* MakeAssReqFrame(u16* pDA) { // TxCtrl.c:1969
         return (ASSREQ_FRAME*)pReq;
     }
     
-    pReq->header.code = -1;
+    pReq->header.code = 0xFFFF;
     
     pFrm = (ASSREQ_FRAME*)&pReq->frame;
     InitManHeader((TXFRM*)pFrm, pDA);
@@ -964,7 +964,7 @@ REASSREQ_FRAME* MakeReAssReqFrame(u16* pDA) { // TxCtrl.c:2021
         return (REASSREQ_FRAME*)pReq;
     }
     
-    pReq->header.code = -1;
+    pReq->header.code = 0xFFFF;
     
     pFrm = (REASSREQ_FRAME*)&pReq->frame;
     InitManHeader((TXFRM*)pFrm, pDA);
@@ -1000,7 +1000,7 @@ ASSRES_FRAME* MakeAssResFrame(u16 camAdrs, u16 statusCode, SSID_ELEMENT* pSSID) 
         return (ASSRES_FRAME*)pReq;
     }
     
-    pReq->header.code = -1;
+    pReq->header.code = 0xFFFF;
     
     if (statusCode == 0) {
         aid = CAM_AllocateAID(camAdrs);
@@ -1067,7 +1067,7 @@ REASSRES_FRAME* MakeReAssResFrame(u16 camAdrs, u16 statusCode, SSID_ELEMENT* pSS
         return (REASSRES_FRAME*)pReq;
     }
     
-    pReq->header.code = -1;
+    pReq->header.code = 0xFFFF;
     
     if (statusCode == 0) {
         aid = CAM_AllocateAID(camAdrs);
@@ -1123,7 +1123,7 @@ PRBREQ_FRAME* MakeProbeReqFrame(u16* pDA) { // TxCtrl.c:2245
         return (PRBREQ_FRAME*)pReq;
     }
     
-    pReq->header.code = -1;
+    pReq->header.code = 0xFFFF;
     
     pFrm = (PRBREQ_FRAME*)&pReq->frame;
     InitManHeader((TXFRM*)pFrm, pDA);
@@ -1156,7 +1156,7 @@ PRBRES_FRAME* MakeProbeResFrame(u16* pDA) { // TxCtrl.c:2294
         return (PRBRES_FRAME*)pReq;
     }
     
-    pReq->header.code = -1;
+    pReq->header.code = 0xFFFF;
     
     pFrm = (PRBRES_FRAME*)&pReq->frame;
     InitManHeader((TXFRM*)pFrm, pDA);
@@ -1192,7 +1192,7 @@ AUTH_FRAME* MakeAuthFrame(u16* pDA, u16 txtLen, u32 bCheck) { // TxCtrl.c:2355
         return (AUTH_FRAME*)pReq;
     }
     
-    pReq->header.code = -1;
+    pReq->header.code = 0xFFFF;
     
     pFrm = (AUTH_FRAME*)&pReq->frame;
     InitManHeader((TXFRM*)pFrm, pDA);
@@ -1226,7 +1226,7 @@ DEAUTH_FRAME* MakeDeAuthFrame(u16* pDA, u16 reasonCode, u32 bCheck) { // TxCtrl.
         return (DEAUTH_FRAME*)pReq;
     }
     
-    pReq->header.code = -1;
+    pReq->header.code = 0xFFFF;
     
     pFrm = (DEAUTH_FRAME*)&pReq->frame;
     InitManHeader((TXFRM*)pFrm, pDA);
@@ -1337,7 +1337,7 @@ void InitTxCtrl() { // TxCtrl.c:2825
     pTxCtrl->BkKeyOut = -1;
     
     switch (pWork->Mode) {
-        case 0:
+        case MODE_TEST:
             pTxCtrl->Txq[0].pMacFrm = (TXFRM_MAC *)&W_MACMEM(0x170);
             pTxCtrl->Txq[1].pMacFrm = (TXFRM_MAC *)&W_MACMEM(0x028);
             pTxCtrl->Txq[2].pMacFrm = (TXFRM_MAC *)&W_MACMEM(0x000);
@@ -1355,7 +1355,7 @@ void InitTxCtrl() { // TxCtrl.c:2825
             W_TXREQ_SET = 1;
             break;
             
-        case 1:
+        case MODE_PARENT:
             pTxCtrl->Txq[0].pMacFrm = (TXFRM_MAC *)&W_MACMEM(0xAA0);
             pTxCtrl->Txq[1].pMacFrm = (TXFRM_MAC *)&W_MACMEM(0x958);
             pTxCtrl->Txq[2].pMacFrm = (TXFRM_MAC *)&W_MACMEM(0x334);
@@ -1378,7 +1378,7 @@ void InitTxCtrl() { // TxCtrl.c:2825
             MakeBeaconFrame();
             break;
             
-        case 2:
+        case MODE_CHILD:
             pTxCtrl->Txq[0].pMacFrm = (TXFRM_MAC *)&W_MACMEM(0x5D8);
             pTxCtrl->Txq[1].pMacFrm = (TXFRM_MAC *)&W_MACMEM(0x490);
             pTxCtrl->Txq[2].pMacFrm = (TXFRM_MAC *)&W_MACMEM(0x468);
@@ -1400,7 +1400,7 @@ void InitTxCtrl() { // TxCtrl.c:2825
             W_TXREQ_SET = 0x0D;
             break;
             
-        case 3:
+        case MODE_HOTSPOT:
             pTxCtrl->Txq[0].pMacFrm = (TXFRM_MAC *)&W_MACMEM(0x170);
             pTxCtrl->Txq[1].pMacFrm = (TXFRM_MAC *)&W_MACMEM(0x028);
             pTxCtrl->Txq[2].pMacFrm = (TXFRM_MAC *)&W_MACMEM(0x000);

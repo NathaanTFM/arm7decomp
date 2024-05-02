@@ -13,9 +13,9 @@ u16 MA_DataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:48
     if (pFrm->FirmHeader.Length > 0x5E4)
         return 5;
     
-    if (pConfig->Mode == 1) {
+    if (pConfig->Mode == MODE_PARENT) {
         camAdrs = CAM_Search(pFrm->Dot11Header.Adrs1);
-        if (camAdrs == 255 || CAM_GetStaState(camAdrs) != 0x40)
+        if (camAdrs == 0xFF || CAM_GetStaState(camAdrs) != STA_CLASS3)
             return 10;
         
     } else {
@@ -48,7 +48,7 @@ u16 MA_DataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:48
     }
     
     switch (pConfig->Mode) {
-        case 1:
+        case MODE_PARENT:
             WSetMacAdrs1(pFrm->Dot11Header.Adrs3, pFrm->Dot11Header.Adrs2);
             WSetMacAdrs1(pFrm->Dot11Header.Adrs2, pWork->BSSID);
             
@@ -66,8 +66,8 @@ u16 MA_DataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:48
             
             break;
             
-        case 2:
-        case 3:
+        case MODE_CHILD:
+        case MODE_HOTSPOT:
             WSetMacAdrs1(pFrm->Dot11Header.Adrs3, pFrm->Dot11Header.Adrs1);
             WSetMacAdrs1(pFrm->Dot11Header.Adrs1, pWork->BSSID);
             
@@ -93,7 +93,7 @@ u16 MA_KeyDataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:223
     
     pCfm->header.length = 1;
     
-    if (pConfig->Mode != 2)
+    if (pConfig->Mode != MODE_CHILD)
         return 11;
     
     if (pReq->length > 0x204)
@@ -162,7 +162,7 @@ u16 MA_MpReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:363
 
     pCfm->header.length = 1;
     
-    if (pConfig->Mode != 1) return 11;
+    if (pConfig->Mode != MODE_PARENT) return 11;
     if (pTxCtrl->Mp.Busy) return 8;
     
     pFrm = (TXMPFRM_MAC*)pTxCtrl->Mp.pMacFrm;
@@ -273,7 +273,7 @@ u16 MA_MpReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:363
         pId[1] = 0x1D46;
     }
 
-    pTxCtrl->pMpEndInd->header.code = 0x184;
+    pTxCtrl->pMpEndInd->header.code = MA_MP_END_IND_CMD;
     pTxCtrl->pMpEndInd->header.length = (oneLen * pollCnt + 11) / 2;
     pTxCtrl->pMpEndInd->mpKey.bitmap = pReq->pollBitmap;
     pTxCtrl->pMpEndInd->mpKey.count = pollCnt;
@@ -342,7 +342,7 @@ u16 MA_TestDataReqCmd(WlCmdReq* pReqt, WlCmdCfm* pCfmt) { // MA.c:775
     TXFRM* pFrm = (TXFRM*)&pReq->frame; // r0 - :783
     
     pCfm->header.length = 1;
-    pReq->header.code = -1;
+    pReq->header.code = 0xFFFF;
     pFrm->FirmHeader.CamAdrs = 0;
     pFrm->MacHeader.Tx.MPDU = pFrm->FirmHeader.Length;
     

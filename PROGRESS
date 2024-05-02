@@ -1,6 +1,6 @@
 Progress:
-    Functions: 481/505 (95.2%)
-    Bytecode: 76584/97516 (78.5%)
+    Functions: 485/505 (96.0%)
+    Bytecode: 87028/97516 (89.2%)
 
 File progress:
     libraries\wm\ARM7\src\req_AutoDeAuth.c
@@ -17,11 +17,11 @@ File progress:
 
     libraries\wm\ARM7\src\req_Disconnect.c
         Functions: 4/5 (80.0%)
-        Bytecode: 412/1832 (22.5%)
+        Bytecode: 1672/1832 (91.3%)
 
     libraries\wm\ARM7\src\req_Enable.c
         Functions: 1/2 (50.0%)
-        Bytecode: 80/488 (16.4%)
+        Bytecode: 300/488 (61.5%)
 
     libraries\wm\ARM7\src\req_End.c
         Functions: 1/1 (100.0%)
@@ -69,7 +69,7 @@ File progress:
 
     libraries\wm\ARM7\src\req_Reset.c
         Functions: 1/2 (50.0%)
-        Bytecode: 48/904 (5.3%)
+        Bytecode: 764/904 (84.5%)
 
     libraries\wm\ARM7\src\req_SetBeaconPeriod.c
         Functions: 1/1 (100.0%)
@@ -80,16 +80,16 @@ File progress:
         Bytecode: 112/112 (100.0%)
 
     libraries\wm\ARM7\src\req_SetDCFData.c
-        Functions: 0/1 (0.0%)
-        Bytecode: 0/252 (0.0%)
+        Functions: 1/1 (100.0%)
+        Bytecode: 252/252 (100.0%)
 
     libraries\wm\ARM7\src\req_SetEntry.c
         Functions: 1/1 (100.0%)
         Bytecode: 144/144 (100.0%)
 
     libraries\wm\ARM7\src\req_SetGameInfo.c
-        Functions: 0/1 (0.0%)
-        Bytecode: 0/248 (0.0%)
+        Functions: 1/1 (100.0%)
+        Bytecode: 248/248 (100.0%)
 
     libraries\wm\ARM7\src\req_SetLifeTime.c
         Functions: 1/1 (100.0%)
@@ -157,11 +157,11 @@ File progress:
 
     libraries\wm\ARM7\src\wmsp_indicate.c
         Functions: 8/9 (88.9%)
-        Bytecode: 688/5176 (13.3%)
+        Bytecode: 5060/5176 (97.8%)
 
     libraries\wm\ARM7\src\wmsp_port.c
-        Functions: 4/9 (44.4%)
-        Bytecode: 1676/7032 (23.8%)
+        Functions: 5/9 (55.6%)
+        Bytecode: 2704/7032 (38.5%)
 
     libraries\wm\ARM7\src\wmsp_request.c
         Functions: 2/2 (100.0%)
@@ -172,8 +172,8 @@ File progress:
         Bytecode: 2548/2548 (100.0%)
 
     libraries\wm\ARM7\src\wmsp_valarm.c
-        Functions: 6/9 (66.7%)
-        Bytecode: 644/1444 (44.6%)
+        Functions: 7/9 (77.8%)
+        Bytecode: 1164/1444 (80.6%)
 
     libraries\wm\ARM7\src\wmsp_wl_control.c
         Functions: 36/36 (100.0%)
@@ -241,11 +241,11 @@ File progress:
 
     marionea\WlIntr.c
         Functions: 19/20 (95.0%)
-        Bytecode: 4224/5464 (77.3%)
+        Bytecode: 5420/5464 (99.2%)
 
     marionea\WlIntrTask.c
         Functions: 5/6 (83.3%)
-        Bytecode: 1028/1808 (56.9%)
+        Bytecode: 1660/1808 (91.8%)
 
     marionea\WlNic.c
         Functions: 93/93 (100.0%)
