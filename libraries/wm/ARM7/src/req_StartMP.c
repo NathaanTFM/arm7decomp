@@ -8,23 +8,24 @@ static inline void UnkFunction(WMMPTmpParam *tmpParam)
     WMErrCode result = WM_ERRCODE_SUCCESS;
     u32 mask = tmpParam->mask;
     WMStatus *status = wmspW.status;
+    u16 freq, maxFreq, minFreq;
 
     if (wmspW.status->state != WM_STATE_MP_PARENT && wmspW.status->state != WM_STATE_MP_CHILD)
     {
         enabled = OS_DisableInterrupts();
 
-        u16 maxFreq = (mask & 0x4) ? tmpParam->maxFrequency : status->mp_maxFreq;
+        maxFreq = (mask & 0x4) ? tmpParam->maxFrequency : status->mp_maxFreq;
         if (maxFreq == 0)
             maxFreq = 16;
 
-        u16 minFreq = (mask & 0x1) ? tmpParam->minFrequency : status->mp_minFreq;
+        minFreq = (mask & 0x1) ? tmpParam->minFrequency : status->mp_minFreq;
         if (minFreq == 0)
             minFreq = 16;
 
         if (minFreq > maxFreq)
             minFreq = maxFreq;
 
-        u16 freq = (mask & 0x2) ? tmpParam->frequency : status->mp_freq;
+        freq = (mask & 0x2) ? tmpParam->frequency : status->mp_freq;
         if (freq == 0)
             freq = 16;
 
