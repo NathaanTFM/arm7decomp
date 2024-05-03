@@ -266,7 +266,7 @@ void WMSP_AddRssiToList(u8 rssi8)
     wmspW.rssiIndex = (wmspW.rssiIndex + 1) & 0x1F;
 
     // Apparently, this is used for RNG?
-    RSSI_UNK = rssi8 ^ (RSSI_UNK << 1) ^ ((rssi8 ^ ((u32)RSSI_UNK << 1)) >> 16);
+    WMSP_AddRssiToRandomPool(rssi8);
 }
 
 void WMSP_FillRssiIntoList(u8 rssi8)

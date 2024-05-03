@@ -1,21 +1,7 @@
 #include "Mongoose.h"
 
 // TODO
-extern void OSi_Warning(char *file, int line, char *fmt, ...);
 #define MAC_EQUALS(a, b) ((a)[0] == (b)[0] && (a)[1] == (b)[1] && (a)[2] == (b)[2] && (a)[3] == (b)[3] && (a)[4] == (b)[4] && (a)[5] == (b)[5])
-
-// This is from a common header file
-static u8 WMSP_GetRssi8(u8 rssi)
-{
-    if (rssi & 2)
-    {
-        return rssi >> 2;
-    }
-    else
-    {
-        return (rssi >> 2) + 25;
-    }
-}
 
 static void WmspIndicate(WlCmdReq *req);
 static void WmspFreeBufOfWL(WlCmdReq *buf);
@@ -171,8 +157,7 @@ static void WmspIndicateMlmeBeaconRecv(WlCmdReq *req)
     WlMlmeBeaconRecvInd *pInd = (WlMlmeBeaconRecvInd *)req;
     WMGameInfo *pGameInfo = (WMGameInfo *)pInd->gameInfo;
 
-    u16 rssi8 = WMSP_GetRssi8(pInd->rssi);
-    RSSI_UNK = rssi8 ^ (RSSI_UNK << 1) ^ ((rssi8 ^ ((u32)RSSI_UNK << 1)) >> 16);
+    WMSP_AddRssiToRandomPool(WMSP_GetRssi8(pInd->rssi));
 
     if (status->state == WM_STATE_CHILD || status->state == WM_STATE_MP_CHILD)
     {

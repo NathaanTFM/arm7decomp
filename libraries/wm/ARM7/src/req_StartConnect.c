@@ -1,18 +1,5 @@
 #include "Mongoose.h"
 
-/* TODO */
-static inline u8 WMSP_GetRssi8(u8 rssi)
-{
-    if (rssi & 2)
-    {
-        return rssi >> 2;
-    }
-    else
-    {
-        return (rssi >> 2) + 25;
-    }
-}
-
 STATIC void WmspError(u16 wlCommand, u16 wlResult, u16 wlStatus);
 
 void WMSP_StartConnectEx(void *msg)
