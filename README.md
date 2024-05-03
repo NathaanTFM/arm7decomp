@@ -57,6 +57,5 @@ Inaccurate functions:
 Non-implemented functions:
 - WMSP_MeasureChannel
 - WMSP_StartScan
-- WMSP_StartScanEx
 - WmspChildVAlarmMP
 - WmspGetTmptt (pushed an incorrect version)

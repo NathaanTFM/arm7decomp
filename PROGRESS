@@ -1,6 +1,6 @@
 Progress:
-    Functions: 485/505 (96.0%)
-    Bytecode: 91148/97516 (93.5%)
+    Functions: 486/505 (96.2%)
+    Bytecode: 92392/97516 (94.7%)
 
 File progress:
     libraries\wm\ARM7\src\req_AutoDeAuth.c
@@ -132,8 +132,8 @@ File progress:
         Bytecode: 656/656 (100.0%)
 
     libraries\wm\ARM7\src\req_StartScan.c
-        Functions: 1/3 (33.3%)
-        Bytecode: 72/2072 (3.5%)
+        Functions: 2/3 (66.7%)
+        Bytecode: 1316/2072 (63.5%)
 
     libraries\wm\ARM7\src\req_StartTestMode.c
         Functions: 1/1 (100.0%)
