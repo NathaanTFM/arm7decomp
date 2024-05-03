@@ -57,4 +57,3 @@ Inaccurate functions:
 Non-implemented functions:
 - WMSP_MeasureChannel
 - WmspChildVAlarmMP
-- WmspGetTmptt (pushed an incorrect version)

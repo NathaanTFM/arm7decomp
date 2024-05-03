@@ -868,27 +868,30 @@ void WMSP_ParsePortPacket(u16 aid, u16 wmHeader, u16 *data, u8 rssi, u16 length,
 
 // I can't get it to match, so enjoy this partial version
 #pragma dont_inline on
-static u16 WmspGetTmptt(u32 dataLength, u32 txop, u32 pollBitmap, u32 targetVCount)
-{                // wmsp_port.c:1694
-    long tmptt;  // r3 - :1708
+#pragma optimize_for_size off
+
+u16 WmspGetTmptt(u32 dataLength, u32 txop, u32 pollBitmap, u32 targetVCount)
+{               // wmsp_port.c:1694
+    long tmptt; // r3 - :1708
+    u16 vcount;
     u32 pollCnt; // r0 - :1710
     u32 mp_time; // r4 - :1711
 
     if ((txop & 0x8000) != 0)
-    {                            // :1714
-        mp_time = txop & 0x7FFF; // :1716
+    {                         // :1714
+        txop = txop & 0x7FFF; // :1716
     }
     else
     {
-        mp_time = 4 * (txop + 0x1C) + 0x66; // :1721
+        txop = 4 * (txop + 0x1C) + 0x66; // :1721
     }
 
-    pollCnt = MATH_CountPopulation(pollBitmap);         // :1723
-    dataLength = (dataLength + 0x22) * 4 + 0x60;        // :1724
-    mp_time = dataLength + (mp_time * pollCnt) + 0x388; // :1725
+    pollCnt = MATH_CountPopulation(pollBitmap);      // :1723
+    dataLength = (dataLength + 0x22) * 4 + 0x60;     // :1724
+    mp_time = (txop * pollCnt) + 0x388 + dataLength; // :1725
 
-    u16 tmp = REG_VCOUNT; // :1728
-    tmptt = targetVCount - 2 - tmp;
+    vcount = REG_VCOUNT; // :1728
+    tmptt = targetVCount - 2 - vcount;
     if (tmptt < 0)
     {
         do
@@ -897,10 +900,13 @@ static u16 WmspGetTmptt(u32 dataLength, u32 txop, u32 pollBitmap, u32 targetVCou
         } while (tmptt < 0);
     }
 
-    tmptt = (127 * tmptt) / 20;
+    tmptt *= 127;
+    tmptt /= 20;
     if (10 * tmptt < mp_time)
-        tmptt &= ~0xFFFF;
+        tmptt = 0;
 
     return tmptt;
 }
+
+#pragma optimize_for_size on
 #pragma dont_inline off
