@@ -5,39 +5,180 @@ static u32 WmspGetScanExBufSize4WL(u16 arm9_BufSize);
 static void WmspError(u16 wlCommand, u16 wlResult, int exFlag);
 
 void WMSP_StartScan(void *msg)
-{                                  // req_StartScan.c:44
-    u32 wlBuf[128];                // None - :47
-    u16 scanChannel;               // r8 - :54
-    u16 scanBssid[3];              // None - :55
-    u16 scanMaxChannelTime;        // r9 - :56
-    WMStartScanReq *args;          // r0 - :59
-    WMStartScanCallback *callback; // r0 - :65
-    if (0)
+{                                    // req_StartScan.c:44
+    u32 wlBuf[128];                  // None - :47
+    u16 *buf = (u16 *)wlBuf;         // :48
+    WMStatus *status = wmspW.status; // :50
+    u16 scanChannel;                 // r8 - :54
+    u16 scanBssid[3];                // None - :55
+    u16 scanMaxChannelTime;          // r9 - :56
+
+    WMStartScanReq *args = (WMStartScanReq *)msg; // r0 - :59
+
+    if (status->state != WM_STATE_IDLE && status->state != WM_STATE_CLASS1 && status->state != WM_STATE_SCAN)
     {
-        WMStartScanCallback *callback;      // r0 - :96
-        WMStartScanCallback *cb;            // r0 - :107
-        WlDevGetStationStateCfm *p_confirm; // r0 - :120
-    }
-    if (0)
-    {
-        WlDevClass1Cfm *p_confirm; // r0 - :139
-    }
-    if (0)
-    {
-        WlMlmePowerMgtCfm *p_confirm; // r0 - :151
-    }
-    if (0)
-    {
-        WlMlmeScanCfm *p_confirm;      // r0 - :178
-        u16 ssid[16];                  // None - :183
-        u8 channelList[16];            // None - :185
-        WMStartScanCallback *callback; // r9 - :237
-        u8 tempRssi;                   // r0 - :261
+        WMStartScanCallback *callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :65
+        callback->apiid = WM_APIID_START_SCAN;
+        callback->errcode = WM_ERRCODE_ILLEGAL_STATE;
+        callback->state = WM_STATECODE_PARENT_NOT_FOUND;
+        WMSP_ReturnResult2Wm9(callback);
+        return;
     }
 
-    // Just making sure it doesn't get inlined (temporary)
-    WMSP_GetRssi8(*(u16 *)0);
-    WMSP_AddRssiToRandomPool(*(u16 *)0);
+    wmspW.status->pInfoBuf = args->scanBuf;
+    status->scan_channel = scanChannel = args->channel;
+    scanMaxChannelTime = args->maxChannelTime;
+    MI_CpuCopy8(args->bssid, scanBssid, sizeof(scanBssid));
+
+    if (scanBssid[0] != 0xFFFF && (scanBssid[0] & 1) != 0)
+    {
+        scanBssid[0] &= ~1;
+    }
+
+    if (scanChannel == 0)
+    {
+        WMStartScanCallback *callback = WMSP_GetBuffer4Callback2Wm9(); // r0 - :96
+        callback->apiid = WM_APIID_START_SCAN;
+        callback->errcode = WM_ERRCODE_INVALID_PARAM;
+        callback->state = WM_STATECODE_PARENT_NOT_FOUND;
+        WMSP_ReturnResult2Wm9(callback);
+        return;
+    }
+
+    if ((status->enableChannel & (1 << scanChannel)) == 0)
+    {
+        WMStartScanCallback *cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :107
+        cb->apiid = WM_APIID_START_SCAN;
+        cb->errcode = WM_ERRCODE_INVALID_PARAM;
+        cb->state = WM_STATECODE_PARENT_NOT_FOUND;
+        WMSP_ReturnResult2Wm9(cb);
+        return;
+    }
+
+    status->mode = MODE_CHILD;
+
+    {
+        WlDevGetStationStateCfm *p_confirm; // r0 - :120
+        p_confirm = WMSP_WL_DevGetStationState(buf);
+
+        if (p_confirm->resultCode != 0)
+        {
+            WmspError(DEV_GET_STATE_REQ_CMD, p_confirm->resultCode, 0);
+            return;
+        }
+
+        if (p_confirm->state == STA_IDLE)
+        {
+            if (!WMSP_SetAllParams(WM_APIID_START_SCAN, buf))
+                return;
+
+            {
+                WlDevClass1Cfm *p_confirm; // r0 - :139
+                p_confirm = WMSP_WL_DevClass1(buf);
+
+                if (p_confirm->resultCode != 0)
+                {
+                    WmspError(DEV_CLASS1_REQ_CMD, p_confirm->resultCode, 0);
+                    return;
+                }
+
+                status->state = WM_STATE_CLASS1;
+            }
+
+            {
+                WlMlmePowerMgtCfm *p_confirm; // r0 - :151
+                p_confirm = WMSP_WL_MlmePowerManagement(buf, 1, 0, 1);
+
+                if (p_confirm->resultCode != 0)
+                {
+                    WmspError(MLME_PWR_MGT_REQ_CMD, p_confirm->resultCode, 0);
+                    return;
+                }
+
+                status->pwrMgtMode = 1;
+            }
+        }
+    }
+
+    status->state = WM_STATE_SCAN;
+
+    {
+        WlMlmeScanCfm *p_confirm; // r0 - :178
+        u16 ssid[16];             // None - :183
+        u8 channelList[16];       // None - :185
+
+        MIi_CpuClear16(0xFFFF, ssid, sizeof(ssid));
+
+        channelList[0] = scanChannel;
+        MI_CpuFill8(&channelList[1], 0, sizeof(channelList) - 1);
+
+        p_confirm = WMSP_WL_MlmeScan(
+            buf,
+            0x11E, /* ?? */
+            scanBssid,
+            0,
+            (u8 *)ssid,
+            1,
+            (u8 *)channelList,
+            scanMaxChannelTime);
+
+        if (p_confirm->resultCode != 0)
+        {
+            WmspError(MLME_SCAN_REQ_CMD, p_confirm->resultCode, 0);
+            return;
+        }
+        else
+        {
+            WMStartScanCallback *callback = WMSP_GetBuffer4Callback2Wm9(); // r9 - :237
+
+            if (p_confirm->bssDescCount == 0)
+            {
+                callback->apiid = WM_APIID_START_SCAN;
+                callback->errcode = WM_ERRCODE_SUCCESS;
+                callback->state = WM_STATECODE_PARENT_NOT_FOUND;
+                callback->channel = scanChannel;
+                callback->linkLevel = 0;
+            }
+            else
+            {
+                MIi_CpuClear16(0, &status->pInfoBuf->gameInfo, 0x80);
+                MI_CpuCopy8(&p_confirm->bssDescList[0], status->pInfoBuf, 2 * p_confirm->bssDescList[0].length);
+
+                callback->apiid = WM_APIID_START_SCAN;
+                callback->errcode = WM_ERRCODE_SUCCESS;
+                callback->state = WM_STATECODE_PARENT_FOUND;
+                callback->channel = p_confirm->bssDescList[0].channel;
+
+                {
+                    u8 tempRssi; // r0 - :261
+                    tempRssi = WMSP_GetRssi8(p_confirm->bssDescList[0].rssi);
+                    callback->linkLevel = WMSP_GetLinkLevel(tempRssi);
+                    WMSP_AddRssiToRandomPool(tempRssi);
+                }
+
+                callback->ssidLength = p_confirm->bssDescList[0].ssidLength;
+                MI_CpuCopy8(p_confirm->bssDescList[0].bssid, callback->macAddress, 6);
+                MIi_CpuCopy16(p_confirm->bssDescList[0].ssid, callback->ssid, 0x20);
+                callback->gameInfoLength = p_confirm->bssDescList[0].gameInfoLength;
+
+                if (callback->gameInfoLength > 0x80)
+                {
+                    callback->apiid = WM_APIID_START_SCAN;
+                    callback->errcode = WM_ERRCODE_SUCCESS;
+                    callback->state = WM_STATECODE_PARENT_NOT_FOUND;
+                    callback->channel = scanChannel;
+                    callback->linkLevel = 0;
+                }
+                else
+                {
+                    MIi_CpuClear16(0, &callback->gameInfo, 0x80);
+                    MIi_CpuCopy16(&p_confirm->bssDescList[0].gameInfo, &callback->gameInfo, (callback->gameInfoLength + 1) & ~1);
+                }
+            }
+
+            WMSP_ReturnResult2Wm9(callback);
+        }
+    }
 }
 
 void WMSP_StartScanEx(void *msg)
