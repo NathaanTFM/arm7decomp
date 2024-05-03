@@ -2,12 +2,12 @@
 
 static OSVAlarm wmspVAlarm; // :22
 
-static void WmspChildAdjustVSync1();
-static void WmspChildAdjustVSync2();
-static void WmspChildVAlarmMP();
-static void WmspParentAdjustVSync();
-static void WmspParentVAlarmMP();
-STATIC void WmspFromVAlarmToWmspThread();
+static void WmspChildAdjustVSync1(void *arg);
+static void WmspChildAdjustVSync2(void *arg);
+static void WmspChildVAlarmMP(void *arg);
+static void WmspParentAdjustVSync(void *arg);
+static void WmspParentVAlarmMP(void *arg);
+static void WmspFromVAlarmToWmspThread();
 
 // The following functions are known to exist, but are missing
 // from the latest known version (inlined). They're not placed as they should be,
@@ -128,7 +128,7 @@ void WMSP_SetVAlarm()
         if (pVAlarm->handler)
             WMSP_CancelVAlarm();
 
-        WmspSetVAlarm(203, (void *)WmspParentAdjustVSync, (void *)3);
+        WmspSetVAlarm(203, WmspParentAdjustVSync, (void *)3);
     }
     else if (status->mode == MODE_CHILD)
     {
@@ -136,12 +136,12 @@ void WMSP_SetVAlarm()
         if (pVAlarm->handler)
             WMSP_CancelVAlarm();
 
-        WmspSetVAlarm(200, (void *)WmspChildAdjustVSync1, (void *)1);
+        WmspSetVAlarm(200, WmspChildAdjustVSync1, (void *)1);
         status->v_remain = 0;
     }
 }
 
-static void WmspChildAdjustVSync1()
+static void WmspChildAdjustVSync1(void *arg)
 { // wmsp_valarm.c:360
     WMStatus *status = wmspW.status;
     status->v_tsf = global_vtsf_var;
@@ -159,11 +159,11 @@ static void WmspChildAdjustVSync1()
     else
     {
         status->VSyncFlag = 1;
-        WmspSetVAlarm(status->mp_childVCount, (void *)WmspChildVAlarmMP, (void *)4);
+        WmspSetVAlarm(status->mp_childVCount, WmspChildVAlarmMP, (void *)4);
     }
 }
 
-static void WmspChildAdjustVSync2()
+static void WmspChildAdjustVSync2(void *arg)
 { // wmsp_valarm.c:406
     WMStatus *status = wmspW.status;
     WmspExpendVRemain();
@@ -173,19 +173,63 @@ static void WmspChildAdjustVSync2()
         status->VSyncFlag = 0;
     }
 
-    WmspSetVAlarm(status->mp_childVCount, (void *)WmspChildVAlarmMP, (void *)4);
+    WmspSetVAlarm(status->mp_childVCount, WmspChildVAlarmMP, (void *)4);
 }
 
-static void WmspChildVAlarmMP()
-{                      // wmsp_valarm.c:435
-    u64 now;           // None - :449
-    u64 last;          // None - :450
-    int result;        // r5 - :451
-    u32 *buf;          // r0 - :458
-    WMIndCallback *cb; // r0 - :483
+static void WmspChildVAlarmMP(void *arg)
+{ // wmsp_valarm.c:435
+    WMStatus *status = wmspW.status;
+
+    if (wmspW.status->mp_flag == 1)
+    {
+        u64 now;    // None - :449
+        u64 last;   // None - :450
+        int result; // r5 - :451
+
+        WmspSetVAlarm(200, WmspChildAdjustVSync1, (void *)1);
+
+        if (status->mp_lifeTimeTick != 0)
+        {
+            now = OS_GetTick() | 1;
+            last = status->mp_lastRecvTick[0];
+
+            if (last != 0 && (now - last) > status->mp_lifeTimeTick)
+            {
+                u32 *buf; // r0 - :458
+                status->mp_lastRecvTick[0] = 0;
+
+                buf = WMSP_GetInternalRequestBuf();
+                if (buf == 0)
+                {
+                    result = 0;
+                }
+                else
+                {
+                    buf[0] = 37;
+                    buf[1] = 0;
+                    buf[2] = 0x8001;
+                    result = OS_SendMessage(&wmspW.requestQ, buf, 0);
+                }
+
+                if (result == 0)
+                {
+                    WMIndCallback *cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :483
+                    cb->apiid = WM_APIID_INDICATION;
+                    cb->errcode = WM_ERRCODE_FIFO_ERROR;
+                    cb->state = WM_STATECODE_FIFO_ERROR;
+                    cb->reason = 37; // ??
+                    WMSP_ReturnResult2Wm9(cb);
+                }
+
+                return;
+            }
+        }
+
+        WmspFromVAlarmToWmspThread();
+    }
 }
 
-static void WmspParentAdjustVSync()
+static void WmspParentAdjustVSync(void *arg)
 { // wmsp_valarm.c:509
     WMStatus *status = wmspW.status;
 
@@ -204,19 +248,19 @@ static void WmspParentAdjustVSync()
     }
 
     WmspSetVTSF();
-    WmspSetVAlarm(status->mp_parentVCount, (void *)WmspParentVAlarmMP, (void *)5);
+    WmspSetVAlarm(status->mp_parentVCount, WmspParentVAlarmMP, (void *)5);
 }
 
-static void WmspParentVAlarmMP()
+static void WmspParentVAlarmMP(void *arg)
 { // wmsp_valarm.c:551
     if (wmspW.status->mp_flag == 1)
     {
-        WmspSetVAlarm(203, (void *)WmspParentAdjustVSync, (void *)3);
+        WmspSetVAlarm(203, WmspParentAdjustVSync, (void *)3);
         WmspFromVAlarmToWmspThread();
     }
 }
 
-STATIC void WmspFromVAlarmToWmspThread()
+static void WmspFromVAlarmToWmspThread()
 {                              // wmsp_valarm.c:578
     int result;                // r0 - :580
     u32 *buf;                  // r0 - :581
