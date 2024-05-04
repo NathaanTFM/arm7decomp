@@ -1,5 +1,3 @@
-#pragma pack(1)
-
 typedef enum WMErrCode
 {
     WM_ERRCODE_SUCCESS = 0,

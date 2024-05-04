@@ -205,9 +205,6 @@
 #include "PublicSdk.h"
 #endif
 
-// Misc structs I don't know where to put them
-#pragma pack(push, 1)
-
 typedef struct
 {
     u16 rssi;           // offset 00
@@ -380,5 +377,4 @@ typedef struct
 #include "DevCmd.h"
 #include "WlSys.h"
 
-#pragma pack(pop)
 #endif
