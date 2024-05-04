@@ -199,7 +199,11 @@
 #define global_vtsf_var (*(u16 *)0x0380FFF0)
 
 // Don't pack this one
+#ifdef WIFI_USE_SDK_H
+#include <sdk.h>
+#else
 #include "PublicSdk.h"
+#endif
 
 // Misc structs I don't know where to put them
 #pragma pack(push, 1)
