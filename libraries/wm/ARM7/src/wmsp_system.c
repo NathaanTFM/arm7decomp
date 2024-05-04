@@ -1,7 +1,5 @@
 #include "Mongoose.h"
 
-#define FLAG_UNK (*(u16 *)0x2FFFF96UL)
-
 WMSPWork wmspW;                     // :27
 static OSThread wmspRequestThread;  // :32
 static OSThread wmspIndicateThread; // :33

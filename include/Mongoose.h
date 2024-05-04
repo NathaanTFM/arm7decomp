@@ -16,6 +16,7 @@
 
 extern WMSPWork wmspW;
 
+#define FLAG_UNK (*(u16 *)0x2FFFF96UL)
 #define RSSI_UNK (*(u16 *)0x2FFFF98UL)
 
 /* Functions defined in wmsp_private.h */
