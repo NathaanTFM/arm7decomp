@@ -247,6 +247,7 @@ extern void PXI_SetFifoRecvCallback(int fifotag, void (*callback)(PXIFifoTag, u3
 extern int PXI_SendWordByFifo(int fifotag, u32 data, int err);                            // pxi_fifo.c:215
 
 extern u8 MATH_CountPopulation(u32 x);
+extern void SVC_WaitByLoop(u32 count);
 
 extern void SND_BeginSleep();
 

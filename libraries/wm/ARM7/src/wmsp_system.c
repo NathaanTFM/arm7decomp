@@ -61,8 +61,6 @@ void WM_sp_init(WlInit *wlInit, WmInit *wmInit)
 
 void WMSP_ReturnResult2Wm9(void *ptr)
 {                                   // wmsp_system.c:192
-    void SVC_WaitByLoop(u32 count); // TODO?
-
     while (PXI_SendWordByFifo(10, (u32)ptr, 0) < 0)
         SVC_WaitByLoop(256);
 
@@ -71,8 +69,6 @@ void WMSP_ReturnResult2Wm9(void *ptr)
 
 void *WMSP_GetBuffer4Callback2Wm9()
 {                                   // wmsp_system.c:237
-    void SVC_WaitByLoop(u32 count); // TODO?
-
     OS_LockMutex(&wmspW.fifoExclusive);
     while ((FLAG_UNK & 1) != 0)
         SVC_WaitByLoop(256);
