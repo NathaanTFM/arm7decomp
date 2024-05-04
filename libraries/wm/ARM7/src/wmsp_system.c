@@ -33,10 +33,10 @@ void WM_sp_init(WlInit *wlInit, WmInit *wmInit)
 
     OS_InitMutex(&wmspW.fifoExclusive);
 
-    OS_CreateThread(&wmspIndicateThread, WMSP_IndicateThread, 0, &wmspW.fifoExclusive, 0x400, wmInit->indPrio_low);
+    OS_CreateThread(&wmspIndicateThread, WMSP_IndicateThread, 0, &wmspW.indicateStack[0x400/4], 0x400, wmInit->indPrio_low);
     OS_WakeupThreadDirect(&wmspIndicateThread);
 
-    OS_CreateThread(&wmspRequestThread, WMSP_RequestThread, 0, wmspW.indicateStack, 0x1000, wmInit->reqPrio_low);
+    OS_CreateThread(&wmspRequestThread, WMSP_RequestThread, 0, &wmspW.requestStack[0x1000/4], 0x1000, wmInit->reqPrio_low);
     OS_WakeupThreadDirect(&wmspRequestThread);
 
     long i; // r5 - :135
