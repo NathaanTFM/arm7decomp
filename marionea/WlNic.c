@@ -1550,9 +1550,9 @@ void DMA_WepWriteHeaderData(TXFRM_MAC *destAdrs, MAC_HEADER *header, u8 *data, u
 void WL_WriteByte(void *p, u8 data)
 { // WlNic.c:4341
     if ((u32)p & 1)
-        *(u16 *)((u8 *)p - 1) = (*(u16 *)((u8 *)p - 1) & 0xFF) | (data << 8);
+        *(volatile u16 *)((u32)p - 1) = (*(volatile u16 *)((u32)p - 1) & 0xFF) | (data << 8);
     else
-        *(u16 *)p = ((*(u16 *)p) & 0xFF00) | (data & 0xFF); // & 0xFF is useless, but it's in the code
+        *(volatile u16 *)p = ((*(volatile u16 *)p) & 0xFF00) | (data & 0xFF); // & 0xFF is useless, but it's in the code
 }
 
 u8 WL_ReadByte(void *p)
