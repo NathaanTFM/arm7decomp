@@ -28,9 +28,7 @@ void InitializeTask()
         pTaskMan->TaskTbl[i].pTaskFunc = pTaskFunc[i];
     }
 
-#ifndef NO_IDLE_TASK
     AddTask(PRIORITY_LOWEST, TASK_LOWEST_IDLE);
-#endif
 }
 
 void MainTaskRoutine()
