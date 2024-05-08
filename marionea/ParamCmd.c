@@ -378,7 +378,7 @@ u16 PARAMSET_GameInfoReqCmd(WlCmdReq *pReqt, WlCmdCfm *pCfmt)
     if (pReq->header.length < (pReq->gameInfoLength + 1) / 2 + 1)
         return 4;
 
-    WSetGameInfo(pReq->gameInfoLength, (u8 *)pReq->gameInfo);
+    return WSetGameInfo(pReq->gameInfoLength, (u8 *)pReq->gameInfo);
 }
 
 u16 PARAMGET_AllReqCmd(WlCmdReq *pReqt, WlCmdCfm *pCfmt)
