@@ -1338,7 +1338,7 @@ void WConfigDevice()
 {                                // WlNic.c:3322
     RF_CONFIG *pRf = &wlMan->Rf; // r5 - :3324
 
-    MIi_CpuClear16(0, &wlMan->Rf, 0x10u);
+    MIi_CpuClear16(0, &wlMan->Rf, sizeof(wlMan->Rf));
     FLASH_Read(0x40u, 1u, (u8 *)&pRf->Id);
     FLASH_Read(0x41u, 1u, (u8 *)&pRf->Bits);
     FLASH_Read(0x42u, 1u, (u8 *)&pRf->InitNum);

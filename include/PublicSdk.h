@@ -2,6 +2,7 @@
 #define PUBLIC_SDK_H
 
 #define NELEMS(a) (sizeof(a) / sizeof(*(a)))
+#define OFFSETOF(st, m) ((u32)&(((st *)0)->m))
 
 typedef unsigned char u8;
 typedef unsigned short u16;

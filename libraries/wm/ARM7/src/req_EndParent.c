@@ -28,7 +28,7 @@ void WMSP_EndParent()
     {
         if ((status->child_bitmap & (1 << i)) != 0)
         {
-            MI_CpuCopy8(status->childMacAddress[i - 1], wMac, 6);
+            MI_CpuCopy8(status->childMacAddress[i - 1], wMac, sizeof(wMac));
 
             long auth_retry; // r9 - :175
             for (auth_retry = 0; auth_retry < 2; auth_retry++)
@@ -79,7 +79,7 @@ void WMSP_EndParent()
     status->state = WM_STATE_IDLE;
     status->wep_flag = 0;
     status->wepMode = 0;
-    MI_CpuFill8(status->wepKey, 0, 0x50);
+    MI_CpuFill8(status->wepKey, 0, sizeof(status->wepKey));
 
     WMSP_ResetSizeVars();
 

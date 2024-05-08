@@ -151,7 +151,7 @@ int WMSP_SetAllParams(u16 wmApiID, u16 *buf)
     WlParamSetCfm *pConfirm;                          // r0 - :468
     WlParamSetAllReq *pReq = (WlParamSetAllReq *)buf; // r0 - :472
 
-    MI_CpuCopy8(status->MacAddress, pReq->staMacAdrs, 6);
+    MI_CpuCopy8(status->MacAddress, pReq->staMacAdrs, sizeof(pReq->staMacAdrs));
     pReq->retryLimit = 7;
     pReq->enableChannel = status->enableChannel;
     pReq->rate = status->rate;
@@ -161,14 +161,14 @@ int WMSP_SetAllParams(u16 wmApiID, u16 *buf)
     {
         pReq->wepMode = 0;
         pReq->wepKeyId = 0;
-        MIi_CpuClear16(0, pReq->wepKey, 0x50);
+        MIi_CpuClear16(0, pReq->wepKey, sizeof(pReq->wepKey));
         pReq->authAlgo = 0;
     }
     else
     {
         pReq->wepMode = status->wepMode;
         pReq->wepKeyId = status->wepKeyId;
-        MI_CpuCopy8(status->wepKey, pReq->wepKey, 0x50);
+        MI_CpuCopy8(status->wepKey, pReq->wepKey, sizeof(pReq->wepKey));
         pReq->authAlgo = 1;
     }
 
@@ -188,12 +188,12 @@ int WMSP_SetAllParams(u16 wmApiID, u16 *buf)
 
     if (wmApiID == WM_APIID_START_SCAN_EX)
     {
-        MIi_CpuClear16(0, pReq->ssidMask, 32);
+        MIi_CpuClear16(0, pReq->ssidMask, sizeof(pReq->ssidMask));
     }
     else
     {
         MIi_CpuClear16(0, pReq->ssidMask, 8);
-        MIi_CpuClear16(-1, pReq->ssidMask + 8, 24);
+        MIi_CpuClear16(-1, pReq->ssidMask + 8, sizeof(pReq->ssidMask) - 8);
     }
 
     pReq->preambleType = status->preamble;

@@ -19,7 +19,7 @@ void WMSP_SetParentParam(void *msg)
     WMCallback *cb;     // r0 - :40
     WlCmdCfm *pConfirm; // r0 - :42
 
-    MI_CpuCopy8((void *)buf[1], &status->pparam, 0x40);
+    MI_CpuCopy8((void *)buf[1], &status->pparam, sizeof(status->pparam));
 
     if (((1 << status->pparam.channel) & status->enableChannel) == 0)
     {

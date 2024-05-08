@@ -73,9 +73,9 @@ void WMSP_StartParent(void *msg)
     WMParentParam *pparam = &status->pparam; // r9 - :139
     WMGameInfo GameInfo;                     // None - :140
 
-    MIi_CpuClear16(0, &GameInfo, 0x80);
+    MIi_CpuClear16(0, &GameInfo, sizeof(GameInfo));
     WMSP_CopyParentParam(&GameInfo, pparam);
-    MIi_CpuClear16(0, &ssid, 0x20);
+    MIi_CpuClear16(0, &ssid, sizeof(ssid));
     ssidLength = 0x20;
 
     ssid[0] = pparam->ggid;

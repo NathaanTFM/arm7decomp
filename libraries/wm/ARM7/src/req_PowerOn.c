@@ -94,7 +94,7 @@ int WMSPi_CommonWlIdle(u16 *pWlCommand, u16 *pWlResult)
         return 0;
     }
 
-    MIi_CpuCopy16(pVConfirm->wlVersion, status->wlVersion, 8);
+    MIi_CpuCopy16(pVConfirm->wlVersion, status->wlVersion, sizeof(status->wlVersion));
     status->macVersion = pVConfirm->macVersion;
     status->bbpVersion[0] = pVConfirm->bbpVersion[0];
     status->bbpVersion[1] = pVConfirm->bbpVersion[1];
@@ -110,7 +110,7 @@ int WMSPi_CommonWlIdle(u16 *pWlCommand, u16 *pWlResult)
         return 0;
     }
 
-    MI_CpuCopy8(pMConfirm->staMacAdrs, status->MacAddress, 6);
+    MI_CpuCopy8(pMConfirm->staMacAdrs, status->MacAddress, sizeof(status->MacAddress));
 
     pConfirm = (WlCmdCfm *)WMSP_WL_ParamSetBeaconSendRecvInd((u16 *)wlBuf, 1);
     if (pConfirm->resultCode != 0)

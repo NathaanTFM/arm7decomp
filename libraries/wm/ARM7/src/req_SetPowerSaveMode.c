@@ -31,17 +31,17 @@ void WMSP_SetPowerSaveMode(void *msg)
             WlTxFrame wlTxFrame;             // None - :82
             WMStatus *status = wmspW.status; // ???????????????
 
-            MI_CpuCopy8(status->parentMacAddress, status->dcf_destAdr, 6);
+            MI_CpuCopy8(status->parentMacAddress, status->dcf_destAdr, sizeof(status->dcf_destAdr));
             status->dcf_sendData = buf;
             status->dcf_sendSize = 0;
             status->dcf_sendFlag = 1;
 
-            MIi_CpuClear16(0, &wlTxFrame, 0x30);
+            MIi_CpuClear16(0, &wlTxFrame, sizeof(wlTxFrame));
             wlTxFrame.frameId = 0;
             wlTxFrame.length = 0;
             wlTxFrame.rate = status->rate == 2 ? 20 : 10;
-            MI_CpuCopy8(status->parentMacAddress, wlTxFrame.destAdrs, 6);
-            MI_CpuCopy8(status->MacAddress, wlTxFrame.srcAdrs, 6);
+            MI_CpuCopy8(status->parentMacAddress, wlTxFrame.destAdrs, sizeof(wlTxFrame.destAdrs));
+            MI_CpuCopy8(status->MacAddress, wlTxFrame.srcAdrs, sizeof(wlTxFrame.srcAdrs));
             wlTxFrame.datap = (u16 *)wlBuf;
 
             p_confirm = WMSP_WL_MaData((u16 *)wlBuf, &wlTxFrame);

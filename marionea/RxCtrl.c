@@ -906,7 +906,7 @@ static void RxProbeResFrame(PRBRES_FRAME *pFrm, ELEMENT_CHECKER *pChk)
         pDesc = (WlBssDesc *)((u32)pDesc + 2 * pDesc->length);
     }
 
-    MIi_CpuClear16(0, pDesc, 0x40);
+    MIi_CpuClear16(0, pDesc, OFFSETOF(WlBssDesc, gameInfo));
     bodyLen = pFrm->FirmHeader.Length;
 
     if (bodyLen <= 12)

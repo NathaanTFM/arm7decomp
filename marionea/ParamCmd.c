@@ -398,7 +398,7 @@ u16 PARAMGET_AllReqCmd(WlCmdReq *pReqt, WlCmdCfm *pCfmt)
     pCfm->probeRes = wlMan->Config.BcSsidResponse;
     pCfm->beaconLostTh = wlMan->Work.BeaconLostTh;
     pCfm->activeZoneTime = wlMan->Config.ActiveZone;
-    MIi_CpuCopy16(wlMan->Work.SSIDMask, pCfm->ssidMask, 0x20);
+    MIi_CpuCopy16(wlMan->Work.SSIDMask, pCfm->ssidMask, sizeof(pCfm->ssidMask));
     pCfm->preambleType = wlMan->Config.PreambleType;
     pCfm->authAlgo = wlMan->Config.AuthAlgo;
     return 0;

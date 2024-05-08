@@ -76,7 +76,7 @@ void WMSP_Reset()
         }
     }
 
-    MI_CpuFill8(status->childMacAddress, 0, 0x5A);
+    MI_CpuFill8(status->childMacAddress, 0, sizeof(status->childMacAddress));
 
     // get station
     pConfirm = (WlCmdCfm *)WMSP_WL_DevGetStationState(buf);
@@ -105,7 +105,7 @@ void WMSP_Reset()
         if ((u16)(mode + 0x10000 - 2) <= 1)
         {
             u16 wMac[3]; // None - :165
-            MI_CpuCopy8(status->parentMacAddress, wMac, 6);
+            MI_CpuCopy8(status->parentMacAddress, wMac, sizeof(wMac));
 
             long auth_retry; // r5 - :176
             for (auth_retry = 0; auth_retry < 2;)
@@ -136,7 +136,7 @@ void WMSP_Reset()
             if (mode == 1)
             {
                 u16 wMac[3]; // None - :214
-                MI_CpuFill8(wMac, 0xFF, 6);
+                MI_CpuFill8(wMac, 0xFF, sizeof(wMac));
 
                 pConfirm = (WlCmdCfm *)WMSP_WL_MlmeDeAuthenticate(buf, wMac, 3);
                 if (pConfirm->resultCode == 0)

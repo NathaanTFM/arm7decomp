@@ -141,7 +141,7 @@ void WMSP_StartScan(void *msg)
             }
             else
             {
-                MIi_CpuClear16(0, &status->pInfoBuf->gameInfo, 0x80);
+                MIi_CpuClear16(0, &status->pInfoBuf->gameInfo, sizeof(status->pInfoBuf->gameInfo));
                 MI_CpuCopy8(&p_confirm->bssDescList[0], status->pInfoBuf, 2 * p_confirm->bssDescList[0].length);
 
                 callback->apiid = WM_APIID_START_SCAN;
@@ -157,8 +157,8 @@ void WMSP_StartScan(void *msg)
                 }
 
                 callback->ssidLength = p_confirm->bssDescList[0].ssidLength;
-                MI_CpuCopy8(p_confirm->bssDescList[0].bssid, callback->macAddress, 6);
-                MIi_CpuCopy16(p_confirm->bssDescList[0].ssid, callback->ssid, 0x20);
+                MI_CpuCopy8(p_confirm->bssDescList[0].bssid, callback->macAddress, sizeof(callback->macAddress));
+                MIi_CpuCopy16(p_confirm->bssDescList[0].ssid, callback->ssid, sizeof(callback->ssid));
                 callback->gameInfoLength = p_confirm->bssDescList[0].gameInfoLength;
 
                 if (callback->gameInfoLength > 0x80)
@@ -171,7 +171,7 @@ void WMSP_StartScan(void *msg)
                 }
                 else
                 {
-                    MIi_CpuClear16(0, &callback->gameInfo, 0x80);
+                    MIi_CpuClear16(0, &callback->gameInfo, sizeof(callback->gameInfo));
                     MIi_CpuCopy16(&p_confirm->bssDescList[0].gameInfo, &callback->gameInfo, (callback->gameInfoLength + 1) & ~1);
                 }
             }

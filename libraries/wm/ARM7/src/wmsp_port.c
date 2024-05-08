@@ -11,7 +11,7 @@ void WMSP_InitSendQueue()
     WMStatus *status = wmspW.status;
 
     OS_LockMutex(&status->sendQueueMutex);
-    MIi_CpuClear16(0, status->sendQueueData, 0x400);
+    MIi_CpuClear16(0, status->sendQueueData, sizeof(status->sendQueueData));
 
     for (i = 0; i < 31; i++)
     {

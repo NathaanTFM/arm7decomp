@@ -21,7 +21,7 @@ void WMSP_StartConnectEx(void *msg)
         return;
     }
 
-    MI_CpuCopy8(args->pInfo, &p->connectPInfo, 0xC0);
+    MI_CpuCopy8(args->pInfo, &p->connectPInfo, sizeof(p->connectPInfo));
     if (p->connectPInfo.gameInfoLength >= 16 && (p->connectPInfo.gameInfo.attribute & 1) == 0)
     {
         WMStartConnectCallback *cb = WMSP_GetBuffer4Callback2Wm9(); // r0 - :88
@@ -151,7 +151,7 @@ void WMSP_StartConnectEx(void *msg)
         WlMlmeJoinCfm *p_confirm; // r0 - :240
         WlBssDesc bss_desc;       // None - :243
 
-        MI_CpuCopy8(&p->connectPInfo, &bss_desc, 0x40);
+        MI_CpuCopy8(&p->connectPInfo, &bss_desc, OFFSETOF(WlBssDesc, gameInfo));
         if (status->mode == MODE_CHILD)
         {
             bss_desc.ssidLength = 32;
@@ -159,7 +159,7 @@ void WMSP_StartConnectEx(void *msg)
             *(u16 *)&bss_desc.ssid[2] = p->connectPInfo.gameInfo.ggid >> 16;
             *(u16 *)&bss_desc.ssid[4] = p->connectPInfo.gameInfo.tgid;
             *(u16 *)&bss_desc.ssid[6] = 0;
-            MI_CpuCopy8(args->ssid, &bss_desc.ssid[8], 0x18);
+            MI_CpuCopy8(args->ssid, &bss_desc.ssid[8], sizeof(bss_desc.ssid) - 8);
         }
 
         p_confirm = WMSP_WL_MlmeJoin(buf, 2000, &bss_desc);
@@ -170,14 +170,14 @@ void WMSP_StartConnectEx(void *msg)
             return;
         }
 
-        MI_CpuCopy8(p_confirm->peerMacAdrs, status->parentMacAddress, 6);
+        MI_CpuCopy8(p_confirm->peerMacAdrs, status->parentMacAddress, sizeof(status->parentMacAddress));
     }
 
     {
         WlMlmeAuthCfm *p_confirm; // r0 - :304
         u16 mac[3];               // None - :308
 
-        MI_CpuCopy8(status->parentMacAddress, mac, 6);
+        MI_CpuCopy8(status->parentMacAddress, mac, sizeof(mac));
 
         // TODO: 3 instructions are shuffled here for some reason - should behave the same anyway
         p_confirm = WMSP_WL_MlmeAuthenticate(buf, mac, args->authMode, 0x7D0);
@@ -201,7 +201,7 @@ void WMSP_StartConnectEx(void *msg)
 
     u16 mac[3]; // None - :344
 
-    MI_CpuCopy8(status->parentMacAddress, mac, 6);
+    MI_CpuCopy8(status->parentMacAddress, mac, sizeof(mac));
     assConfirm = WMSP_WL_MlmeAssociate(buf, mac, 1, 0x7D0);
 
     u32 e = OS_DisableInterrupts(); // r11 - :359
@@ -227,7 +227,7 @@ void WMSP_StartConnectEx(void *msg)
 
     status->aid = assConfirm->aid;
     status->curr_tgid = p->connectPInfo.gameInfo.tgid;
-    MIi_CpuClear16(1, status->portSeqNo, 0x10);
+    MIi_CpuClear16(1, &status->portSeqNo[0], sizeof(status->portSeqNo[0]));
 
     u16 linkLevel = WMSP_GetRssi8(p->connectPInfo.rssi);
 
@@ -260,7 +260,7 @@ void WMSP_StartConnectEx(void *msg)
     callback->errcode = WM_ERRCODE_SUCCESS;
     callback->state = WM_STATECODE_CONNECTED;
     callback->aid = status->aid;
-    MI_CpuCopy8(status->parentMacAddress, callback->macAddress, 6);
+    MI_CpuCopy8(status->parentMacAddress, callback->macAddress, sizeof(callback->macAddress));
     callback->parentSize = status->mp_parentSize;
     callback->childSize = status->mp_childSize;
     WMSP_ReturnResult2Wm9(callback);

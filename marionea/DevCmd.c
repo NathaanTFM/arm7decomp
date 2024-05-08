@@ -113,7 +113,7 @@ u16 DEV_GetWlInfoReqCmd(WlCmdReq *pReqt, WlCmdCfm *pCfmt)
     pCfm->header.length = 92; // sizeof...?
 
     WUpdateCounter();
-    MIi_CpuCopy32(&wlMan->Counter, &pCfm->counter, 180); // sizeof...?
+    MIi_CpuCopy32(&wlMan->Counter, &pCfm->counter, sizeof(pCfm->counter));
     return 0;
 }
 

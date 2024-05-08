@@ -57,7 +57,7 @@ void WMSPi_CommonInit(u32 miscFlags)
     status->mp_current_ignoreFatalErrorMode = status->mp_ignoreFatalErrorMode;
     status->wep_flag = 0;
     status->wepMode = 0;
-    MI_CpuFill8(status->wepKey, 0, 0x50);
+    MI_CpuFill8(status->wepKey, 0, sizeof(status->wepKey));
     WMSP_ResetSizeVars();
     status->mp_parentVCount = 260;
     status->mp_childVCount = 240;
@@ -80,7 +80,7 @@ void WMSPi_CommonInit(u32 miscFlags)
         p->requestBuf[i * 4] = 0x8000;
     }
 
-    MIi_CpuClear16(1, status->portSeqNo, 0x100);
+    MIi_CpuClear16(1, status->portSeqNo, sizeof(status->portSeqNo));
     WMSP_InitAlarm();
     OS_InitMutex(&status->sendQueueMutex);
     WMSP_InitVAlarm();

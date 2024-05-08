@@ -571,8 +571,8 @@ static void WmspIndicateMaMultiPoll(WlCmdReq *req)
         }
         else
         {
-            MI_CpuCopy8(pInd->frame.destAdrs, bufp->destAdrs, 6);
-            MI_CpuCopy8(pInd->frame.srcAdrs, bufp->srcAdrs, 6);
+            MI_CpuCopy8(pInd->frame.destAdrs, bufp->destAdrs, sizeof(bufp->destAdrs));
+            MI_CpuCopy8(pInd->frame.srcAdrs, bufp->srcAdrs, sizeof(bufp->srcAdrs));
 
             if (bufp->length >= 2)
             {
@@ -744,8 +744,8 @@ static void WmspIndicateMaMultiPollAck(WlCmdReq *req)
             {
                 callback->timeStamp = pFrame->timeStamp;
                 callback->rate_rssi = *(u16 *)&pFrame->rate;
-                MI_CpuCopy8(pFrame->destAdrs, callback->destAdrs, 6);
-                MI_CpuCopy8(pFrame->srcAdrs, callback->srcAdrs, 6);
+                MI_CpuCopy8(pFrame->destAdrs, callback->destAdrs, sizeof(callback->destAdrs));
+                MI_CpuCopy8(pFrame->srcAdrs, callback->srcAdrs, sizeof(callback->srcAdrs));
                 callback->seqNum = pFrame->seqCtrl;
                 callback->tmptt = pFrame->tmptt;
                 callback->pollbmp = pFrame->bitmap;
@@ -833,8 +833,8 @@ static void WmspIndicateMaData(WlCmdReq *req)
 
             WMDcfRecvBuf *bufp = status->dcf_recvBuf[status->dcf_recvBufSel];
             MI_CpuCopy8(pFrame, bufp, ((u32)(pFrame->length + 44) + 1) & ~1); // How much did they torture the compiler to get this
-            MI_CpuCopy8(pFrame->destAdrs, bufp->destAdrs, 6);
-            MI_CpuCopy8(pFrame->srcAdrs, bufp->srcAdrs, 6);
+            MI_CpuCopy8(pFrame->destAdrs, bufp->destAdrs, sizeof(bufp->destAdrs));
+            MI_CpuCopy8(pFrame->srcAdrs, bufp->srcAdrs, sizeof(bufp->srcAdrs));
 
             WMStartDCFCallback *callback = WMSP_GetBuffer4Callback2Wm9();
             callback->apiid = WM_APIID_START_DCF;
@@ -950,7 +950,7 @@ static void WmspIndicateMlmeAssociate(WlCmdReq *req)
         else
         {
             buf[0] = 34;
-            MI_CpuCopy8(pInd->peerMacAdrs, buf + 1, 6);
+            MI_CpuCopy8(pInd->peerMacAdrs, buf + 1, sizeof(pInd->peerMacAdrs));
             result = OS_SendMessage(&wmspW.requestQ, buf, 0);
         }
 
@@ -972,11 +972,11 @@ static void WmspIndicateMlmeAssociate(WlCmdReq *req)
         status->mp_readyBitmap &= ~(1 << aid);
 
         status->mp_lastRecvTick[aid] = OS_GetTick() | 1;
-        MI_CpuCopy8(pInd->peerMacAdrs, status->childMacAddress[aid - 1], 6);
+        MI_CpuCopy8(pInd->peerMacAdrs, status->childMacAddress[aid - 1], sizeof(status->childMacAddress[aid - 1]));
 
         OS_RestoreInterrupts(e);
 
-        MIi_CpuClear16(1, status->portSeqNo[aid], 0x10);
+        MIi_CpuClear16(1, status->portSeqNo[aid], sizeof(status->portSeqNo[aid]));
 
         WMStartParentCallback *callback = WMSP_GetBuffer4Callback2Wm9();
         callback->apiid = WM_APIID_START_PARENT;
@@ -984,7 +984,7 @@ static void WmspIndicateMlmeAssociate(WlCmdReq *req)
         callback->state = WM_STATECODE_CHILD_CONNECTED;
         MI_CpuCopy8(pInd->peerMacAdrs, callback->macAddress, sizeof(callback->macAddress));
         callback->aid = aid;
-        MIi_CpuCopy16(&pInd->ssid[8], callback->ssid, 0x18);
+        MIi_CpuCopy16(&pInd->ssid[8], callback->ssid, sizeof(callback->ssid));
         callback->parentSize = status->mp_parentSize;
         callback->childSize = status->mp_childSize;
         WMSP_ReturnResult2Wm9(callback);
@@ -1002,7 +1002,7 @@ static void WmspIndicateMlmeDeAuthenticate(WlCmdReq *req)
         u8 tmpMacAddress[6];
         u16 tmpAID;
 
-        MI_CpuCopy8(pInd->peerMacAdrs, tmpMacAddress, 6);
+        MI_CpuCopy8(pInd->peerMacAdrs, tmpMacAddress, sizeof(tmpMacAddress));
         tmpAID = 0;
 
         for (i = 0; i < 15; i++)
@@ -1016,7 +1016,7 @@ static void WmspIndicateMlmeDeAuthenticate(WlCmdReq *req)
                     status->child_bitmap &= ~(1 << tmpAID);
                     status->mp_readyBitmap &= ~(1 << tmpAID);
                     status->mp_lastRecvTick[tmpAID] = 0;
-                    MI_CpuFill8(status->childMacAddress[i], 0, 6);
+                    MI_CpuFill8(status->childMacAddress[i], 0, sizeof(status->childMacAddress[i]));
                     OS_RestoreInterrupts(e);
                     break;
                 }
@@ -1033,7 +1033,7 @@ static void WmspIndicateMlmeDeAuthenticate(WlCmdReq *req)
             callback->state = WM_STATECODE_DISCONNECTED;
             callback->reason = pInd->reasonCode;
             callback->aid = tmpAID;
-            MI_CpuCopy8(pInd->peerMacAdrs, callback->macAddress, 6);
+            MI_CpuCopy8(pInd->peerMacAdrs, callback->macAddress, sizeof(callback->macAddress));
             callback->parentSize = status->mp_parentSize;
             callback->childSize = status->mp_childSize;
             WMSP_ReturnResult2Wm9(callback);
@@ -1071,7 +1071,7 @@ static void WmspIndicateMlmeDeAuthenticate(WlCmdReq *req)
             status->VSyncFlag = 0;
             status->wep_flag = 0;
             status->wepMode = 0;
-            MI_CpuFill8(status->wepKey, 0, 0x50);
+            MI_CpuFill8(status->wepKey, 0, sizeof(status->wepKey));
             WMSP_ResetSizeVars();
             status->beaconIndicateFlag = 0;
             status->state = WM_STATE_CLASS1;
@@ -1083,7 +1083,7 @@ static void WmspIndicateMlmeDeAuthenticate(WlCmdReq *req)
             callback->state = WM_STATECODE_DISCONNECTED;
             callback->reason = pInd->reasonCode;
             callback->aid = status->aid;
-            MI_CpuCopy8(status->parentMacAddress, callback->macAddress, 6);
+            MI_CpuCopy8(status->parentMacAddress, callback->macAddress, sizeof(callback->macAddress));
             callback->parentSize = status->mp_parentSize;
             callback->childSize = status->mp_childSize;
             WMSP_ReturnResult2Wm9(callback);

@@ -107,7 +107,7 @@ int WMSP_DisconnectCore(u32 *args, int indicateFlag, u16 *disconnected)
         u16 wMac[3];     // None - :319
         long auth_retry; // r5 - :332
 
-        MI_CpuCopy8(status->parentMacAddress, wMac, 6);
+        MI_CpuCopy8(status->parentMacAddress, wMac, sizeof(wMac));
 
         for (auth_retry = 0; auth_retry < 2;)
         {
@@ -192,7 +192,7 @@ int WMSP_DisconnectCore(u32 *args, int indicateFlag, u16 *disconnected)
         status->state = WM_STATE_IDLE;
         status->wep_flag = 0;
         status->wepMode = 0;
-        MI_CpuFill8(status->wepKey, 0, 0x50);
+        MI_CpuFill8(status->wepKey, 0, sizeof(status->wepKey));
         WMSP_ResetSizeVars();
 
         if (indicateFlag == 1)
@@ -203,7 +203,7 @@ int WMSP_DisconnectCore(u32 *args, int indicateFlag, u16 *disconnected)
             cb->state = WM_STATECODE_DISCONNECTED;
             cb->reason = reason;
             cb->aid = status->aid;
-            MI_CpuCopy8(wMac, cb->macAddress, 6);
+            MI_CpuCopy8(wMac, cb->macAddress, sizeof(cb->macAddress));
             cb->parentSize = status->mp_parentSize;
             cb->childSize = status->mp_childSize;
             WMSP_ReturnResult2Wm9(cb);
@@ -336,7 +336,7 @@ void WMSP_IndicateDisconnectionFromMyself(int parent, u16 aid, void *mac)
         cb_Parent->state = WM_STATECODE_DISCONNECTED_FROM_MYSELF;
         cb_Parent->reason = 0xF001;
         cb_Parent->aid = aid;
-        MI_CpuCopy8(mac, cb_Parent->macAddress, 6);
+        MI_CpuCopy8(mac, cb_Parent->macAddress, sizeof(cb_Parent->macAddress));
         cb_Parent->parentSize = status->mp_parentSize;
         cb_Parent->childSize = status->mp_childSize;
     }
@@ -347,7 +347,7 @@ void WMSP_IndicateDisconnectionFromMyself(int parent, u16 aid, void *mac)
         cb_Child->state = WM_STATECODE_DISCONNECTED_FROM_MYSELF;
         cb_Child->reason = 0xF001;
         cb_Child->aid = status->aid;
-        MI_CpuCopy8(mac, cb_Child->macAddress, 6);
+        MI_CpuCopy8(mac, cb_Child->macAddress, sizeof(cb_Child->macAddress));
         cb_Child->parentSize = status->mp_parentSize;
         cb_Child->childSize = status->mp_childSize;
     }

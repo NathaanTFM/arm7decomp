@@ -8,18 +8,18 @@ void WMSP_SetDCFData(void *msg)
     WlTxFrame wlTxFrame;   // None - :34
     WlMaDataCfm *wlResult; // r4 - :35
 
-    MI_CpuCopy8(&buf[1], status->dcf_destAdr, 6);
+    MI_CpuCopy8(&buf[1], status->dcf_destAdr, sizeof(status->dcf_destAdr));
     status->dcf_sendData = (u16 *)buf[3];
     status->dcf_sendSize = buf[4];
     status->dcf_sendFlag = 1;
 
-    MIi_CpuClear16(0, &wlTxFrame, 0x30);
+    MIi_CpuClear16(0, &wlTxFrame, sizeof(wlTxFrame));
     wlTxFrame.frameId = 0;
     wlTxFrame.length = buf[4];
     wlTxFrame.rate = status->rate == 2 ? 20 : 10;
 
-    MI_CpuCopy8(&buf[1], wlTxFrame.destAdrs, 6);
-    MI_CpuCopy8(status->MacAddress, wlTxFrame.srcAdrs, 6);
+    MI_CpuCopy8(&buf[1], wlTxFrame.destAdrs, sizeof(wlTxFrame.destAdrs));
+    MI_CpuCopy8(status->MacAddress, wlTxFrame.srcAdrs, sizeof(wlTxFrame.srcAdrs));
     wlTxFrame.datap = (u16 *)buf[3];
 
     wlResult = WMSP_WL_MaData((u16 *)wlBuf, &wlTxFrame);

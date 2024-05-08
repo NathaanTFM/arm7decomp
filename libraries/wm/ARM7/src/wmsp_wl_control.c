@@ -230,7 +230,7 @@ WlMaDataCfm *WMSP_WL_MaData(u16 *buf, WlTxFrame *frame)
 
     req->header.code = MA_DATA_REQ_CMD;
     req->header.length = 24;
-    MIi_CpuCopy16(frame, &req->frame, 0x30);
+    MIi_CpuCopy16(frame, &req->frame, sizeof(req->frame));
 
     WMDcfRecvBuf *pFrame = (WMDcfRecvBuf *)frame; // r0 - :541
     pFrame->rsv1[0] = 0;
@@ -392,7 +392,7 @@ WlParamSetCfm *WMSP_WL_ParamSetSsidMask(u16 *buf, u8 *mask)
 
     req->header.code = PARAMSET_SSID_MASK_REQ_CMD;
     req->header.length = 16;
-    MIi_CpuCopy16(mask, req->mask, 0x20u);
+    MIi_CpuCopy16(mask, req->mask, sizeof(req->mask));
 
     cfm = GET_CFM(req);
     cfm->header.code = req->header.code;

@@ -16,7 +16,7 @@ void WVR_Begin(int handle)
     wvrHeapHandle = handle;
     wvrVramImageBuf = 0;
 
-    MI_CpuFill8(&wvrThread, 0, 0xA4);
+    MI_CpuFill8(&wvrThread, 0, sizeof(wvrThread));
     WvrBegin(handle);
     wvrStatus = 3;
 }
