@@ -1,7 +1,7 @@
 #define MARIONEA_INTERNAL 1
 #include "BufMan.h"
 
-void *AllocateHeapBuf(HEAPBUF_MAN *pBufMan, u32 Length)
+WRAM_FUNC void *AllocateHeapBuf(HEAPBUF_MAN *pBufMan, u32 Length)
 { // BufMan.c:71
     // u32 AllocPages; // r0 - :74   // is it used?
     HEAPBUF_HEADER *pAllocBuf;            // r6 - :75
@@ -33,7 +33,7 @@ void *AllocateHeapBuf(HEAPBUF_MAN *pBufMan, u32 Length)
     return pAllocBuf;
 }
 
-u32 ReleaseHeapBuf(HEAPBUF_MAN *pBufMan, void *pBuf)
+WRAM_FUNC u32 ReleaseHeapBuf(HEAPBUF_MAN *pBufMan, void *pBuf)
 {                                                        // BufMan.c:162
     HEAPBUF_HEADER *pBufHeader = (HEAPBUF_HEADER *)pBuf; // r0 - :165
     HEAP_MAN *pHeapMan = &wlMan->HeapMan;                // r0 - :166
@@ -60,7 +60,7 @@ u32 ReleaseHeapBuf(HEAPBUF_MAN *pBufMan, void *pBuf)
     return sts;
 }
 
-u32 MoveHeapBuf(HEAPBUF_MAN *pFromMan, HEAPBUF_MAN *pToMan, void *pBuf)
+WRAM_FUNC u32 MoveHeapBuf(HEAPBUF_MAN *pFromMan, HEAPBUF_MAN *pToMan, void *pBuf)
 {                                                        // BufMan.c:238
     HEAPBUF_HEADER *pBufHeader = (HEAPBUF_HEADER *)pBuf; // r0 - :241
     u32 sts;                                             // r4 - :242
@@ -81,7 +81,7 @@ u32 MoveHeapBuf(HEAPBUF_MAN *pFromMan, HEAPBUF_MAN *pToMan, void *pBuf)
     return sts;
 }
 
-u32 NewHeapBuf(HEAPBUF_MAN *pBufMan, void *pBuf)
+WRAM_FUNC u32 NewHeapBuf(HEAPBUF_MAN *pBufMan, void *pBuf)
 {                                                        // BufMan.c:287
     HEAPBUF_HEADER *pBufHeader = (HEAPBUF_HEADER *)pBuf; // r0 - :289
     HEAPBUF_HEADER *pTailBuf;                            // r0 - :290
@@ -113,7 +113,7 @@ u32 NewHeapBuf(HEAPBUF_MAN *pBufMan, void *pBuf)
     return 0;
 }
 
-u32 AddHeapBuf(HEAPBUF_MAN *pBufMan, void *pBuf)
+WRAM_FUNC u32 AddHeapBuf(HEAPBUF_MAN *pBufMan, void *pBuf)
 {                                                        // BufMan.c:342
     HEAPBUF_HEADER *pBufHeader = (HEAPBUF_HEADER *)pBuf; // r0 - :345
     HEAPBUF_HEADER *pTailBuf;                            // r0 - :346
@@ -152,7 +152,7 @@ u32 AddHeapBuf(HEAPBUF_MAN *pBufMan, void *pBuf)
     return 0;
 }
 
-u32 DeleteHeapBuf(HEAPBUF_MAN *pBufMan, void *pBuf)
+WRAM_FUNC u32 DeleteHeapBuf(HEAPBUF_MAN *pBufMan, void *pBuf)
 {                                                        // BufMan.c:408
     HEAPBUF_HEADER *pBufHeader = (HEAPBUF_HEADER *)pBuf; // r0 - :411
     u32 x;                                               // r0 - :412
@@ -198,7 +198,7 @@ u32 DeleteHeapBuf(HEAPBUF_MAN *pBufMan, void *pBuf)
     return 0;
 }
 
-void *GetHeapBufNextAdrs(void *pBuf)
+WRAM_FUNC void *GetHeapBufNextAdrs(void *pBuf)
 { // BufMan.c:486
     return (void *)((HEAPBUF_HEADER *)pBuf)->Next;
 }

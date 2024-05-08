@@ -1903,7 +1903,7 @@ void DefragTimerTask()
     }
 }
 
-void InitRxCtrl()
+WRAM_FUNC void InitRxCtrl()
 {                                      // RxCtrl.c:3395
     WORK_PARAM *pWork = &wlMan->Work;  // r6 - :3397
     RX_CTRL *pRxCtrl = &wlMan->RxCtrl; // r7 - :3398

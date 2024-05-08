@@ -3,7 +3,7 @@
 
 static RXFRM *TakeoutRxFrame(RXFRM_MAC *pMFrm, u32 length);
 
-void WlIntrTxBeaconTask()
+WRAM_FUNC void WlIntrTxBeaconTask()
 { // WlIntrTask.c:77
     if (wlMan->Work.bUpdateGameInfo)
         UpdateGameInfoElement();
@@ -12,7 +12,7 @@ void WlIntrTxBeaconTask()
         MLME_IssueBeaconSendIndication();
 }
 
-void WlIntrTxEndTask()
+WRAM_FUNC void WlIntrTxEndTask()
 {                                      // WlIntrTask.c:106
     WORK_PARAM *pWork = &wlMan->Work;  // r0 - :108
     TX_CTRL *pTxCtrl = &wlMan->TxCtrl; // r8 - :109
@@ -80,7 +80,7 @@ void WlIntrTxEndTask()
     }
 }
 
-void WlIntrRxEndTask()
+WRAM_FUNC void WlIntrRxEndTask()
 {                                                  // WlIntrTask.c:240
     RX_CTRL *pRxCtrl = &wlMan->RxCtrl;             // r6 - :242
     HEAP_MAN *pHeapMan = &wlMan->HeapMan;          // r0 - :243
@@ -230,7 +230,7 @@ void WlIntrRxEndTask()
     }
 }
 
-void WlIntrMpEndTask()
+WRAM_FUNC void WlIntrMpEndTask()
 {                                      // WlIntrTask.c:615
     TX_CTRL *pTxCtrl = &wlMan->TxCtrl; // r5 - :617
 
@@ -259,7 +259,7 @@ void WlIntrMpEndTask()
     }
 }
 
-void SetParentTbttTxqTask()
+WRAM_FUNC void SetParentTbttTxqTask()
 {                                         // WlIntrTask.c:770
     HEAP_MAN *pHeapMan = &wlMan->HeapMan; // r4 - :772
 
@@ -289,7 +289,7 @@ void SetParentTbttTxqTask()
 
 #pragma dont_inline on
 
-static RXFRM *TakeoutRxFrame(RXFRM_MAC *pMFrm, u32 length)
+WRAM_FUNC static RXFRM *TakeoutRxFrame(RXFRM_MAC *pMFrm, u32 length)
 {                      // WlIntrTask.c:832
     RXPACKET *pPacket; // r0 - :834
     RXFRM *pFrm;       // r0 - :835

@@ -1532,7 +1532,7 @@ static u32 SetSupRateSet(u8 *pBuf)
         W_MACMEM(adr - 2) = 0x1D46; \
     } while (0)
 
-void InitTxCtrl()
+WRAM_FUNC void InitTxCtrl()
 {                                           // TxCtrl.c:2825
     TX_CTRL *pTxCtrl = &wlMan->TxCtrl;      // r7 - :2827
     WORK_PARAM *pWork = &wlMan->Work;       // r8 - :2828

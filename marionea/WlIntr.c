@@ -38,7 +38,7 @@ static void MultiPollRevicedClearSeq()
 
 #pragma dont_inline on
 
-void WlIntr()
+WRAM_FUNC void WlIntr()
 { // WlIntr.c:80
     while (1)
     {
@@ -76,7 +76,7 @@ void WlIntr()
 
 #pragma dont_inline off
 
-static void WlIntrPreTbtt()
+WRAM_FUNC static void WlIntrPreTbtt()
 {                                     // WlIntr.c:175
     WORK_PARAM *pWork = &wlMan->Work; // r4 - :177
 
@@ -98,7 +98,7 @@ static void WlIntrPreTbtt()
     pWork->PowerState = 1;
 }
 
-static void WlIntrTbtt()
+WRAM_FUNC static void WlIntrTbtt()
 {                                           // WlIntr.c:240
     WORK_PARAM *pWork = &wlMan->Work;       // r5 - :242
     CONFIG_PARAM *pConfig = &wlMan->Config; // r7 - :243
@@ -205,7 +205,7 @@ static void WlIntrTbtt()
     }
 }
 
-static void WlIntrActEnd()
+WRAM_FUNC static void WlIntrActEnd()
 {                                     // WlIntr.c:457
     WORK_PARAM *pWork = &wlMan->Work; // r0 - :459
 
@@ -231,14 +231,14 @@ static void WlIntrRfWakeup()
     W_IF = 0x800;
 }
 
-static void WlIntrCntOvf()
+WRAM_FUNC static void WlIntrCntOvf()
 { // WlIntr.c:625
     WUpdateCounter();
     W_RXSTAT_OVF_IF = 0xFFFF;
     W_IF = 0x30;
 }
 
-static void WlIntrTxErr()
+WRAM_FUNC static void WlIntrTxErr()
 {                     // WlIntr.c:625
     TXFRM_MAC *pMFrm; // r0 - :627
     u32 i;            // r2 - :628
@@ -283,7 +283,7 @@ static void WlIntrTxErr()
     }
 }
 
-static void WlIntrRxCntup()
+WRAM_FUNC static void WlIntrRxCntup()
 {                                      // WlIntr.c:705
     RX_CTRL *pRxCtrl = &wlMan->RxCtrl; // r1 - :707
     TXQ *pTxq = wlMan->TxCtrl.Txq;     // r12 - :708
@@ -328,7 +328,7 @@ static void WlIntrRxCntup()
     }
 }
 
-static void WlIntrTxEnd()
+WRAM_FUNC static void WlIntrTxEnd()
 {                                      // WlIntr.c:857
     TX_CTRL *pTxCtrl = &wlMan->TxCtrl; // r7 - :859
     u32 txFrm;                         // r8 - :860
@@ -437,7 +437,7 @@ static void WlIntrTxEnd()
     }
 }
 
-void WlIntrRxEnd()
+WRAM_FUNC void WlIntrRxEnd()
 {                                                       // WlIntr.c:1101
     WORK_PARAM *pWork = &wlMan->Work;                   // r6 - :1103
     RX_CTRL *pRxCtrl = &wlMan->RxCtrl;                  // r7 - :1104
@@ -594,7 +594,7 @@ void WlIntrRxEnd()
         AddTask(0, 0xF);
 }
 
-static void WlIntrMpEnd(u32 bMacBugPatch)
+WRAM_FUNC static void WlIntrMpEnd(u32 bMacBugPatch)
 {                                      // WlIntr.c:1449
     TX_CTRL *pTxCtrl = &wlMan->TxCtrl; // r3 - :1451
     u32 cnt;                           // r2 - :1452
@@ -633,7 +633,7 @@ static void WlIntrMpEnd(u32 bMacBugPatch)
     }
 } // :1531
 
-static void WlIntrStartTx()
+WRAM_FUNC static void WlIntrStartTx()
 {                                      // WlIntr.c:1548
     TX_CTRL *pTxCtrl = &wlMan->TxCtrl; // r0 - :1550
     u32 i, cnt;                        // None, r2 - :1552
@@ -675,7 +675,7 @@ static void WlIntrStartTx()
     }
 }
 
-static void WlIntrStartRx()
+WRAM_FUNC static void WlIntrStartRx()
 {                                      // WlIntr.c:1631
     WORK_PARAM *pWork = &wlMan->Work;  // r4 - :1633
     TX_CTRL *pTxCtrl = &wlMan->TxCtrl; // r5 - :1634
@@ -766,7 +766,7 @@ static void WlIntrStartRx()
 exit:;
 }
 
-static void SetParentTbttTxq()
+WRAM_FUNC static void SetParentTbttTxq()
 {                                      // WlIntr.c:1857
     TX_CTRL *pTxCtrl = &wlMan->TxCtrl; // r4 - :1859
     u32 bTask = 0;                     // r5 - :1860
@@ -805,7 +805,7 @@ static void SetParentTbttTxq()
     AddTask(PRIORITY_HIGHEST, TASK_SET_PARENT_TBTT_TXQ);
 }
 
-void MacBugTxMp()
+WRAM_FUNC void MacBugTxMp()
 {                          // WlIntr.c:1934
     u32 x, i;              // r4, r1 - :1938
     u16 seqCtrl, seqCtrl2; // r3, r0 - :1939
@@ -827,7 +827,7 @@ void MacBugTxMp()
     OS_EnableIrqMask(x);
 }
 
-void *AdjustRingPointer(void *p)
+WRAM_FUNC void *AdjustRingPointer(void *p)
 { // WlIntr.c:1996
     if (p >= RING_END_PTR)
         return (char *)p - wlMan->Work.Ofst.RxBuf.Size;
@@ -837,7 +837,7 @@ void *AdjustRingPointer(void *p)
 
 #pragma dont_inline on
 
-static u32 CheckKeyTxEnd()
+WRAM_FUNC static u32 CheckKeyTxEnd()
 {                                                                                           // WlIntr.c:2063
     TX_CTRL *pTxCtrl = &wlMan->TxCtrl;                                                      // r5 - :2065
     RX_CTRL *pRxCtrl = &wlMan->RxCtrl;                                                      // r6 - :2066

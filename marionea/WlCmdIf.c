@@ -104,7 +104,7 @@ static const WLLIB_CMD_TBL WlibCmdTbl_DEV[11] = { // :237
     {0x04, 0x01, DEV_TestSignalReqCmd},
     {0x02, 0x01, DEV_TestRxReqCmd}};
 
-void RequestCmdTask()
+WRAM_FUNC void RequestCmdTask()
 {                                      // WlCmdIf.c:267
     CMDIF_MAN *pCmdIf = &wlMan->CmdIf; // r7 - :269
     WlCmdReq *pReq;                    // r0 - :271
@@ -270,7 +270,7 @@ u16 CMD_ReservedReqCmd()
     return 3;
 }
 
-void SendMessageToWmDirect(HEAPBUF_MAN *pBufMan, void *pMsg)
+WRAM_FUNC void SendMessageToWmDirect(HEAPBUF_MAN *pBufMan, void *pMsg)
 { // WlCmdIf.c:568
     if (wlMan->HeapMan.ToWM.Count)
     {

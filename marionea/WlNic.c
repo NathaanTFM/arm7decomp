@@ -870,7 +870,7 @@ void WClearKSID(void *unused)
     }
 }
 
-void WSetStaState(u32 state)
+WRAM_FUNC void WSetStaState(u32 state)
 {                                     // WlNic.c:2111
     WORK_PARAM *pWork = &wlMan->Work; // r4 - :2113
 
@@ -1113,7 +1113,7 @@ u32 WCalcManRate()
     return 20; // :2672
 }
 
-void WStart()
+WRAM_FUNC void WStart()
 {                                           // WlNic.c:2700
     WORK_PARAM *pWork = &wlMan->Work;       // r9 - :2702
     CONFIG_PARAM *pConfig = &wlMan->Config; // r4 - :2703
@@ -1263,7 +1263,7 @@ void WStart()
     WaitLoop_Rxpe();
 }
 
-void WStop()
+WRAM_FUNC void WStop()
 {                                     // WlNic.c:2919
     WORK_PARAM *pWork = &wlMan->Work; // r5 - :2921
 

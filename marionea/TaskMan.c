@@ -31,7 +31,7 @@ void InitializeTask()
     AddTask(PRIORITY_LOWEST, TASK_LOWEST_IDLE);
 }
 
-void MainTaskRoutine()
+WRAM_FUNC void MainTaskRoutine()
 {                                         // TaskMan.c:136
     TASK_MAN *pTaskMan = &wlMan->TaskMan; // r8 - :140
     u32 x;                                // r0 - :141
@@ -63,7 +63,7 @@ void MainTaskRoutine()
     }
 }
 
-void AddTask(long nPriority, u32 nTaskID)
+WRAM_FUNC void AddTask(long nPriority, u32 nTaskID)
 {                                           // TaskMan.c:291
     TASK_MAN *pTaskMan = &wlMan->TaskMan;   // r4 - :293
     TASK_TBL *pTaskTbl = pTaskMan->TaskTbl; // r5 - :294
@@ -97,7 +97,7 @@ void AddTask(long nPriority, u32 nTaskID)
         OS_SendMessage(wlMan->pRecvMsgQueue, 0, 0);
 }
 
-u32 DeleteTask(u32 nPriority)
+WRAM_FUNC u32 DeleteTask(u32 nPriority)
 {                                         // TaskMan.c:362
     TASK_MAN *pTaskMan = &wlMan->TaskMan; // r4 - :364
     TASK_TBL *pTaskTbl;                   // r0 - :365
@@ -127,7 +127,7 @@ u32 DeleteTask(u32 nPriority)
     return nTaskID;      // :398
 }
 
-void LowestIdleTask()
+WRAM_FUNC void LowestIdleTask()
 {              // TaskMan.c:416
     void *msg; // None - :418
 
@@ -136,7 +136,7 @@ void LowestIdleTask()
     AddTask(PRIORITY_LOWEST, TASK_LOWEST_IDLE);
 }
 
-void ExecuteMessage(void **pMsg)
+WRAM_FUNC void ExecuteMessage(void **pMsg)
 { // TaskMan.c:501
     if (*pMsg)
     {

@@ -5,7 +5,7 @@ static OSThread wmspRequestThread;  // :32
 static OSThread wmspIndicateThread; // :33
 
 static void WmspError(u16 wmApiID, u16 wlCommand, u16 wlResult);
-STATIC void WmspPxiCallback(PXIFifoTag unused, u32 data, int err);
+static void WmspPxiCallback(PXIFifoTag unused, u32 data, int err);
 
 void WM_sp_init(WlInit *wlInit, WmInit *wmInit)
 { // wmsp_system.c:55
@@ -31,10 +31,10 @@ void WM_sp_init(WlInit *wlInit, WmInit *wmInit)
 
     OS_InitMutex(&wmspW.fifoExclusive);
 
-    OS_CreateThread(&wmspIndicateThread, WMSP_IndicateThread, 0, &wmspW.indicateStack[0x400/4], 0x400, wmInit->indPrio_low);
+    OS_CreateThread(&wmspIndicateThread, WMSP_IndicateThread, 0, &wmspW.indicateStack[0x400 / 4], 0x400, wmInit->indPrio_low);
     OS_WakeupThreadDirect(&wmspIndicateThread);
 
-    OS_CreateThread(&wmspRequestThread, WMSP_RequestThread, 0, &wmspW.requestStack[0x1000/4], 0x1000, wmInit->reqPrio_low);
+    OS_CreateThread(&wmspRequestThread, WMSP_RequestThread, 0, &wmspW.requestStack[0x1000 / 4], 0x1000, wmInit->reqPrio_low);
     OS_WakeupThreadDirect(&wmspRequestThread);
 
     long i; // r5 - :135
@@ -57,16 +57,16 @@ void WM_sp_init(WlInit *wlInit, WmInit *wmInit)
     WL_InitDriver(wlInit);
 }
 
-void WMSP_ReturnResult2Wm9(void *ptr)
-{                                   // wmsp_system.c:192
+WRAM_FUNC void WMSP_ReturnResult2Wm9(void *ptr)
+{ // wmsp_system.c:192
     while (PXI_SendWordByFifo(10, (u32)ptr, 0) < 0)
         SVC_WaitByLoop(256);
 
     OS_UnlockMutex(&wmspW.fifoExclusive);
 }
 
-void *WMSP_GetBuffer4Callback2Wm9()
-{                                   // wmsp_system.c:237
+WRAM_FUNC void *WMSP_GetBuffer4Callback2Wm9()
+{ // wmsp_system.c:237
     OS_LockMutex(&wmspW.fifoExclusive);
     while ((FLAG_UNK & 1) != 0)
         SVC_WaitByLoop(256);
@@ -99,7 +99,7 @@ u16 *WMSP_WlRequest(u16 *request)
     return (u16 *)msg;
 }
 
-STATIC void WmspPxiCallback(PXIFifoTag unused, u32 data, int err)
+static void WmspPxiCallback(PXIFifoTag unused, u32 data, int err)
 {               // wmsp_system.c:306
     int result; // r0 - :310
 
@@ -208,7 +208,7 @@ int WMSP_SetAllParams(u16 wmApiID, u16 *buf)
     return 1;
 }
 
-u16 WMSP_GetAllowedChannel(u16 bitField)
+WRAM_FUNC u16 WMSP_GetAllowedChannel(u16 bitField)
 {                // wmsp_system.c:576
     u16 temp;    // r0 - :578
     long max;    // r12 - :579

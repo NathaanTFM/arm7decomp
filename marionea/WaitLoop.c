@@ -1,7 +1,7 @@
 #define MARIONEA_INTERNAL 1
 #include "WaitLoop.h"
 
-void WaitLoop_Rxpe()
+WRAM_FUNC void WaitLoop_Rxpe()
 {
     u32 i;
 
@@ -12,7 +12,7 @@ void WaitLoop_Rxpe()
     }
 }
 
-void WaitLoop_Waitus(u32 us, void (*TimeoutFunc)(void *))
+WRAM_FUNC void WaitLoop_Waitus(u32 us, void (*TimeoutFunc)(void *))
 {
     volatile u32 flag = 1;
 
@@ -21,7 +21,7 @@ void WaitLoop_Waitus(u32 us, void (*TimeoutFunc)(void *))
         ;
 }
 
-void WaitLoop_ClrAid()
+WRAM_FUNC void WaitLoop_ClrAid()
 {
     u32 x, state, b = 1;
 
@@ -44,7 +44,7 @@ void WaitLoop_ClrAid()
     }
 }
 
-u32 WaitLoop_BbpAccess()
+WRAM_FUNC u32 WaitLoop_BbpAccess()
 {
     u32 i;
     for (i = 0; i < 0x2800; ++i)
@@ -55,7 +55,7 @@ u32 WaitLoop_BbpAccess()
     return 1;
 }
 
-u32 WaitLoop_RfAccess()
+WRAM_FUNC u32 WaitLoop_RfAccess()
 {
     u32 i;
     for (i = 0; i < 0x2800; ++i)

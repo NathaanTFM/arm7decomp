@@ -1,6 +1,7 @@
 #ifndef PUBLIC_SDK_H
 #define PUBLIC_SDK_H
 
+#define WRAM_FUNC
 #define NELEMS(a) (sizeof(a) / sizeof(*(a)))
 #define OFFSETOF(st, m) ((u32)&(((st *)0)->m))
 
