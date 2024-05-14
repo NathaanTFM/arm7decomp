@@ -99,6 +99,10 @@ void WMSPi_CommonInit(u32 miscFlags)
     OS_InitMutex(&status->sendQueueMutex);
     WMSP_InitVAlarm();
 
+#ifdef TWL_MODE
+    wmspW.wmInitialized = 1;
+#endif
+
     if ((miscFlags & 2) == 0)
     {
         PM_SetLEDPattern(PM_LED_PATTERN_WIRELESS);

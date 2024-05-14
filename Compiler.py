@@ -284,9 +284,13 @@ for internal in ("NITRO", "TWL"):
                 target = "built/" + internal + "/" + file[:-2] + ".o"
                 results = None
                 
+                tmp = re.split(r"[/\\]", path)
                 if internal == "NITRO":
-                    tmp = re.split(r"[/\\]", path)
                     if "wpa" in tmp or "ARM7.TWL" in tmp or "common.TWL" in tmp or "tianshan" in tmp:
+                        continue
+                        
+                elif internal == "TWL":
+                    if "wvr_sp.c" in tmp and "ARM7" in tmp:
                         continue
                         
                 results = compile(path, target, internal)
@@ -363,10 +367,6 @@ for internal in ("NITRO", "TWL"):
             
         print("+-" + "-" * 50 + "-+-" + "-" * 40 + "-+-" + "-" * 8 + "-+")
         
-
-    for name, rawAsm, rawSrc in disasmQueue:
-        disassemble(name, rawAsm, rawSrc)
-        
     sumBytesOk, sumBytesTot, sumFuncsOk, sumFuncsTot = 0, 0, 0, 0
 
     progressVerbose = "File progress:\n"
@@ -390,3 +390,5 @@ for internal in ("NITRO", "TWL"):
         with open("PROGRESS.TWL" if internal == "TWL" else "PROGRESS", "w") as f:
             f.write(progress + "\n" + progressVerbose)
             
+for name, rawAsm, rawSrc in disasmQueue:
+    disassemble(name, rawAsm, rawSrc)

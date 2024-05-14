@@ -15,6 +15,10 @@ void WM_sp_init(WlInit *wlInit, WmInit *wmInit)
     wmspW.wm7buf = 0;
     wmspW.status = 0;
 
+#ifdef TWL_MODE
+    wmspW.wmInitialized = 0;
+#endif
+
     OS_InitMessageQueue(&wmspW.toWLmsgQ, wmspW.toWLmsg, 2);
     OS_InitMessageQueue(&wmspW.fromWLmsgQ, wmspW.fromWLmsg, 4);
     OS_InitMessageQueue(&wmspW.confirmQ, wmspW.confirm, 4);
@@ -54,7 +58,21 @@ void WM_sp_init(WlInit *wlInit, WmInit *wmInit)
 
     wlInit->dmaChannel = 2;
     wlInit->priority = wmInit->wlPrio_low;
+
+#ifdef TWL_MODE
+    if (OS_IsRunOnTwl() == 1 && !EXI2i_IsVibrate())
+    {
+        EXI2i_SetBitVibration(1);
+        SVC_WaitByLoop(0xA410);
+    }
+#endif
+
     WL_InitDriver(wlInit);
+
+#ifdef TWL_MODE
+    if (OS_IsRunOnTwl() == 1)
+        EXI2i_SetBitVibration(0);
+#endif
 }
 
 WRAM_FUNC void WMSP_ReturnResult2Wm9(void *ptr)

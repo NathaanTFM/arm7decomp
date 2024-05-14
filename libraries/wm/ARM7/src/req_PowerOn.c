@@ -13,31 +13,38 @@ void WMSP_PowerOn()
         cb->apiid = WM_APIID_POWER_ON;
         cb->errcode = WM_ERRCODE_ILLEGAL_STATE;
         WMSP_ReturnResult2Wm9(cb);
+        return;
     }
-    else
+
+    u16 wlcom; // None - :74
+    u16 wlres; // None - :75
+
+#ifdef TWL_MODE
+    if (OS_IsRunOnTwl() == 1)
+        WMSPi_SwitchModule(WMSP_MODULE_WM);
+#endif
+
+    if (!WMSPi_CommonWlIdle(&wlcom, &wlres))
     {
-        u16 wlcom; // None - :74
-        u16 wlres; // None - :75
-
-        if (!WMSPi_CommonWlIdle(&wlcom, &wlres))
-        {
-            cb = WMSP_GetBuffer4Callback2Wm9();
-            cb->apiid = WM_APIID_POWER_ON;
-            cb->errcode = WM_ERRCODE_FAILED;
-            cb->wlCmdID = wlcom;
-            cb->wlResult = wlres;
-            WMSP_ReturnResult2Wm9(cb);
-        }
-        else
-        {
-            status->state = WM_STATE_IDLE;
-
-            cb = WMSP_GetBuffer4Callback2Wm9();
-            cb->apiid = WM_APIID_POWER_ON;
-            cb->errcode = WM_ERRCODE_SUCCESS;
-            WMSP_ReturnResult2Wm9(cb);
-        }
+#ifdef TWL_MODE
+        if (OS_IsRunOnTwl() == 1)
+            WMSPi_SwitchModule(WMSP_MODULE_NWM);
+#endif
+        cb = WMSP_GetBuffer4Callback2Wm9();
+        cb->apiid = WM_APIID_POWER_ON;
+        cb->errcode = WM_ERRCODE_FAILED;
+        cb->wlCmdID = wlcom;
+        cb->wlResult = wlres;
+        WMSP_ReturnResult2Wm9(cb);
+        return;
     }
+
+    status->state = WM_STATE_IDLE;
+
+    cb = WMSP_GetBuffer4Callback2Wm9();
+    cb->apiid = WM_APIID_POWER_ON;
+    cb->errcode = WM_ERRCODE_SUCCESS;
+    WMSP_ReturnResult2Wm9(cb);
 }
 
 int WMSPi_CommonWlIdle(u16 *pWlCommand, u16 *pWlResult)

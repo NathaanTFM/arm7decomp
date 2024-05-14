@@ -3,7 +3,7 @@
 
 #define WRAM_FUNC
 #define NELEMS(a) (sizeof(a) / sizeof(*(a)))
-#define OFFSETOF(st, m) ((u32)&(((st *)0)->m))
+#define OFFSETOF(st, m) ((u32) & (((st *)0)->m))
 
 typedef unsigned char u8;
 typedef unsigned short u16;
@@ -255,6 +255,8 @@ extern void SND_BeginSleep();
 
 #ifdef TWL_MODE
 int OS_IsRunOnTwl();
+void EXI2i_SetBitVibration(int on);
+int EXI2i_IsVibrate();
 #endif
 
 #define REG_VCOUNT (*(volatile u16 *)0x4000006)

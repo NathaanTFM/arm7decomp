@@ -13,26 +13,29 @@ void WMSP_PowerOff()
         cb->apiid = WM_APIID_POWER_OFF;
         cb->errcode = WM_ERRCODE_ILLEGAL_STATE;
         WMSP_ReturnResult2Wm9(cb);
+        return;
     }
-    else
+
+    pConfirm = (WlCmdCfm *)WMSP_WL_DevShutdown((u16 *)wlBuf);
+    if (pConfirm->resultCode != 0)
     {
-        pConfirm = (WlCmdCfm *)WMSP_WL_DevShutdown((u16 *)wlBuf);
-        if (pConfirm->resultCode != 0)
-        {
-            cb = WMSP_GetBuffer4Callback2Wm9();
-            cb->apiid = WM_APIID_POWER_OFF;
-            cb->errcode = WM_ERRCODE_FAILED;
-            cb->wlCmdID = 0x301;
-            cb->wlResult = pConfirm->resultCode;
-            WMSP_ReturnResult2Wm9(cb);
-        }
-        else
-        {
-            status->state = WM_STATE_STOP;
-            cb = WMSP_GetBuffer4Callback2Wm9();
-            cb->apiid = WM_APIID_POWER_OFF;
-            cb->errcode = WM_ERRCODE_SUCCESS;
-            WMSP_ReturnResult2Wm9(cb);
-        }
+        cb = WMSP_GetBuffer4Callback2Wm9();
+        cb->apiid = WM_APIID_POWER_OFF;
+        cb->errcode = WM_ERRCODE_FAILED;
+        cb->wlCmdID = 0x301;
+        cb->wlResult = pConfirm->resultCode;
+        WMSP_ReturnResult2Wm9(cb);
+        return;
     }
+
+#ifdef TWL_MODE
+    if (OS_IsRunOnTwl() == 1)
+        EXI2i_SetBitVibration(0);
+#endif
+
+    status->state = WM_STATE_STOP;
+    cb = WMSP_GetBuffer4Callback2Wm9();
+    cb->apiid = WM_APIID_POWER_OFF;
+    cb->errcode = WM_ERRCODE_SUCCESS;
+    WMSP_ReturnResult2Wm9(cb);
 }

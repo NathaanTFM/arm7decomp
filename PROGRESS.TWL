@@ -1,6 +1,6 @@
 Progress:
-    Functions: 489/794 (61.6%)
-    Bytecode: 92832/158028 (58.7%)
+    Functions: 489/790 (61.9%)
+    Bytecode: 93680/157528 (59.5%)
 
 File progress:
     libraries\wm\ARM7.TWL\common\src\wmsp_common.c
@@ -49,11 +49,11 @@ File progress:
 
     libraries\wm\ARM7\src\req_Enable.c
         Functions: 1/2 (50.0%)
-        Bytecode: 116/532 (21.8%)
+        Bytecode: 344/532 (64.7%)
 
     libraries\wm\ARM7\src\req_End.c
-        Functions: 0/1 (0.0%)
-        Bytecode: 0/192 (0.0%)
+        Functions: 1/1 (100.0%)
+        Bytecode: 192/192 (100.0%)
 
     libraries\wm\ARM7\src\req_EndDCF.c
         Functions: 1/1 (100.0%)
@@ -88,12 +88,12 @@ File progress:
         Bytecode: 0/460 (0.0%)
 
     libraries\wm\ARM7\src\req_PowerOff.c
-        Functions: 0/1 (0.0%)
-        Bytecode: 0/172 (0.0%)
+        Functions: 1/1 (100.0%)
+        Bytecode: 172/172 (100.0%)
 
     libraries\wm\ARM7\src\req_PowerOn.c
-        Functions: 1/2 (50.0%)
-        Bytecode: 492/672 (73.2%)
+        Functions: 2/2 (100.0%)
+        Bytecode: 672/672 (100.0%)
 
     libraries\wm\ARM7\src\req_Reset.c
         Functions: 1/2 (50.0%)
@@ -196,8 +196,8 @@ File progress:
         Bytecode: 164/164 (100.0%)
 
     libraries\wm\ARM7\src\wmsp_system.c
-        Functions: 20/22 (90.9%)
-        Bytecode: 2092/2644 (79.1%)
+        Functions: 21/22 (95.5%)
+        Bytecode: 2616/2644 (98.9%)
 
     libraries\wm\ARM7\src\wmsp_valarm.c
         Functions: 8/9 (88.9%)
@@ -332,12 +332,8 @@ File progress:
         Bytecode: 0/10096 (0.0%)
 
     libraries\wvr\ARM7.TWL\src\wvr_sp.c
-        Functions: 2/4 (50.0%)
-        Bytecode: 224/500 (44.8%)
-
-    libraries\wvr\ARM7\src\wvr_sp.c
-        Functions: 2/4 (50.0%)
-        Bytecode: 224/500 (44.8%)
+        Functions: 0/4 (0.0%)
+        Bytecode: 0/500 (0.0%)
 
     marionea\ApList.c
         Functions: 3/3 (100.0%)
