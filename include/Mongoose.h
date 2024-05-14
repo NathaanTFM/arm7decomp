@@ -21,6 +21,10 @@
 
 extern WMSPWork wmspW;
 
+#ifdef TWL_MODE
+extern NWMSPWork nwsWork;
+#endif
+
 #define FLAG_UNK (*(u16 *)0x2FFFF96UL)
 #define RSSI_UNK (*(u16 *)0x2FFFF98UL)
 

@@ -186,6 +186,16 @@ typedef enum PXIFifoTag
     PXI_FIFO_TAG_WVR = 15,
     PXI_FIFO_TAG_CTRDG_Ex = 16,
     PXI_FIFO_TAG_CTRDG_PHI = 17,
+#ifdef TWL_MODE
+    PXI_FIFO_TAG_MI = 18,
+    PXI_FIFO_TAG_AES = 19,
+    PXI_FIFO_TAG_FATFS = 20,
+    PXI_FIFO_TAG_CAMERA = 21,
+    PXI_FIFO_TAG_WMW = 22,
+    PXI_FIFO_TAG_SCFG = 23,
+    PXI_FIFO_TAG_SNDEX = 24,
+    PXI_FIFO_TAG_SEA = 31,
+#endif
     PXI_MAX_FIFO_TAG = 32,
 } PXIFifoTag;
 
@@ -254,9 +264,9 @@ extern void SVC_WaitByLoop(u32 count);
 extern void SND_BeginSleep();
 
 #ifdef TWL_MODE
-int OS_IsRunOnTwl();
-void EXI2i_SetBitVibration(int on);
-int EXI2i_IsVibrate();
+extern int OS_IsRunOnTwl();
+extern void EXI2i_SetBitVibration(int on);
+extern int EXI2i_IsVibrate();
 #endif
 
 #define REG_VCOUNT (*(volatile u16 *)0x4000006)

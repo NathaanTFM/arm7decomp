@@ -382,8 +382,8 @@ for internal in ("NITRO", "TWL"):
         sumFuncsTot += funcsTot
         
     progress = "Progress:" + "\n"
-    progress += "    Functions: %d/%d (%.1f%%)" % (sumFuncsOk, sumFuncsTot, sumFuncsOk/sumFuncsTot * 100) + "\n"
-    progress += "    Bytecode: %d/%d (%.1f%%)" % (sumBytesOk, sumBytesTot, sumBytesOk/sumBytesTot * 100) + "\n"
+    progress += "    Functions: %d/%d (%.1f%%)" % (sumFuncsOk, sumFuncsTot, sumFuncsOk/(sumFuncsTot or 1) * 100) + "\n"
+    progress += "    Bytecode: %d/%d (%.1f%%)" % (sumBytesOk, sumBytesTot, sumBytesOk/(sumBytesTot or 1) * 100) + "\n"
 
     if "-p" not in sys.argv:
         print("\n" + progress)

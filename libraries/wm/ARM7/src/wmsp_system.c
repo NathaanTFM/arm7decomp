@@ -486,3 +486,12 @@ void WMSP_SetChildSize(u16 childSize)
         status->mp_sendSize = childSize + 2;
     }
 }
+
+#ifdef TWL_MODE
+
+int WMSPi_CheckInitialized()
+{ // wmsp_system.c:1167
+    return wmspW.wmInitialized == 0;
+}
+
+#endif

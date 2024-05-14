@@ -1,11 +1,11 @@
 Progress:
-    Functions: 489/790 (61.9%)
-    Bytecode: 93680/157528 (59.5%)
+    Functions: 499/790 (63.2%)
+    Bytecode: 94336/157528 (59.9%)
 
 File progress:
     libraries\wm\ARM7.TWL\common\src\wmsp_common.c
-        Functions: 0/2 (0.0%)
-        Bytecode: 0/44 (0.0%)
+        Functions: 1/2 (50.0%)
+        Bytecode: 12/44 (27.3%)
 
     libraries\wm\ARM7.TWL\nwm\src\nwmsp_beaconinfo.c
         Functions: 0/9 (0.0%)
@@ -24,8 +24,8 @@ File progress:
         Bytecode: 0/4112 (0.0%)
 
     libraries\wm\ARM7.TWL\nwm\src\nwmsp_system.c
-        Functions: 0/8 (0.0%)
-        Bytecode: 0/1196 (0.0%)
+        Functions: 6/8 (75.0%)
+        Bytecode: 392/1196 (32.8%)
 
     libraries\wm\ARM7.TWL\nwm\src\nwmsp_wlan_handler.c
         Functions: 0/6 (0.0%)
@@ -196,8 +196,8 @@ File progress:
         Bytecode: 164/164 (100.0%)
 
     libraries\wm\ARM7\src\wmsp_system.c
-        Functions: 21/22 (95.5%)
-        Bytecode: 2616/2644 (98.9%)
+        Functions: 22/22 (100.0%)
+        Bytecode: 2644/2644 (100.0%)
 
     libraries\wm\ARM7\src\wmsp_valarm.c
         Functions: 8/9 (88.9%)
@@ -332,8 +332,8 @@ File progress:
         Bytecode: 0/10096 (0.0%)
 
     libraries\wvr\ARM7.TWL\src\wvr_sp.c
-        Functions: 0/4 (0.0%)
-        Bytecode: 0/500 (0.0%)
+        Functions: 2/4 (50.0%)
+        Bytecode: 224/500 (44.8%)
 
     marionea\ApList.c
         Functions: 3/3 (100.0%)
