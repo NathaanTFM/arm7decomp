@@ -245,13 +245,17 @@ extern void PM_SetLEDPattern(PMLEDPattern pattern);
 extern void PMi_SetLED(PMLEDStatus status);
 
 extern void PXI_Init();
-extern void PXI_SetFifoRecvCallback(int fifotag, void (*callback)(PXIFifoTag, u32, int)); // p
-extern int PXI_SendWordByFifo(int fifotag, u32 data, int err);                            // pxi_fifo.c:215
+extern void PXI_SetFifoRecvCallback(int fifotag, void (*callback)(PXIFifoTag, u32, int));
+extern int PXI_SendWordByFifo(int fifotag, u32 data, int err);
 
 extern u8 MATH_CountPopulation(u32 x);
 extern void SVC_WaitByLoop(u32 count);
 
 extern void SND_BeginSleep();
+
+#ifdef TWL_MODE
+int OS_IsRunOnTwl();
+#endif
 
 #define REG_VCOUNT (*(volatile u16 *)0x4000006)
 #define REG_IME (*(volatile u16 *)0x4000208)

@@ -8,6 +8,9 @@ subprograms/**
 # from twlsdk 5.5
 mongoose_sub.nef
 mongoose_sub.sbin
+mongoose.tef
+mongoose.TWL.FLX.sbin
+mongoose.TWL.LTD.sbin
 
 # compiled files
 built/*

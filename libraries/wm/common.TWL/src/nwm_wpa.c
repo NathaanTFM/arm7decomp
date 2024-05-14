@@ -1,0 +1,10 @@
+// NWMSP_SetWPAPSK
+// NWMSP_SetWPAKey
+// NWMSP_SetWPAParams
+// NWMSP_WpaAssociate
+// NWMSP_WpaSetkey
+// NWMSP_WpaSetTkipMeasure
+// NWMSP_WpaSendEapol
+// NWMSP_WpaSetReceivingEapol
+// NWMSP_WpaDeauthenticate
+// NWM_GetMacAddress

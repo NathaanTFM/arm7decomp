@@ -1,0 +1,413 @@
+Progress:
+    Functions: 489/794 (61.6%)
+    Bytecode: 92832/158028 (58.7%)
+
+File progress:
+    libraries\wm\ARM7.TWL\common\src\wmsp_common.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/44 (0.0%)
+
+    libraries\wm\ARM7.TWL\nwm\src\nwmsp_beaconinfo.c
+        Functions: 0/9 (0.0%)
+        Bytecode: 0/1064 (0.0%)
+
+    libraries\wm\ARM7.TWL\nwm\src\nwmsp_cmd.c
+        Functions: 0/5 (0.0%)
+        Bytecode: 0/632 (0.0%)
+
+    libraries\wm\ARM7.TWL\nwm\src\nwmsp_event.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/2304 (0.0%)
+
+    libraries\wm\ARM7.TWL\nwm\src\nwmsp_event_handler.c
+        Functions: 0/27 (0.0%)
+        Bytecode: 0/4112 (0.0%)
+
+    libraries\wm\ARM7.TWL\nwm\src\nwmsp_system.c
+        Functions: 0/8 (0.0%)
+        Bytecode: 0/1196 (0.0%)
+
+    libraries\wm\ARM7.TWL\nwm\src\nwmsp_wlan_handler.c
+        Functions: 0/6 (0.0%)
+        Bytecode: 0/736 (0.0%)
+
+    libraries\wm\ARM7\src\req_AutoDeAuth.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 172/172 (100.0%)
+
+    libraries\wm\ARM7\src\req_AutoDisconnect.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 20/20 (100.0%)
+
+    libraries\wm\ARM7\src\req_Disable.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 112/112 (100.0%)
+
+    libraries\wm\ARM7\src\req_Disconnect.c
+        Functions: 4/5 (80.0%)
+        Bytecode: 1672/1832 (91.3%)
+
+    libraries\wm\ARM7\src\req_Enable.c
+        Functions: 1/2 (50.0%)
+        Bytecode: 116/532 (21.8%)
+
+    libraries\wm\ARM7\src\req_End.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/192 (0.0%)
+
+    libraries\wm\ARM7\src\req_EndDCF.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 168/168 (100.0%)
+
+    libraries\wm\ARM7\src\req_EndMP.c
+        Functions: 2/2 (100.0%)
+        Bytecode: 336/336 (100.0%)
+
+    libraries\wm\ARM7\src\req_EndParent.c
+        Functions: 2/2 (100.0%)
+        Bytecode: 492/492 (100.0%)
+
+    libraries\wm\ARM7\src\req_EndScan.c
+        Functions: 2/2 (100.0%)
+        Bytecode: 248/248 (100.0%)
+
+    libraries\wm\ARM7\src\req_GetWirelessCounter.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 128/128 (100.0%)
+
+    libraries\wm\ARM7\src\req_InitWirelessCounter.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 100/100 (100.0%)
+
+    libraries\wm\ARM7\src\req_Initialize.c
+        Functions: 1/2 (50.0%)
+        Bytecode: 224/284 (78.9%)
+
+    libraries\wm\ARM7\src\req_MeasureChannel.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/460 (0.0%)
+
+    libraries\wm\ARM7\src\req_PowerOff.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/172 (0.0%)
+
+    libraries\wm\ARM7\src\req_PowerOn.c
+        Functions: 1/2 (50.0%)
+        Bytecode: 492/672 (73.2%)
+
+    libraries\wm\ARM7\src\req_Reset.c
+        Functions: 1/2 (50.0%)
+        Bytecode: 764/904 (84.5%)
+
+    libraries\wm\ARM7\src\req_SetBeaconPeriod.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 116/116 (100.0%)
+
+    libraries\wm\ARM7\src\req_SetBeaconTxRxInd.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 112/112 (100.0%)
+
+    libraries\wm\ARM7\src\req_SetDCFData.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 252/252 (100.0%)
+
+    libraries\wm\ARM7\src\req_SetEntry.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 144/144 (100.0%)
+
+    libraries\wm\ARM7\src\req_SetGameInfo.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 248/248 (100.0%)
+
+    libraries\wm\ARM7\src\req_SetLifeTime.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 292/292 (100.0%)
+
+    libraries\wm\ARM7\src\req_SetMPData.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 320/320 (100.0%)
+
+    libraries\wm\ARM7\src\req_SetMPParameter.c
+        Functions: 2/2 (100.0%)
+        Bytecode: 888/888 (100.0%)
+
+    libraries\wm\ARM7\src\req_SetParentParam.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 168/168 (100.0%)
+
+    libraries\wm\ARM7\src\req_SetPowerSaveMode.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 348/348 (100.0%)
+
+    libraries\wm\ARM7\src\req_SetWEPKey.c
+        Functions: 2/2 (100.0%)
+        Bytecode: 392/392 (100.0%)
+
+    libraries\wm\ARM7\src\req_StartConnect.c
+        Functions: 2/2 (100.0%)
+        Bytecode: 1372/1372 (100.0%)
+
+    libraries\wm\ARM7\src\req_StartDCF.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 136/136 (100.0%)
+
+    libraries\wm\ARM7\src\req_StartMP.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 920/928 (99.1%)
+
+    libraries\wm\ARM7\src\req_StartParent.c
+        Functions: 2/2 (100.0%)
+        Bytecode: 656/656 (100.0%)
+
+    libraries\wm\ARM7\src\req_StartScan.c
+        Functions: 5/5 (100.0%)
+        Bytecode: 2120/2120 (100.0%)
+
+    libraries\wm\ARM7\src\req_StartTestMode.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 36/36 (100.0%)
+
+    libraries\wm\ARM7\src\req_StartTestRxMode.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 36/36 (100.0%)
+
+    libraries\wm\ARM7\src\req_StopTestMode.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 36/36 (100.0%)
+
+    libraries\wm\ARM7\src\req_StopTestRxMode.c
+        Functions: 1/1 (100.0%)
+        Bytecode: 36/36 (100.0%)
+
+    libraries\wm\ARM7\src\valarm_SetMPData.c
+        Functions: 4/4 (100.0%)
+        Bytecode: 528/528 (100.0%)
+
+    libraries\wm\ARM7\src\wmsp_indicate.c
+        Functions: 9/10 (90.0%)
+        Bytecode: 5080/5196 (97.8%)
+
+    libraries\wm\ARM7\src\wmsp_port.c
+        Functions: 6/9 (66.7%)
+        Bytecode: 6072/7032 (86.3%)
+
+    libraries\wm\ARM7\src\wmsp_request.c
+        Functions: 2/2 (100.0%)
+        Bytecode: 164/164 (100.0%)
+
+    libraries\wm\ARM7\src\wmsp_system.c
+        Functions: 20/22 (90.9%)
+        Bytecode: 2092/2644 (79.1%)
+
+    libraries\wm\ARM7\src\wmsp_valarm.c
+        Functions: 8/9 (88.9%)
+        Bytecode: 1436/1444 (99.4%)
+
+    libraries\wm\ARM7\src\wmsp_wl_control.c
+        Functions: 36/36 (100.0%)
+        Bytecode: 3028/3028 (100.0%)
+
+    libraries\wm\common.TWL\src\nwm_close.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/204 (0.0%)
+
+    libraries\wm\common.TWL\src\nwm_connect.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/2180 (0.0%)
+
+    libraries\wm\common.TWL\src\nwm_disconnect.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/496 (0.0%)
+
+    libraries\wm\common.TWL\src\nwm_installfirm.c
+        Functions: 0/4 (0.0%)
+        Bytecode: 0/1424 (0.0%)
+
+    libraries\wm\common.TWL\src\nwm_loaddev.c
+        Functions: 0/4 (0.0%)
+        Bytecode: 0/928 (0.0%)
+
+    libraries\wm\common.TWL\src\nwm_open.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/368 (0.0%)
+
+    libraries\wm\common.TWL\src\nwm_qos.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/444 (0.0%)
+
+    libraries\wm\common.TWL\src\nwm_recvframe.c
+        Functions: 0/6 (0.0%)
+        Bytecode: 0/872 (0.0%)
+
+    libraries\wm\common.TWL\src\nwm_reset.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/464 (0.0%)
+
+    libraries\wm\common.TWL\src\nwm_sendframe.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/520 (0.0%)
+
+    libraries\wm\common.TWL\src\nwm_setpowersave.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/104 (0.0%)
+
+    libraries\wm\common.TWL\src\nwm_setwepkey.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/416 (0.0%)
+
+    libraries\wm\common.TWL\src\nwm_startscan.c
+        Functions: 0/6 (0.0%)
+        Bytecode: 0/1492 (0.0%)
+
+    libraries\wm\common.TWL\src\nwm_unloaddev.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/568 (0.0%)
+
+    libraries\wm\common.TWL\src\nwm_wpa.c
+        Functions: 0/10 (0.0%)
+        Bytecode: 0/2508 (0.0%)
+
+    libraries\wpa\src\aes_wrap.c
+        Functions: 0/5 (0.0%)
+        Bytecode: 0/2376 (0.0%)
+
+    libraries\wpa\src\common.c
+        Functions: 0/4 (0.0%)
+        Bytecode: 0/544 (0.0%)
+
+    libraries\wpa\src\config.c
+        Functions: 0/10 (0.0%)
+        Bytecode: 0/788 (0.0%)
+
+    libraries\wpa\src\config_nitro.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/448 (0.0%)
+
+    libraries\wpa\src\ctrl_iface.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/824 (0.0%)
+
+    libraries\wpa\src\driver_dragon.c
+        Functions: 0/23 (0.0%)
+        Bytecode: 0/3776 (0.0%)
+
+    libraries\wpa\src\eloop_nitro.c
+        Functions: 0/9 (0.0%)
+        Bytecode: 0/2056 (0.0%)
+
+    libraries\wpa\src\events.c
+        Functions: 0/6 (0.0%)
+        Bytecode: 0/3272 (0.0%)
+
+    libraries\wpa\src\l2_packet_nitro.c
+        Functions: 0/6 (0.0%)
+        Bytecode: 0/528 (0.0%)
+
+    libraries\wpa\src\md5_stub.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/40 (0.0%)
+
+    libraries\wpa\src\os_nitro.c
+        Functions: 0/14 (0.0%)
+        Bytecode: 0/916 (0.0%)
+
+    libraries\wpa\src\rc4.c
+        Functions: 0/1 (0.0%)
+        Bytecode: 0/264 (0.0%)
+
+    libraries\wpa\src\sha1_stub.c
+        Functions: 0/2 (0.0%)
+        Bytecode: 0/404 (0.0%)
+
+    libraries\wpa\src\wpa.c
+        Functions: 0/31 (0.0%)
+        Bytecode: 0/9072 (0.0%)
+
+    libraries\wpa\src\wpa_api.c
+        Functions: 0/4 (0.0%)
+        Bytecode: 0/864 (0.0%)
+
+    libraries\wpa\src\wpa_supplicant.c
+        Functions: 0/60 (0.0%)
+        Bytecode: 0/10096 (0.0%)
+
+    libraries\wvr\ARM7.TWL\src\wvr_sp.c
+        Functions: 2/4 (50.0%)
+        Bytecode: 224/500 (44.8%)
+
+    libraries\wvr\ARM7\src\wvr_sp.c
+        Functions: 2/4 (50.0%)
+        Bytecode: 224/500 (44.8%)
+
+    marionea\ApList.c
+        Functions: 3/3 (100.0%)
+        Bytecode: 432/432 (100.0%)
+
+    marionea\BufMan.c
+        Functions: 11/11 (100.0%)
+        Bytecode: 1232/1232 (100.0%)
+
+    marionea\CAM.c
+        Functions: 33/33 (100.0%)
+        Bytecode: 3416/3416 (100.0%)
+
+    marionea\DevCmd.c
+        Functions: 10/11 (90.9%)
+        Bytecode: 948/1776 (53.4%)
+
+    marionea\Diag.c
+        Functions: 2/3 (66.7%)
+        Bytecode: 792/1520 (52.1%)
+
+    marionea\Flash.c
+        Functions: 5/5 (100.0%)
+        Bytecode: 608/608 (100.0%)
+
+    marionea\MA.c
+        Functions: 6/6 (100.0%)
+        Bytecode: 2260/2260 (100.0%)
+
+    marionea\MLME.c
+        Functions: 34/34 (100.0%)
+        Bytecode: 6544/6544 (100.0%)
+
+    marionea\ParamCmd.c
+        Functions: 58/58 (100.0%)
+        Bytecode: 3700/3700 (100.0%)
+
+    marionea\RxCtrl.c
+        Functions: 16/16 (100.0%)
+        Bytecode: 11012/11012 (100.0%)
+
+    marionea\TaskMan.c
+        Functions: 6/6 (100.0%)
+        Bytecode: 748/748 (100.0%)
+
+    marionea\TxCtrl.c
+        Functions: 39/40 (97.5%)
+        Bytecode: 9248/9376 (98.6%)
+
+    marionea\WaitLoop.c
+        Functions: 5/5 (100.0%)
+        Bytecode: 372/372 (100.0%)
+
+    marionea\WlCmdIf.c
+        Functions: 5/5 (100.0%)
+        Bytecode: 968/968 (100.0%)
+
+    marionea\WlIntr.c
+        Functions: 19/20 (95.0%)
+        Bytecode: 5420/5464 (99.2%)
+
+    marionea\WlIntrTask.c
+        Functions: 5/6 (83.3%)
+        Bytecode: 1660/1808 (91.8%)
+
+    marionea\WlNic.c
+        Functions: 93/93 (100.0%)
+        Bytecode: 10416/10416 (100.0%)
+
+    marionea\WlSys.c
+        Functions: 3/3 (100.0%)
+        Bytecode: 536/536 (100.0%)
+

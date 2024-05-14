@@ -1,0 +1,10 @@
+// wpa_config_add_prio_network
+// wpa_config_free_ssid
+// wpa_config_free
+// wpa_config_set_network_defaults
+// wpa_config_update_psk
+// wpa_config_get_blob
+// wpa_config_set_blob
+// wpa_config_free_blob
+// wpa_config_remove_blob
+// wpa_config_alloc_empty

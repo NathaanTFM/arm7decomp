@@ -14,6 +14,11 @@
 #include "Structures.h"
 #include "Prototypes.h"
 
+#ifdef TWL_MODE
+#include "StructuresTWL.h"
+#include "PrototypesTWL.h"
+#endif
+
 extern WMSPWork wmspW;
 
 #define FLAG_UNK (*(u16 *)0x2FFFF96UL)

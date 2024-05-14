@@ -33,7 +33,7 @@ void WMSP_MeasureChannel(void *msg)
     }
 }
 
-STATIC void WmspError(u16 wlCommand, u16 wlResult)
+static void WmspError(u16 wlCommand, u16 wlResult)
 {                   // req_MeasureChannel.c:188
     WMCallback *cb; // r0 - :190
     cb = WMSP_GetBuffer4Callback2Wm9();

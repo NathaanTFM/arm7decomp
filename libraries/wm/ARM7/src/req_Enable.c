@@ -5,12 +5,26 @@ void WMSP_Enable(void *msg)
     u32 *reqBuf = (u32 *)msg; // r0 - :43
     WMCallback *cb;           // r0 - :44
     WMArm7Buf *p;             // r0 - :46
+    u32 miscFlags;            // :47
 
     p = wmspW.wm7buf = (WMArm7Buf *)reqBuf[1];
     wmspW.status = (WMStatus *)reqBuf[2];
     p->status = wmspW.status;
     p->fifo7to9 = (u32 *)reqBuf[3];
-    WMSPi_CommonInit(reqBuf[4]);
+    miscFlags = reqBuf[4];
+
+#ifdef TWL_MODE
+    if (NWMSP_CheckInitialized())
+    {
+        cb = WMSP_GetBuffer4Callback2Wm9();
+        cb->apiid = 0;
+        cb->errcode = 3;
+        WMSP_ReturnResult2Wm9(cb);
+        return;
+    }
+#endif
+
+    WMSPi_CommonInit(miscFlags);
 
     cb = (WMCallback *)WMSP_GetBuffer4Callback2Wm9();
     cb->apiid = WM_APIID_ENABLE;

@@ -161,9 +161,9 @@ typedef struct WMGameInfo
     {
         u8 gameNameCount_attribute; // offset 00
         u8 attribute;               // offset 00
-    };                              // offset 0b
-    u16 parentMaxSize;              // offset 0c
-    u16 childMaxSize;               // offset 0e
+    }; // offset 0b
+    u16 parentMaxSize; // offset 0c
+    u16 childMaxSize;  // offset 0e
     union
     {
         u16 userGameInfo[56]; // offset 00
@@ -173,7 +173,7 @@ typedef struct WMGameInfo
             u16 gameName[8]; // offset 08
             u16 padd1[44];   // offset 18
         } old_type;          // offset 00
-    };                       // offset 10
+    }; // offset 10
 } WMGameInfo;
 
 typedef struct WMBssDesc
@@ -434,6 +434,9 @@ typedef struct WMSPWork
     u32 indPrio_low;           // offset 1584
     u32 wlPrio_low;            // offset 1588
     u32 reqPrio_low;           // offset 158c
+#ifdef TWL_MODE
+    u32 wmInitialized; // offset 1590
+#endif
 } WMSPWork;
 
 typedef struct WMIndCallback
@@ -645,9 +648,9 @@ typedef struct WMPortSendCallback
     u16 *data;      // offset 14
     union
     {
-        u16 size;             // offset 00
-        u16 length;           // offset 00
-    };                        // offset 18
+        u16 size;   // offset 00
+        u16 length; // offset 00
+    }; // offset 18
     u16 seqNo;                // offset 1a
     void (*callback)(void *); // offset 1c
     void *arg;                // offset 20

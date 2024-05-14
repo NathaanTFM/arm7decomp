@@ -1,0 +1,2 @@
+// wpa_supplicant_global_iface_interfaces
+// wpa_supplicant_global_ctrl_iface_process

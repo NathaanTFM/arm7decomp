@@ -1,0 +1,14 @@
+// os_sleep
+// os_get_time
+// os_daemonize
+// os_get_random
+// os_zalloc
+// os_malloc
+// os_realloc
+// os_free
+// os_memcpy
+// os_memmove
+// os_memset
+// os_strdup
+// os_strncpy
+// wpa_create_heap

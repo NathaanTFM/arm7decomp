@@ -133,7 +133,7 @@ def disassemble(name, rawAsm, rawSrc):
         
     print()
     
-def compile(path, target):
+def compile(path, target, internal):
     global disasmQueue
     
     isRecompiled = False
@@ -144,12 +144,17 @@ def compile(path, target):
         if os.path.isfile(target):
             os.remove(target)
         
+        extra_flags = []
+        if internal == "TWL":
+            extra_flags.append("-DTWL_MODE")
+            
         subprocess.call([
             COMPILER,
             "-o", target,
             "-Iinclude",
             "-Imarionea",
             "-ipa", "file",
+            *extra_flags,
             
             "-O4",
             "-inline", "on,noauto",
@@ -190,7 +195,7 @@ def compile(path, target):
             size = symbol.entry.st_size
             info = symbol.entry.st_info
             if info["type"] == "STT_FUNC":
-                subprog = "subprograms/" + os.path.basename(path) + "/" + name + ".bin"
+                subprog = "subprograms/" + os.path.basename(path) + "/" + name + "/" + internal + ".bin"
                 if os.path.isfile(subprog):
                     rawSrc = elf.get_section(shndx).data()[addr:addr+size]
                     rawAsm = open(subprog, "rb").read()
@@ -233,11 +238,12 @@ def compile(path, target):
                 #else:
                     #print("    %-30s <unk>" % (name))
                     
-    for filename in os.listdir("subprograms/" + os.path.basename(path)):
-        if filename.endswith(".bin"):
-            name = filename[:-4]
+    parent = "subprograms/" + os.path.basename(path)
+    for filename in os.listdir(parent):
+        if os.path.isfile(parent + "/" + filename + "/" + internal + ".bin"):
+            name = filename
             if name not in results:
-                rawAsm = open("subprograms/" + os.path.basename(path) + "/" + name + ".bin", "rb").read()
+                rawAsm = open(parent + "/" + filename + "/" + internal + ".bin", "rb").read()
                 results[name] = (4, len(rawAsm)) # missing function
                 
                 
@@ -253,125 +259,135 @@ def isTargeted(path):
             return False
             
     return True
-            
-            
-objects = []
 
-os.makedirs("built", exist_ok=True)
 
-if "-e" in sys.argv:
-    emptyFuncs = []
-    
-progressPerFile = {}
+for internal in ("NITRO", "TWL"):
+    objects = []
 
-for directory in ("marionea", "libraries"):
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if not file.endswith(".c"):
-                continue
+    os.makedirs("built/" + internal, exist_ok=True)
+
+    if "-e" in sys.argv:
+        emptyFuncs = []
+        
+    progressPerFile = {}
+
+    for directory in ("marionea", "libraries"):
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if not file.endswith(".c"):
+                    continue
+                    
+                path = os.path.join(root, file)
+                if not isTargeted(path):
+                    continue
                 
-            path = os.path.join(root, file)
-            if not isTargeted(path):
-                continue
-            
-            target = "built/" + file[:-2] + ".o"
-            results = compile(path, target)
-            objects.append(target)
-            
-            progressPerFile[path] = [0, 0, 0, 0] # bytesOk, bytesTot, funcsOk, funcsTot
-            
-            for name, (status, *args) in results.items():
-                if status == 0: # OK
-                    progressPerFile[path][0] += args[0]
-                    progressPerFile[path][2] += 1
-                    
-                elif status == 2: # mismatch
-                    progressPerFile[path][0] += args[4] # these are the identical bytes
-                    
-                if status != 3: # (missing .bin file)
-                    progressPerFile[path][1] += args[0]
-                    progressPerFile[path][3] += 1
-            
-            if "-e" in sys.argv:
-                # sort the interesting results per size
-                for name, (status, *args) in sorted(results.items()):
-                    if (status == 1 and args[1] == 4):
-                        emptyFuncs.append((path, name, args[0]))
-                        
-                    elif status == 4:
-                        emptyFuncs.append((path, name, args[0]))
-                    
-                    
-            else:
-                # just print the results
-                flag = 0
+                target = "built/" + internal + "/" + file[:-2] + ".o"
+                results = None
                 
-                for name, (status, *args) in sorted(results.items()):
-                    if name[0] == "$":
+                if internal == "NITRO":
+                    tmp = re.split(r"[/\\]", path)
+                    print(tmp)
+                    if "wpa" in tmp or "ARM7.TWL" in tmp or "common.TWL" in tmp or "tianshan" in tmp:
                         continue
                         
-                    if "-s" in sys.argv and (status == 0 or (status == 1 and args[1] == 4) or status == 4):
-                        continue
+                results = compile(path, target, internal)
+                    
+                objects.append(target)
+                
+                progressPerFile[path] = [0, 0, 0, 0] # bytesOk, bytesTot, funcsOk, funcsTot
+                
+                for name, (status, *args) in results.items():
+                    if status == 0: # OK
+                        progressPerFile[path][0] += args[0]
+                        progressPerFile[path][2] += 1
                         
-                    # only print path if there's any function to print
-                    if not flag:
-                        flag = 1
-                        print(path)
+                    elif status == 2: # mismatch
+                        progressPerFile[path][0] += args[4] # these are the identical bytes
                         
-                    print("    " + name.ljust(39), end=" ")
-                    if status == 0:
-                        print("OK")
+                    if status != 3: # (missing .bin file)
+                        progressPerFile[path][1] += args[0]
+                        progressPerFile[path][3] += 1
+                
+                if "-e" in sys.argv:
+                    # sort the interesting results per size
+                    for name, (status, *args) in sorted(results.items()):
+                        if (status == 1 and args[1] == 4):
+                            emptyFuncs.append((path, name, args[0]))
+                            
+                        elif status == 4:
+                            emptyFuncs.append((path, name, args[0]))
                         
-                    elif status == 1: # length mismatch
-                        print("length mismatch (%d, %d)" % (args[1], args[0]))
                         
-                    elif status == 2: # incorrect instr
-                        print("incorrect (%02Xh -> %r - %r)" % (args[1], args[2].hex(" "), args[3].hex(" ")))
-                        
-                    elif status == 3: # missing .bin
-                        print("no original")
-                        
-                    elif status == 4: # missing func
-                        print("missing (%d)" % (args[0],))
-                        
-                    else:
-                        print("(Status %d)" % status)
+                else:
+                    # just print the results
+                    flag = 0
+                    
+                    for name, (status, *args) in sorted(results.items()):
+                        if name[0] == "$":
+                            continue
+                            
+                        if "-s" in sys.argv and (status == 0 or (status == 1 and args[1] == 4) or status == 4):
+                            continue
+                            
+                        # only print path if there's any function to print
+                        if not flag:
+                            flag = 1
+                            print(path)
+                            
+                        print("    " + name.ljust(39), end=" ")
+                        if status == 0:
+                            print("OK")
+                            
+                        elif status == 1: # length mismatch
+                            print("length mismatch (%d, %d)" % (args[1], args[0]))
+                            
+                        elif status == 2: # incorrect instr
+                            print("incorrect (%02Xh -> %r - %r)" % (args[1], args[2].hex(" "), args[3].hex(" ")))
+                            
+                        elif status == 3: # missing .bin
+                            print("no original")
+                            
+                        elif status == 4: # missing func
+                            print("missing (%d)" % (args[0],))
+                            
+                        else:
+                            print("(Status %d)" % status)
             
-if "-e" in sys.argv:
-    emptyFuncs.sort(key = lambda x: (x[2], x[1]))
-    print("+-" + "-" * 50 + "-+-" + "-" * 40 + "-+-" + "-" * 8 + "-+")
-    print("| %-50s | %-40s | %-8s |" % ("path", "name", "size"))
-    print("+-" + "-" * 50 + "-+-" + "-" * 40 + "-+-" + "-" * 8 + "-+")
-    
-    for path, name, size in emptyFuncs:
-        print("| %-50s | %-40s | %8d |" % (path, name, size))
+    if "-e" in sys.argv:
+        emptyFuncs.sort(key = lambda x: (x[2], x[1]))
+        print("+-" + "-" * 50 + "-+-" + "-" * 40 + "-+-" + "-" * 8 + "-+")
+        print("| %-50s | %-40s | %-8s |" % ("path", "name", "size"))
+        print("+-" + "-" * 50 + "-+-" + "-" * 40 + "-+-" + "-" * 8 + "-+")
         
-    print("+-" + "-" * 50 + "-+-" + "-" * 40 + "-+-" + "-" * 8 + "-+")
-    
-
-for name, rawAsm, rawSrc in disasmQueue:
-    disassemble(name, rawAsm, rawSrc)
-    
-sumBytesOk, sumBytesTot, sumFuncsOk, sumFuncsTot = 0, 0, 0, 0
-
-progressVerbose = "File progress:\n"
-for file, (bytesOk, bytesTot, funcsOk, funcsTot) in sorted(progressPerFile.items()):
-    progressVerbose += "    " + file + "\n"
-    progressVerbose += "        Functions: %d/%d (%.1f%%)" % (funcsOk, funcsTot, funcsOk/funcsTot * 100) + "\n"
-    progressVerbose += "        Bytecode: %d/%d (%.1f%%)" % (bytesOk, bytesTot, bytesOk/bytesTot * 100) + "\n"
-    progressVerbose += "\n"
-    
-    sumBytesOk += bytesOk
-    sumBytesTot += bytesTot
-    sumFuncsOk += funcsOk
-    sumFuncsTot += funcsTot
-    
-progress = "Progress:" + "\n"
-progress += "    Functions: %d/%d (%.1f%%)" % (sumFuncsOk, sumFuncsTot, sumFuncsOk/sumFuncsTot * 100) + "\n"
-progress += "    Bytecode: %d/%d (%.1f%%)" % (sumBytesOk, sumBytesTot, sumBytesOk/sumBytesTot * 100) + "\n"
-
-if "-p" not in sys.argv:
-    print("\n" + progress)
-    with open("PROGRESS", "w") as f:
-        f.write(progress + "\n" + progressVerbose)
+        for path, name, size in emptyFuncs:
+            print("| %-50s | %-40s | %8d |" % (path, name, size))
+            
+        print("+-" + "-" * 50 + "-+-" + "-" * 40 + "-+-" + "-" * 8 + "-+")
         
+
+    for name, rawAsm, rawSrc in disasmQueue:
+        disassemble(name, rawAsm, rawSrc)
+        
+    sumBytesOk, sumBytesTot, sumFuncsOk, sumFuncsTot = 0, 0, 0, 0
+
+    progressVerbose = "File progress:\n"
+    for file, (bytesOk, bytesTot, funcsOk, funcsTot) in sorted(progressPerFile.items()):
+        progressVerbose += "    " + file + "\n"
+        progressVerbose += "        Functions: %d/%d (%.1f%%)" % (funcsOk, funcsTot, funcsOk/(funcsTot or 1) * 100) + "\n"
+        progressVerbose += "        Bytecode: %d/%d (%.1f%%)" % (bytesOk, bytesTot, bytesOk/(bytesTot or 1) * 100) + "\n"
+        progressVerbose += "\n"
+        
+        sumBytesOk += bytesOk
+        sumBytesTot += bytesTot
+        sumFuncsOk += funcsOk
+        sumFuncsTot += funcsTot
+        
+    progress = "Progress:" + "\n"
+    progress += "    Functions: %d/%d (%.1f%%)" % (sumFuncsOk, sumFuncsTot, sumFuncsOk/sumFuncsTot * 100) + "\n"
+    progress += "    Bytecode: %d/%d (%.1f%%)" % (sumBytesOk, sumBytesTot, sumBytesOk/sumBytesTot * 100) + "\n"
+
+    if "-p" not in sys.argv:
+        print("\n" + progress)
+        with open("PROGRESS.TWL" if internal == "TWL" else "PROGRESS", "w") as f:
+            f.write(progress + "\n" + progressVerbose)
+            
