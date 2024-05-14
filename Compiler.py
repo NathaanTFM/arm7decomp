@@ -286,7 +286,6 @@ for internal in ("NITRO", "TWL"):
                 
                 if internal == "NITRO":
                     tmp = re.split(r"[/\\]", path)
-                    print(tmp)
                     if "wpa" in tmp or "ARM7.TWL" in tmp or "common.TWL" in tmp or "tianshan" in tmp:
                         continue
                         
